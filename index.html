@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jelly Cats Block Puzzle</title>
+    <!-- Подключаем Tailwind CSS для UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #2a2a2a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Запрещаем скролл на мобильных устройствах */
+        }
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* UI слой поверх игры */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Пропускаем клики сквозь UI, когда он скрыт */
+        }
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+        
+        /* Плавное появление */
+        .fade-in {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .scale-in {
+            transform: scale(1) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Контейнер для Phaser Canvas -->
+    <div id="game-container"></div>
+
+    <!-- Кнопка открытия редактора -->
+    <button id="btn-editor-toggle" class="fixed top-4 left-4 bg-white/80 backdrop-blur-md text-slate-800 font-bold py-3 px-5 rounded-2xl shadow-lg border border-slate-200 hover:bg-white active:scale-95 transition-all z-40 flex items-center gap-2">
+        🔧 <span class="hidden sm:inline">Редактор котиков</span>
+    </button>
+
+    <!-- Панель управления масштабом камеры и фона -->
+    <div id="zoom-control-panel" class="fixed top-4 right-4 bg-white/80 backdrop-blur-md text-slate-800 p-4 rounded-3xl shadow-lg border border-slate-200/50 hover:bg-white transition-all z-40 flex flex-col gap-4 min-w-[260px] sm:min-w-[300px]">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+            <span class="text-sm font-bold text-slate-800 flex items-center gap-1">⚙️ Настройки отображения</span>
+            <button id="btn-zoom-reset" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 p-1.5 px-3 rounded-xl border border-orange-100 transition-all text-[11px] font-extrabold flex items-center gap-1" title="Сбросить все">
+                Сброс 🔄
+            </button>
+        </div>
+        
+        <!-- Слайдер масштаба игры (камера) -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">🔍 Масштаб игры (Зум)</span>
+                <span id="zoom-value-label" class="font-extrabold text-orange-600">100%</span>
+            </div>
+            <input type="range" id="global-zoom-slider" min="0.3" max="1.5" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Слайдер размера фона -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">🖼️ Размер фона (Обои)</span>
+                <span id="bg-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+            </div>
+            <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Слайдер разделения клеток (зазоры) -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">📏 Разделение клеток (Зазоры)</span>
+                <span id="grid-gap-value-label" class="font-extrabold text-orange-600">4px</span>
+            </div>
+            <input type="range" id="grid-gap-slider" min="0" max="20" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Слайдер закругления клеток (радиус) -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">📐 Закругление клеток (Радиус)</span>
+                <span id="grid-radius-value-label" class="font-extrabold text-orange-600">4px</span>
+            </div>
+            <input type="range" id="grid-radius-slider" min="0" max="24" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Слайдер толщины обводки котиков -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">✨ Толщина обводки котиков</span>
+                <span id="glow-thickness-value-label" class="font-extrabold text-orange-600">6px</span>
+            </div>
+            <input type="range" id="glow-thickness-slider" min="0" max="12" step="0.5" value="6" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Слайдер размытия обводки котиков -->
+        <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">💨 Размытие обводки (Свечение)</span>
+                <span id="glow-blur-value-label" class="font-extrabold text-orange-600">24px</span>
+            </div>
+            <input type="range" id="glow-blur-slider" min="0" max="40" step="1" value="24" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+
+        <!-- Переключатель видимости подложки блоков -->
+        <div class="flex justify-between items-center text-xs pb-1 border-t border-slate-100 pt-3">
+            <span class="font-bold text-slate-500 flex items-center gap-1">🎨 Показывать подложку блоков</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="show-blocks-toggle" checked class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+            </label>
+        </div>
+
+        <!-- Настройка цвета выделения сетки -->
+        <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
+            <span class="font-bold text-slate-500 flex items-center gap-1">🟢 Цвет занятых ячеек</span>
+            <input type="color" id="grid-color-picker" value="#10b981" class="w-8 h-8 rounded-full border border-slate-200/50 cursor-pointer overflow-hidden bg-transparent">
+        </div>
+
+        <!-- Слайдер толщины рамки ячеек -->
+        <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-500">📏 Толщина рамки ячеек</span>
+                <span id="grid-line-value-label" class="font-extrabold text-orange-600">2px</span>
+            </div>
+            <input type="range" id="grid-line-slider" min="1" max="8" step="1" value="2" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+        </div>
+    </div>
+
+    <!-- Панель редактора -->
+    <div id="editor-panel" class="fixed top-0 right-0 h-full w-96 bg-[#fff9f0]/95 backdrop-blur-md shadow-2xl border-l-4 border-orange-200 z-40 transform translate-x-full transition-transform duration-300 flex flex-col p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-orange-600 flex items-center gap-2">🐾 Редактор котиков</h2>
+            <button id="btn-editor-close" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
+        </div>
+
+        <!-- Выбор котика -->
+        <div class="mb-5">
+            <label class="block text-sm font-semibold text-slate-600 mb-2">Выберите котика для настройки:</label>
+            <select id="edit-cat-select" class="w-full bg-white border-2 border-orange-100 rounded-xl py-3 px-4 text-slate-800 font-medium focus:outline-none focus:border-orange-300 transition-colors">
+                <option value="orangeSolo">orangeSolo (Рыжий 1x1)</option>
+                <option value="creamCurl">creamCurl (Светлый L-3)</option>
+                <option value="graySit">graySit (Серый L-4)</option>
+                <option value="calicoStretch">calicoStretch (Трехцветный S-4)</option>
+                <option value="blackLong">blackLong (Черный 1x4)</option>
+            </select>
+        </div>
+
+        <!-- Настройки слайдеров -->
+        <div class="space-y-4 flex-1">
+            <!-- Смещение X -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Смещение X (offsetX)</span>
+                    <span id="val-offsetX" class="font-bold text-orange-500">0</span>
+                </div>
+                <input type="range" id="slider-offsetX" min="-300" max="300" step="1" value="0" class="w-full accent-orange-500">
+            </div>
+
+            <!-- Смещение Y -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Смещение Y (offsetY)</span>
+                    <span id="val-offsetY" class="font-bold text-orange-500">0</span>
+                </div>
+                <input type="range" id="slider-offsetY" min="-300" max="300" step="1" value="0" class="w-full accent-orange-500">
+            </div>
+
+            <!-- Масштаб X -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Масштаб X (scaleX)</span>
+                    <span id="val-scaleX" class="font-bold text-orange-500">0.5</span>
+                </div>
+                <input type="range" id="slider-scaleX" min="0.1" max="2.0" step="0.01" value="0.5" class="w-full accent-orange-500">
+            </div>
+
+            <!-- Масштаб Y -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Масштаб Y (scaleY)</span>
+                    <span id="val-scaleY" class="font-bold text-orange-500">0.5</span>
+                </div>
+                <input type="range" id="slider-scaleY" min="0.1" max="2.0" step="0.01" value="0.5" class="w-full accent-orange-500">
+            </div>
+
+            <!-- Точка привязки X -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Точка привязки X (originX)</span>
+                    <span id="val-originX" class="font-bold text-orange-500">0.5</span>
+                </div>
+                <input type="range" id="slider-originX" min="0" max="1" step="0.01" value="0.5" class="w-full accent-orange-500">
+            </div>
+
+            <!-- Точка привязки Y -->
+            <div>
+                <div class="flex justify-between text-sm font-medium text-slate-600 mb-1">
+                    <span>Точка привязки Y (originY)</span>
+                    <span id="val-originY" class="font-bold text-orange-500">0.5</span>
+                </div>
+                <input type="range" id="slider-originY" min="0" max="1" step="0.01" value="0.5" class="w-full accent-orange-500">
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="mt-6 pt-4 border-t border-slate-200 space-y-3">
+            <button id="btn-editor-reset" class="w-full bg-slate-100 text-slate-600 font-bold py-3 px-4 rounded-xl hover:bg-slate-200 transition-all">
+                Сбросить настройки
+            </button>
+            <button id="btn-editor-export" class="w-full bg-orange-100 text-orange-600 font-bold py-3 px-4 rounded-xl hover:bg-orange-200 transition-all">
+                Экспорт JSON кода
+            </button>
+        </div>
+
+        <!-- Текстовое поле для экспорта -->
+        <div id="export-box" class="mt-4 hidden">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Замените массив PIECE_DEFS в коде на этот:</label>
+            <textarea id="export-textarea" readonly class="w-full h-32 text-xs bg-slate-900 text-emerald-400 p-2 rounded-lg font-mono focus:outline-none"></textarea>
+        </div>
+    </div>
+
+    <!-- UI Слой (Победный экран) -->
+    <div id="ui-layer" class="flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 transition-all duration-500 opacity-0 invisible">
+        <div id="win-modal" class="bg-[#fff9f0] rounded-3xl p-8 text-center shadow-2xl max-w-sm w-full mx-4 pointer-events-auto transform scale-90 transition-transform duration-500 border-4 border-orange-200">
+            <div class="text-6xl mb-4">🐾</div>
+            <h1 class="text-4xl font-bold text-orange-500 mb-2">Мяу-победа!</h1>
+            <p class="text-gray-600 mb-8 text-lg font-medium">Все котики уютно уложились на коврике.</p>
+            
+            <button id="btn-restart" class="w-full bg-orange-100 text-orange-600 font-bold py-4 px-6 rounded-2xl mb-3 hover:bg-orange-200 active:bg-orange-300 transition-colors">
+                Еще раз
+            </button>
+            <button id="btn-next" class="w-full bg-orange-500 text-white font-bold py-4 px-6 rounded-2xl hover:bg-orange-600 active:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
+                Следующий пазл
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Default premium layout settings for each cat
+        const DEFAULT_SETTINGS = {
+            orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
+            creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
+            graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
+            calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
+            blackLong: { originX: 0.5, originY: 0.5, offsetX: 9, offsetY: 15, scaleX: 0.5, scaleY: 0.7 }
+        };
+
+        // Ensure new custom offsets are loaded by clearing old localStorage once
+        if (localStorage.getItem('jellycats_settings_version') !== 'v2') {
+            localStorage.removeItem('jellycats_editor_settings');
+            localStorage.setItem('jellycats_settings_version', 'v2');
+        }
+
+        // Load modified settings from localStorage (if any)
+        const savedSettings = JSON.parse(localStorage.getItem('jellycats_editor_settings') || '{}');
+
+        // Merge saved settings with defaults
+        const CURRENT_SETTINGS = {};
+        for (let key in DEFAULT_SETTINGS) {
+            CURRENT_SETTINGS[key] = { ...DEFAULT_SETTINGS[key], ...savedSettings[key] };
+        }
+
+        const PIECE_DEFS = [
+            { 
+                id: 'orangeSolo', 
+                color: 0xffaa44, 
+                cells: [[0,0]], 
+                originX: CURRENT_SETTINGS.orangeSolo.originX, 
+                originY: CURRENT_SETTINGS.orangeSolo.originY,
+                offsetX: CURRENT_SETTINGS.orangeSolo.offsetX,
+                offsetY: CURRENT_SETTINGS.orangeSolo.offsetY,
+                scaleX: CURRENT_SETTINGS.orangeSolo.scaleX,
+                scaleY: CURRENT_SETTINGS.orangeSolo.scaleY
+            },
+            { 
+                id: 'creamCurl', 
+                color: 0xffeebb, 
+                cells: [[0,0], [1,0], [1,1]], // Adjusted to match the cat image shape!
+                originX: CURRENT_SETTINGS.creamCurl.originX, 
+                originY: CURRENT_SETTINGS.creamCurl.originY,
+                offsetX: CURRENT_SETTINGS.creamCurl.offsetX,
+                offsetY: CURRENT_SETTINGS.creamCurl.offsetY,
+                scaleX: CURRENT_SETTINGS.creamCurl.scaleX,
+                scaleY: CURRENT_SETTINGS.creamCurl.scaleY
+            },
+            { 
+                id: 'graySit', 
+                color: 0x9999a0, 
+                cells: [[0,0], [0,1], [0,2], [1,2]], 
+                originX: CURRENT_SETTINGS.graySit.originX, 
+                originY: CURRENT_SETTINGS.graySit.originY,
+                offsetX: CURRENT_SETTINGS.graySit.offsetX,
+                offsetY: CURRENT_SETTINGS.graySit.offsetY,
+                scaleX: CURRENT_SETTINGS.graySit.scaleX,
+                scaleY: CURRENT_SETTINGS.graySit.scaleY
+            },
+            { 
+                id: 'calicoStretch', 
+                color: 0xe88a5d, 
+                cells: [[0,0], [0,1], [1,1], [1,2]], // Adjusted to match the cat image shape!
+                originX: CURRENT_SETTINGS.calicoStretch.originX, 
+                originY: CURRENT_SETTINGS.calicoStretch.originY,
+                offsetX: CURRENT_SETTINGS.calicoStretch.offsetX,
+                offsetY: CURRENT_SETTINGS.calicoStretch.offsetY,
+                scaleX: CURRENT_SETTINGS.calicoStretch.scaleX,
+                scaleY: CURRENT_SETTINGS.calicoStretch.scaleY
+            },
+            { 
+                id: 'blackLong', 
+                color: 0x444444, 
+                cells: [[0,0], [0,1], [0,2], [0,3]], 
+                originX: CURRENT_SETTINGS.blackLong.originX, 
+                originY: CURRENT_SETTINGS.blackLong.originY,
+                offsetX: CURRENT_SETTINGS.blackLong.offsetX,
+                offsetY: CURRENT_SETTINGS.blackLong.offsetY,
+                scaleX: CURRENT_SETTINGS.blackLong.scaleX,
+                scaleY: CURRENT_SETTINGS.blackLong.scaleY
+            }
+        ];
+
+        const BASE_CS = 100; // Базовый размер клетки для генерации текстур
+
+        class GameScene extends Phaser.Scene {
+            constructor() {
+                super('GameScene');
+                // Логическая сетка 4x4
+                this.grid = Array(4).fill(null).map(() => Array(4).fill(null));
+                this.pieces = [];
+                this.ghosts = [];
+                this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
+            }
+
+            preload() {
+                // Генерируем текстуры программно
+                this.generateTextures();
+
+                // Load PNG cat images
+                this.load.image('orangeSolo', 'assets/cats/orangeSolo.png');
+                this.load.image('creamCurl', 'assets/cats/creamCurl.png');
+                this.load.image('graySit', 'assets/cats/graySit.png');
+                this.load.image('calicoStretch', 'assets/cats/calicoStretch.png');
+                this.load.image('blackLong', 'assets/cats/blackLong.png');
+
+                // Load room background image
+                this.load.image('room_background', 'assets/room-rug-background.png');
+            }
+
+            create() {
+                // Добавляем фоновое изображение комнаты на задний план
+                this.bgImage = this.add.image(0, 0, 'room_background');
+                this.bgImage.setOrigin(0.5, 0.5);
+                this.bgImage.setDepth(-10);
+
+                // Фон
+                this.cameras.main.setBackgroundColor('#f4ede4');
+                
+                // Графика поля (ковер)
+                this.boardGraphic = this.add.graphics();
+                
+                // Создаем игровые объекты
+                this.createPieces();
+
+                // Настраиваем события перетаскивания
+                this.setupInput();
+
+                // Первичная раскладка
+                this.updateLayout();
+
+                // Слушаем изменение размера окна
+                this.scale.on('resize', this.updateLayout, this);
+
+                // Привязка UI кнопок
+                document.getElementById('btn-restart').onclick = () => this.restartLevel();
+                document.getElementById('btn-next').onclick = () => this.restartLevel(); // В v1 перезапускает уровень
+
+                // Инициализация интерактивного редактора котиков
+                this.initEditor();
+
+                // Инициализация масштабирования камеры
+                this.initZoom();
+                this.updateBlocksVisibility();
+            }
+
+            generateTextures() {
+                // 1. Текстура базового блока (скругленный квадрат с псевдо-3D)
+                let blockG = this.make.graphics({x: 0, y: 0, add: false});
+                const r = 16; // радиус скругления
+                
+                // Основной цвет (белый, будем красить tint-ом)
+                blockG.fillStyle(0xffffff, 1);
+                blockG.fillRoundedRect(0, 0, BASE_CS, BASE_CS, r);
+                
+                // Внутренняя тень снизу
+                blockG.fillStyle(0x000000, 0.15);
+                blockG.fillRoundedRect(0, BASE_CS - 15, BASE_CS, 15, {tl: 0, tr: 0, bl: r, br: r});
+                
+                // Блик сверху
+                blockG.fillStyle(0xffffff, 0.4);
+                blockG.fillRoundedRect(0, 0, BASE_CS, 15, {tl: r, tr: r, bl: 0, br: 0});
+                
+                blockG.generateTexture('block_base', BASE_CS, BASE_CS);
+
+                // 2. Текстура кошачьей мордочки (с ушками)
+                let faceG = this.make.graphics({x: 0, y: 0, add: false});
+                
+                // Ушки (белые, закрасятся цветом блока через tint потом, но тут сложнее.
+                // Сделаем ушки полупрозрачными черными/белыми или просто нарисуем мордашку.
+                
+                // Мордочка (глаза и нос)
+                faceG.fillStyle(0x333333, 1); // Темно-серый
+                // Глаза
+                faceG.fillCircle(BASE_CS * 0.3, BASE_CS * 0.45, BASE_CS * 0.08);
+                faceG.fillCircle(BASE_CS * 0.7, BASE_CS * 0.45, BASE_CS * 0.08);
+                // Носик
+                faceG.fillTriangle(
+                    BASE_CS * 0.5, BASE_CS * 0.65, 
+                    BASE_CS * 0.45, BASE_CS * 0.55, 
+                    BASE_CS * 0.55, BASE_CS * 0.55
+                );
+                
+                // Усы
+                faceG.lineStyle(3, 0x333333, 0.6);
+                faceG.moveTo(BASE_CS * 0.25, BASE_CS * 0.55); faceG.lineTo(BASE_CS * 0.05, BASE_CS * 0.5);
+                faceG.moveTo(BASE_CS * 0.25, BASE_CS * 0.65); faceG.lineTo(BASE_CS * 0.05, BASE_CS * 0.65);
+                faceG.moveTo(BASE_CS * 0.75, BASE_CS * 0.55); faceG.lineTo(BASE_CS * 0.95, BASE_CS * 0.5);
+                faceG.moveTo(BASE_CS * 0.75, BASE_CS * 0.65); faceG.lineTo(BASE_CS * 0.95, BASE_CS * 0.65);
+
+                faceG.generateTexture('cat_face', BASE_CS, BASE_CS);
+            }
+
+            createPieces() {
+                PIECE_DEFS.forEach(def => {
+                    // Создаем боевой контейнер
+                    let container = this.add.container(0, 0);
+                    container.def = def;
+                    container.cells = JSON.parse(JSON.stringify(def.cells)); // Клонируем ячейки
+                    container.isPlaced = false;
+                    container.gridX = null;
+                    container.gridY = null;
+                    container.color = def.color;
+                    
+                    // Создаем ghost контейнер (полупрозрачный)
+                    let ghost = this.add.container(0, 0);
+                    ghost.setAlpha(0.4);
+                    ghost.setVisible(false);
+
+                    // Собираем фигуру из блоков
+                    def.cells.forEach(c => {
+                        let cx = c[0] * BASE_CS;
+                        let cy = c[1] * BASE_CS;
+
+                        // Блок для основной фигуры (подложка под котика с полупрозрачностью для красоты)
+                        let img = this.add.image(cx, cy, 'block_base');
+                        img.setTint(def.color);
+                        img.setAlpha(0.45); // Make it slightly semi-transparent to look like a soft pillow
+                        img.gridX = c[0]; // сохраняем относительные координаты в объекте
+                        img.gridY = c[1];
+                        // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре
+                        img.setInteractive({ cursor: 'pointer', draggable: true });
+
+                        // Надежное свечение при наведении мыши (hover) прямо на блок
+                        img.on('pointerover', () => {
+                            const catImg = container.list.find(child => child.isCatImage);
+                            if (catImg && catImg.postFX) {
+                                if (!container.isDragging && !catImg.glowEffect) {
+                                    catImg.postFX.clear();
+                                    let thickness = this.glowThickness !== undefined ? this.glowThickness : 6;
+                                    let blur = this.glowBlur !== undefined ? this.glowBlur : 24;
+                                    if (thickness > 0) {
+                                        catImg.glowEffect = catImg.postFX.addGlow(0xffffff, thickness, 0, false, 0.1, blur);
+                                    }
+                                }
+                            }
+                        });
+
+                        img.on('pointerout', () => {
+                            const catImg = container.list.find(child => child.isCatImage);
+                            if (catImg && catImg.postFX && !container.isDragging) {
+                                catImg.postFX.clear();
+                                catImg.glowEffect = null;
+                            }
+                        });
+
+                        container.add(img);
+
+                        // Блок для ghost фигуры
+                        let gImg = this.add.image(cx, cy, 'block_base');
+                        gImg.setTint(def.color);
+                        ghost.add(gImg);
+                    });
+
+                    // Добавляем красивую PNG картинку котика поверх блоков с точной точкой привязки
+                    let catImg = this.add.image(def.offsetX, def.offsetY, def.id);
+                    catImg.setOrigin(def.originX, def.originY);
+                    catImg.setScale(def.scaleX, def.scaleY);
+                    catImg.isCatImage = true;
+                    catImg.targetX = def.offsetX;
+                    catImg.targetY = def.offsetY;
+                    catImg.targetAngle = 0;
+                    // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре
+                    catImg.setInteractive({ cursor: 'pointer', draggable: true });
+
+                    // Надежное свечение при наведении мыши (hover) прямо на котика
+                    catImg.on('pointerover', () => {
+                        if (catImg.postFX) {
+                            if (!container.isDragging && !catImg.glowEffect) {
+                                catImg.postFX.clear();
+                                let thickness = this.glowThickness !== undefined ? this.glowThickness : 6;
+                                let blur = this.glowBlur !== undefined ? this.glowBlur : 24;
+                                if (thickness > 0) {
+                                    catImg.glowEffect = catImg.postFX.addGlow(0xffffff, thickness, 0, false, 0.1, blur);
+                                }
+                            }
+                        }
+                    });
+
+                    catImg.on('pointerout', () => {
+                        if (catImg.postFX && !container.isDragging) {
+                            catImg.postFX.clear();
+                            catImg.glowEffect = null;
+                        }
+                    });
+
+                    container.add(catImg);
+
+                    container.ghost = ghost;
+                    this.pieces.push(container);
+                    this.ghosts.push(ghost);
+                });
+            }
+
+            setupInput() {
+                this.input.on('dragstart', (pointer, gameObject) => {
+                    let container = gameObject.parentContainer;
+                    
+                    // Поднимаем фигуру наверх
+                    this.children.bringToTop(container);
+                    
+                    // Запоминаем начальные данные для клика/возврата
+                    container.dragStartX = container.x;
+                    container.dragStartY = container.y;
+                    container.pointerDownTime = this.time.now;
+                    container.isDragging = false;
+                    
+                    // Добавляем эффект белой обводки вокруг картинки котика (свечение по PNG-контуру)
+                    const catImg = container.list.find(child => child.isCatImage);
+                    if (catImg && catImg.postFX) {
+                        catImg.postFX.clear(); // Безопасно сбрасываем старые фильтры
+                        let thickness = this.glowThickness !== undefined ? this.glowThickness : 6;
+                        let blur = this.glowBlur !== undefined ? this.glowBlur : 24;
+                        if (thickness > 0) {
+                            catImg.glowEffect = catImg.postFX.addGlow(0xffffff, thickness, 0, false, 0.1, blur);
+                        }
+                    }
+
+                    // Добавляем эффект "поднятия"
+                    this.tweens.add({
+                        targets: container,
+                        scale: container.targetScale * 1.05,
+                        duration: 100
+                    });
+
+                    // Сохраняем информацию о том, где стояла фигура
+                    if (container.isPlaced) {
+                        container.wasPlacedAt = { x: container.gridX, y: container.gridY };
+                        this.removeFromGrid(container);
+                    } else {
+                        container.wasPlacedAt = null;
+                    }
+                });
+
+                this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+                    let container = gameObject.parentContainer;
+                    
+                    // Move container taking main camera zoom into account
+                    const zoom = this.cameras.main.zoom;
+                    container.x += (pointer.position.x - pointer.prevPosition.x) / zoom;
+                    container.y += (pointer.position.y - pointer.prevPosition.y) / zoom;
+
+                    // Drag threshold with zoom scaling to maintain consistent physical gesture distance
+                    const dragDistScreen = Phaser.Math.Distance.Between(container.dragStartX, container.dragStartY, container.x, container.y) * zoom;
+                    if (dragDistScreen > 5) {
+                        container.isDragging = true;
+                    }
+
+                    // Обновляем Ghost preview
+                    this.updateGhostPreview(container);
+                });
+
+                this.input.on('dragend', (pointer, gameObject) => {
+                    let container = gameObject.parentContainer;
+                    container.ghost.setVisible(false);
+
+                    // Очищаем подсветку ячеек предпросмотра на сетке
+                    this.previewGridCells = [];
+                    this.drawBoard();
+
+                    // Убираем эффект белой обводки вокруг картинки котика
+                    const catImg = container.list.find(child => child.isCatImage);
+                    if (catImg && catImg.postFX) {
+                        catImg.postFX.clear();
+                    }
+
+                    let clickTime = this.time.now - container.pointerDownTime;
+                    
+                    // Опускаем фигуру
+                    this.tweens.add({
+                        targets: container,
+                        scale: container.targetScale,
+                        duration: 100
+                    });
+
+                    // Логика Тап = Поворот
+                    if (!container.isDragging && clickTime < 300) {
+                        this.rotatePiece(container);
+                        
+                        // Если фигура стояла на поле (используем saved wasPlacedAt), пробуем примагнитить обратно после поворота
+                        // Если не влезает - возвращаем на старт
+                        if (container.wasPlacedAt) {
+                            let oldX = container.wasPlacedAt.x;
+                            let oldY = container.wasPlacedAt.y;
+                            if (this.canPlace(container.cells, oldX, oldY)) {
+                                this.placePiece(container, oldX, oldY);
+                            } else {
+                                this.returnToStart(container);
+                            }
+                        }
+                        return;
+                    }
+
+                    // Логика Drop = Попытка установить
+                    let localX = container.x - this.boardX - this.cs/2;
+                    let localY = container.y - this.boardY - this.cs/2;
+                    let gridX = Math.round(localX / this.cs);
+                    let gridY = Math.round(localY / this.cs);
+
+                    if (this.canPlace(container.cells, gridX, gridY)) {
+                        this.placePiece(container, gridX, gridY);
+                    } else {
+                        this.returnToStart(container);
+                    }
+                });
+            }
+
+            rotatePiece(container) {
+                // Математика поворота 90 град по часовой: (x, y) -> (-y, x)
+                container.cells = container.cells.map(([x, y]) => [-y, x]);
+
+                // Анимируем перемещение спрайтов внутри контейнера
+                container.list.forEach(child => {
+                    this.tweens.killTweensOf(child);
+
+                    if (child.isCatImage) {
+                        if (child.targetX === undefined) child.targetX = child.x;
+                        if (child.targetY === undefined) child.targetY = child.y;
+                        if (child.targetAngle === undefined) child.targetAngle = child.angle;
+                        if (child.realAngle === undefined) child.realAngle = child.angle;
+
+                        // Вращаем не только угол, но и смещение картинки относительно (0,0) контейнера!
+                        let nx = -child.targetY;
+                        let ny = child.targetX;
+
+                        child.targetX = nx;
+                        child.targetY = ny;
+                        child.targetAngle += 90;
+
+                        // Имитируем свойство angle без внутреннего ограничения Phaser [-180, 180]
+                        this.tweens.add({
+                            targets: child,
+                            realAngle: child.targetAngle,
+                            x: child.targetX,
+                            y: child.targetY,
+                            duration: 200,
+                            ease: 'Back.easeOut',
+                            onUpdate: () => {
+                                child.angle = child.realAngle;
+                            }
+                        });
+                        return;
+                    }
+
+                    let nx = -child.gridY;
+                    let ny = child.gridX;
+                    child.gridX = nx;
+                    child.gridY = ny;
+
+                    this.tweens.add({
+                        targets: child,
+                        x: nx * BASE_CS,
+                        y: ny * BASE_CS,
+                        duration: 200,
+                        ease: 'Back.easeOut'
+                    });
+                });
+
+                // Сразу обновляем ghost контейнер, чтобы он совпадал с основной фигурой
+                container.ghost.list.forEach((gChild, index) => {
+                    this.tweens.killTweensOf(gChild);
+                    let cell = container.cells[index];
+                    gChild.x = cell[0] * BASE_CS;
+                    gChild.y = cell[1] * BASE_CS;
+                });
+            }
+
+            updateGhostPreview(container) {
+                let localX = container.x - this.boardX - this.cs/2;
+                let localY = container.y - this.boardY - this.cs/2;
+                let gridX = Math.round(localX / this.cs);
+                let gridY = Math.round(localY / this.cs);
+
+                let hasOverlap = false;
+                let newPreviewCells = [];
+
+                container.cells.forEach(([cx, cy]) => {
+                    let gx = gridX + cx;
+                    let gy = gridY + cy;
+                    if (gx >= 0 && gx < 4 && gy >= 0 && gy < 4) {
+                        hasOverlap = true;
+                        let status = this.grid[gy][gx] === null ? 'valid' : 'invalid';
+                        newPreviewCells.push({ r: gy, c: gx, status: status });
+                    }
+                });
+
+                if (hasOverlap) {
+                    container.ghost.setVisible(true);
+                    container.ghost.x = this.boardX + gridX * this.cs + this.cs/2;
+                    container.ghost.y = this.boardY + gridY * this.cs + this.cs/2;
+                    // Опускаем ghost под основные фигуры
+                    this.children.moveBelow(container.ghost, container);
+
+                    // Оптимизация: перерисовываем сетку только если координаты реально изменились или статус ячеек поменялся
+                    let isChanged = !this.previewGridCells || this.previewGridCells.length !== newPreviewCells.length ||
+                        newPreviewCells.some((cell, idx) => {
+                            let oldCell = this.previewGridCells[idx];
+                            return !oldCell || oldCell.r !== cell.r || oldCell.c !== cell.c || oldCell.status !== cell.status;
+                        });
+
+                    if (isChanged) {
+                        this.previewGridCells = newPreviewCells;
+                        this.drawBoard();
+                    }
+                } else {
+                    container.ghost.setVisible(false);
+
+                    // Если фигура вышла за пределы сетки, сбрасываем подсветку предпросмотра
+                    if (this.previewGridCells && this.previewGridCells.length > 0) {
+                        this.previewGridCells = [];
+                        this.drawBoard();
+                    }
+                }
+            }
+
+            canPlace(cells, gridX, gridY) {
+                for (let [cx, cy] of cells) {
+                    let gx = gridX + cx;
+                    let gy = gridY + cy;
+                    // Проверка границ
+                    if (gx < 0 || gx >= 4 || gy < 0 || gy >= 4) return false;
+                    // Проверка пересечений
+                    if (this.grid[gy][gx] !== null) return false;
+                }
+                return true;
+            }
+
+            placePiece(container, gridX, gridY) {
+                container.isPlaced = true;
+                container.gridX = gridX;
+                container.gridY = gridY;
+
+                // Магнитим к сетке
+                let targetX = this.boardX + gridX * this.cs + this.cs/2;
+                let targetY = this.boardY + gridY * this.cs + this.cs/2;
+
+                this.tweens.add({
+                    targets: container,
+                    x: targetX,
+                    y: targetY,
+                    duration: 150,
+                    ease: 'Quad.easeOut'
+                });
+
+                // Записываем в логическую сетку
+                container.cells.forEach(([cx, cy]) => {
+                    this.grid[gridY + cy][gridX + cx] = container.def.id;
+                });
+
+                // Перерисовываем сетку, чтобы закрасить занятые ячейки зеленым
+                this.drawBoard();
+
+                // Проверяем победу
+                this.checkWin();
+            }
+
+            removeFromGrid(container) {
+                container.isPlaced = false;
+                let gx = container.gridX;
+                let gy = container.gridY;
+                
+                if (gx !== null && gy !== null) {
+                    container.cells.forEach(([cx, cy]) => {
+                        this.grid[gy + cy][gx + cx] = null;
+                    });
+                }
+                
+                container.gridX = null;
+                container.gridY = null;
+
+                // Перерисовываем сетку, чтобы убрать зеленую заливку у освободившихся ячеек
+                this.drawBoard();
+            }
+
+            returnToStart(container) {
+                this.tweens.add({
+                    targets: container,
+                    x: container.startX,
+                    y: container.startY,
+                    duration: 300,
+                    ease: 'Back.easeOut'
+                });
+            }
+
+            checkWin() {
+                let isFull = this.grid.every(row => row.every(cell => cell !== null));
+                if (isFull) {
+                    // Мягкая реакция котиков (прыжок)
+                    this.pieces.forEach((p, i) => {
+                        this.time.delayedCall(i * 100, () => {
+                            this.tweens.add({
+                                targets: p,
+                                y: p.y - 15,
+                                yoyo: true,
+                                duration: 200,
+                                ease: 'Sine.easeInOut'
+                            });
+                        });
+                    });
+
+                    // Показываем UI
+                    setTimeout(() => {
+                        const ui = document.getElementById('ui-layer');
+                        const modal = document.getElementById('win-modal');
+                        ui.classList.remove('opacity-0', 'invisible');
+                        ui.classList.add('fade-in');
+                        modal.classList.remove('scale-90');
+                        modal.classList.add('scale-in');
+                    }, 800);
+                }
+            }
+
+            restartLevel() {
+                // Скрываем UI
+                const ui = document.getElementById('ui-layer');
+                const modal = document.getElementById('win-modal');
+                ui.classList.remove('fade-in');
+                modal.classList.remove('scale-in');
+                
+                setTimeout(() => {
+                    ui.classList.add('opacity-0', 'invisible');
+                    modal.classList.add('scale-90');
+                }, 10);
+
+                // Очищаем сетку
+                this.grid = Array(4).fill(null).map(() => Array(4).fill(null));
+
+                // Возвращаем фигуры
+                this.pieces.forEach(p => {
+                    this.removeFromGrid(p);
+                    this.returnToStart(p);
+                });
+            }
+
+            updateLayout() {
+                let w = this.scale.gameSize.width;
+                let h = this.scale.gameSize.height;
+                let isPortrait = w < h;
+
+                // Расчет размеров и позиций
+                if (isPortrait) {
+                    // Мобильная раскладка
+                    this.cs = Math.min((w * 0.9) / 4, (h * 0.4) / 4);
+                    this.boardX = w / 2 - (this.cs * 4) / 2;
+                    this.boardY = h * 0.12;
+
+                    // Зоны для 5 фигур внизу
+                    let bottomY = this.boardY + this.cs * 4 + 30;
+                    let availH = h - bottomY;
+                    let row1 = bottomY + availH * 0.3;
+                    let row2 = bottomY + availH * 0.7;
+
+                    this.startZones = [
+                        {x: w * 0.2, y: row1},
+                        {x: w * 0.5, y: row1},
+                        {x: w * 0.8, y: row1},
+                        {x: w * 0.35, y: row2},
+                        {x: w * 0.65, y: row2}
+                    ];
+                } else {
+                    // Десктопная раскладка
+                    this.cs = Math.min((h * 0.8) / 4, (w * 0.4) / 4);
+                    this.boardX = w / 2 - (this.cs * 4) / 2;
+                    this.boardY = h / 2 - (this.cs * 4) / 2;
+
+                    // Зоны по бокам
+                    let lx = w * 0.2;
+                    let rx = w * 0.8;
+                    this.startZones = [
+                        {x: lx, y: h * 0.25},
+                        {x: lx, y: h * 0.5},
+                        {x: lx, y: h * 0.75},
+                        {x: rx, y: h * 0.35},
+                        {x: rx, y: h * 0.65}
+                    ];
+                }
+
+                this.drawBoard();
+
+                // Обновляем позицию и масштаб фонового изображения комнаты
+                if (this.bgImage) {
+                    let centerX = this.boardX + (this.cs * 4) / 2;
+                    let centerY = this.boardY + (this.cs * 4) / 2;
+
+                    // Rug height inside room-rug-background.png is about 480 pixels (51% of 941px image height).
+                    // We target the pink rug height to match our 4x4 grid perfectly.
+                    let targetBgScale = (this.cs * 4) / 480;
+
+                    // Ensure background fully covers the screen from all sides with zero empty borders
+                    let minScaleX = Math.max(2 * centerX / 1672, 2 * (w - centerX) / 1672);
+                    let minScaleY = Math.max(2 * centerY / 941, 2 * (h - centerY) / 941);
+                    let minScale = Math.max(minScaleX, minScaleY);
+
+                    // Apply the user's custom background scale multiplier
+                    let bgMultiplier = this.bgScaleMultiplier !== undefined ? this.bgScaleMultiplier : parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+                    let baseScale = Math.max(targetBgScale, minScale);
+                    let finalBgScale = baseScale * bgMultiplier;
+
+                    this.bgImage.setScale(finalBgScale);
+                    this.bgImage.setPosition(centerX, centerY);
+                }
+
+                // Обновляем масштаб и позиции фигур
+                let scale = this.cs / BASE_CS;
+                
+                this.pieces.forEach((p, i) => {
+                    p.targetScale = scale;
+                    p.setScale(scale);
+                    p.ghost.setScale(scale);
+                    
+                    p.startX = this.startZones[i].x;
+                    p.startY = this.startZones[i].y;
+
+                    if (p.isPlaced) {
+                        // Перерасчитываем позицию на доске при ресайзе
+                        p.x = this.boardX + p.gridX * this.cs + this.cs/2;
+                        p.y = this.boardY + p.gridY * this.cs + this.cs/2;
+                    } else if (!p.isDragging) {
+                        p.x = p.startX;
+                        p.y = p.startY;
+                    }
+                });
+            }
+
+            drawBoard() {
+                this.boardGraphic.clear();
+                
+                // Считываем текущие настройки разделения и закругления клеток
+                let gap = this.gridGap !== undefined ? this.gridGap : parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
+                let radius = this.gridRadius !== undefined ? this.gridRadius : parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
+                
+                // Считываем цвет и толщину обводки из настроек
+                let highlightColor = parseInt((this.gridHighlightColor || '#10b981').replace('#', '0x'), 16);
+                let thickness = this.gridLineThickness !== undefined ? this.gridLineThickness : 2;
+
+                // Рисуем 16 отдельных ячеек-плиток с тонким разделением между ними, как на референсе
+                for (let r = 0; r < 4; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        // Расчет координат отдельной ячейки с учетом зазора
+                        let cellX = this.boardX + c * this.cs + gap / 2;
+                        let cellY = this.boardY + r * this.cs + gap / 2;
+                        let cellSize = this.cs - gap;
+
+                        // Проверяем, занята ли эта клетка
+                        let isOccupied = this.grid && this.grid[r] && this.grid[r][c] !== null;
+
+                        // Проверяем, находится ли клетка в предпросмотре (при наложении перетаскиваемой фигуры)
+                        let previewCell = this.previewGridCells && this.previewGridCells.find(cell => cell.r === r && cell.c === c);
+
+                        if (previewCell) {
+                            // Клетка в режиме предпросмотра (зеленая/красная в зависимости от занятости)
+                            let color = previewCell.status === 'valid' ? highlightColor : 0xef5350; // Мягкий красный цвет для занятых
+
+                            // Фон: мягкий полупрозрачный цвет (прозрачность 0.22)
+                            this.boardGraphic.fillStyle(color, 0.22);
+                            this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+
+                            // Рамка: яркий контур (прозрачность 0.95)
+                            this.boardGraphic.lineStyle(thickness, color, 0.95);
+                            this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                        } else if (isOccupied) {
+                            // Изысканный выбранный цвет ТОЛЬКО для рамки занятой клетки
+                            // Фон: остается обычным полупрозрачным белым (прозрачность 0.18)
+                            this.boardGraphic.fillStyle(0xffffff, 0.18);
+                            this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+
+                            // Рамка: яркий выбранный контур (прозрачность 0.95)
+                            this.boardGraphic.lineStyle(thickness, highlightColor, 0.95);
+                            this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                        } else {
+                            // Обычная пустая клетка (мягкий белый цвет)
+                            // Фон: белый (прозрачность 0.18)
+                            this.boardGraphic.fillStyle(0xffffff, 0.18);
+                            this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+
+                            // Рамка: белый (прозрачность 0.95)
+                            this.boardGraphic.lineStyle(thickness, 0xffffff, 0.95);
+                            this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                        }
+                    }
+                }
+            }
+
+            initZoom() {
+                // Load global camera zoom
+                const savedZoom = parseFloat(localStorage.getItem('jellycats_global_zoom') || '1.0');
+                this.currentZoom = savedZoom;
+                this.cameras.main.setZoom(this.currentZoom);
+
+                // Load background scale multiplier
+                const savedBgScale = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+                this.bgScaleMultiplier = savedBgScale;
+
+                // Load grid gap and radius settings
+                this.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
+                this.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
+
+                // Load glow thickness and blur settings
+                this.glowThickness = parseFloat(localStorage.getItem('jellycats_glow_thickness') || '6');
+                this.glowBlur = parseInt(localStorage.getItem('jellycats_glow_blur') || '24');
+
+                // Load show blocks setting
+                const savedShowBlocks = localStorage.getItem('jellycats_show_blocks');
+                this.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : true;
+
+                // Load custom grid highlight color and line thickness
+                this.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#10b981';
+                this.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '2');
+
+                // Set up global zoom controls
+                const slider = document.getElementById('global-zoom-slider');
+                const label = document.getElementById('zoom-value-label');
+                const btnReset = document.getElementById('btn-zoom-reset');
+
+                if (slider && label) {
+                    slider.value = this.currentZoom;
+                    label.textContent = `${Math.round(this.currentZoom * 100)}%`;
+
+                    slider.oninput = (e) => {
+                        const zoomVal = parseFloat(e.target.value);
+                        this.setGlobalZoom(zoomVal);
+                    };
+                }
+
+                // Set up background scale controls
+                const bgSlider = document.getElementById('bg-scale-slider');
+                const bgLabel = document.getElementById('bg-scale-value-label');
+
+                if (bgSlider && bgLabel) {
+                    bgSlider.value = this.bgScaleMultiplier;
+                    bgLabel.textContent = `${Math.round(this.bgScaleMultiplier * 100)}%`;
+
+                    bgSlider.oninput = (e) => {
+                        const bgScaleVal = parseFloat(e.target.value);
+                        this.bgScaleMultiplier = bgScaleVal;
+                        bgLabel.textContent = `${Math.round(bgScaleVal * 100)}%`;
+                        localStorage.setItem('jellycats_bg_scale_multiplier', bgScaleVal.toString());
+                        
+                        // Recalculate layout to immediately update background sprite scale
+                        this.updateLayout();
+                    };
+                }
+
+                // Set up grid gap controls
+                const gapSlider = document.getElementById('grid-gap-slider');
+                const gapLabel = document.getElementById('grid-gap-value-label');
+
+                if (gapSlider && gapLabel) {
+                    gapSlider.value = this.gridGap;
+                    gapLabel.textContent = `${this.gridGap}px`;
+
+                    gapSlider.oninput = (e) => {
+                        const gapVal = parseInt(e.target.value);
+                        this.gridGap = gapVal;
+                        gapLabel.textContent = `${gapVal}px`;
+                        localStorage.setItem('jellycats_grid_gap', gapVal.toString());
+                        
+                        // Redraw board to reflect changes immediately
+                        this.drawBoard();
+                    };
+                }
+
+                // Set up grid radius controls
+                const radiusSlider = document.getElementById('grid-radius-slider');
+                const radiusLabel = document.getElementById('grid-radius-value-label');
+
+                if (radiusSlider && radiusLabel) {
+                    radiusSlider.value = this.gridRadius;
+                    radiusLabel.textContent = `${this.gridRadius}px`;
+
+                    radiusSlider.oninput = (e) => {
+                        const radiusVal = parseInt(e.target.value);
+                        this.gridRadius = radiusVal;
+                        radiusLabel.textContent = `${radiusVal}px`;
+                        localStorage.setItem('jellycats_grid_radius', radiusVal.toString());
+                        
+                        // Redraw board to reflect changes immediately
+                        this.drawBoard();
+                    };
+                }
+
+                // Set up glow thickness controls
+                const thickSlider = document.getElementById('glow-thickness-slider');
+                const thickLabel = document.getElementById('glow-thickness-value-label');
+
+                if (thickSlider && thickLabel) {
+                    thickSlider.value = this.glowThickness;
+                    thickLabel.textContent = this.glowThickness === 0 ? 'Выкл' : `${this.glowThickness}px`;
+
+                    thickSlider.oninput = (e) => {
+                        const thickVal = parseFloat(e.target.value);
+                        this.glowThickness = thickVal;
+                        thickLabel.textContent = thickVal === 0 ? 'Выкл' : `${thickVal}px`;
+                        localStorage.setItem('jellycats_glow_thickness', thickVal.toString());
+                    };
+                }
+
+                // Set up glow blur controls
+                const blurSlider = document.getElementById('glow-blur-slider');
+                const blurLabel = document.getElementById('glow-blur-value-label');
+
+                if (blurSlider && blurLabel) {
+                    blurSlider.value = this.glowBlur;
+                    blurLabel.textContent = this.glowBlur === 0 ? 'Резкая' : `${this.glowBlur}px`;
+
+                    blurSlider.oninput = (e) => {
+                        const blurVal = parseInt(e.target.value);
+                        this.glowBlur = blurVal;
+                        blurLabel.textContent = blurVal === 0 ? 'Резкая' : `${blurVal}px`;
+                        localStorage.setItem('jellycats_glow_blur', blurVal.toString());
+                    };
+                }
+
+                // Set up show blocks toggle controls
+                const showBlocksToggle = document.getElementById('show-blocks-toggle');
+
+                if (showBlocksToggle) {
+                    showBlocksToggle.checked = this.showBlocks;
+
+                    showBlocksToggle.onchange = (e) => {
+                        const checked = e.target.checked;
+                        this.showBlocks = checked;
+                        localStorage.setItem('jellycats_show_blocks', checked.toString());
+                        this.updateBlocksVisibility();
+                    };
+                }
+
+                // Set up grid highlight color picker
+                const colorPicker = document.getElementById('grid-color-picker');
+                if (colorPicker) {
+                    colorPicker.value = this.gridHighlightColor;
+                    colorPicker.onchange = (e) => {
+                        const hexColor = e.target.value;
+                        this.gridHighlightColor = hexColor;
+                        localStorage.setItem('jellycats_grid_highlight_color', hexColor);
+                        this.drawBoard();
+                    };
+                }
+
+                // Set up grid line thickness slider
+                const lineSlider = document.getElementById('grid-line-slider');
+                const lineLabel = document.getElementById('grid-line-value-label');
+                if (lineSlider && lineLabel) {
+                    lineSlider.value = this.gridLineThickness;
+                    lineLabel.textContent = `${this.gridLineThickness}px`;
+
+                    lineSlider.oninput = (e) => {
+                        const lineVal = parseInt(e.target.value);
+                        this.gridLineThickness = lineVal;
+                        lineLabel.textContent = `${lineVal}px`;
+                        localStorage.setItem('jellycats_grid_line_thickness', lineVal.toString());
+                        this.drawBoard();
+                    };
+                }
+
+                if (btnReset) {
+                    btnReset.onclick = () => {
+                        this.setGlobalZoom(1.0);
+                        if (slider) slider.value = 1.0;
+
+                        this.bgScaleMultiplier = 1.0;
+                        if (bgSlider) bgSlider.value = 1.0;
+                        if (bgLabel) bgLabel.textContent = '100%';
+                        localStorage.setItem('jellycats_bg_scale_multiplier', '1.0');
+
+                        this.gridGap = 4;
+                        if (gapSlider) gapSlider.value = 4;
+                        if (gapLabel) gapLabel.textContent = '4px';
+                        localStorage.setItem('jellycats_grid_gap', '4');
+
+                        this.gridRadius = 4;
+                        if (radiusSlider) radiusSlider.value = 4;
+                        if (radiusLabel) radiusLabel.textContent = '4px';
+                        localStorage.setItem('jellycats_grid_radius', '4');
+
+                        this.glowThickness = 6;
+                        if (thickSlider) thickSlider.value = 6;
+                        if (thickLabel) thickLabel.textContent = '6px';
+                        localStorage.setItem('jellycats_glow_thickness', '6');
+
+                        this.glowBlur = 24;
+                        if (blurSlider) blurSlider.value = 24;
+                        if (blurLabel) blurLabel.textContent = '24px';
+                        localStorage.setItem('jellycats_glow_blur', '24');
+
+                        this.showBlocks = true;
+                        if (showBlocksToggle) showBlocksToggle.checked = true;
+                        localStorage.setItem('jellycats_show_blocks', 'true');
+                        this.updateBlocksVisibility();
+
+                        this.gridHighlightColor = '#10b981';
+                        if (colorPicker) colorPicker.value = '#10b981';
+                        localStorage.setItem('jellycats_grid_highlight_color', '#10b981');
+
+                        this.gridLineThickness = 2;
+                        if (lineSlider) lineSlider.value = 2;
+                        if (lineLabel) lineLabel.textContent = '2px';
+                        localStorage.setItem('jellycats_grid_line_thickness', '2');
+
+                        this.updateLayout();
+                    };
+                }
+            }
+
+            updateBlocksVisibility() {
+                const show = this.showBlocks !== undefined ? this.showBlocks : true;
+                
+                this.pieces.forEach(p => {
+                    p.list.forEach(child => {
+                        // Если это фоновая подушка блока (имеет текстуру block_base)
+                        if (child.texture && child.texture.key === 'block_base') {
+                            child.setAlpha(show ? 0.45 : 0.0);
+                        }
+                    });
+                    
+                    if (p.ghost) {
+                        p.ghost.list.forEach(child => {
+                            if (child.texture && child.texture.key === 'block_base') {
+                                child.setAlpha(show ? 0.4 : 0.0);
+                            }
+                        });
+                    }
+                });
+            }
+
+            setGlobalZoom(zoomVal) {
+                this.currentZoom = zoomVal;
+                this.cameras.main.setZoom(zoomVal);
+
+                // Update text label
+                const label = document.getElementById('zoom-value-label');
+                if (label) {
+                    label.textContent = `${Math.round(zoomVal * 100)}%`;
+                }
+
+                // Save to localStorage
+                localStorage.setItem('jellycats_global_zoom', zoomVal.toString());
+            }
+
+            initEditor() {
+                const scene = this;
+                const panel = document.getElementById('editor-panel');
+                const btnToggle = document.getElementById('btn-editor-toggle');
+                const btnClose = document.getElementById('btn-editor-close');
+                const catSelect = document.getElementById('edit-cat-select');
+                const btnReset = document.getElementById('btn-editor-reset');
+                const btnExport = document.getElementById('btn-editor-export');
+                const exportBox = document.getElementById('export-box');
+                const exportTextarea = document.getElementById('export-textarea');
+
+                // Sliders and labels mapping
+                const controls = {
+                    offsetX: { slider: document.getElementById('slider-offsetX'), val: document.getElementById('val-offsetX') },
+                    offsetY: { slider: document.getElementById('slider-offsetY'), val: document.getElementById('val-offsetY') },
+                    scaleX: { slider: document.getElementById('slider-scaleX'), val: document.getElementById('val-scaleX') },
+                    scaleY: { slider: document.getElementById('slider-scaleY'), val: document.getElementById('val-scaleY') },
+                    originX: { slider: document.getElementById('slider-originX'), val: document.getElementById('val-originX') },
+                    originY: { slider: document.getElementById('slider-originY'), val: document.getElementById('val-originY') }
+                };
+
+                // Toggle visibility
+                btnToggle.onclick = () => {
+                    panel.classList.toggle('translate-x-full');
+                };
+                btnClose.onclick = () => {
+                    panel.classList.add('translate-x-full');
+                    exportBox.classList.add('hidden');
+                };
+
+                // Sync sliders with memory
+                function updateSliders(catId) {
+                    const def = PIECE_DEFS.find(p => p.id === catId);
+                    if (!def) return;
+
+                    for (let key in controls) {
+                        controls[key].slider.value = def[key];
+                        controls[key].val.textContent = def[key];
+                    }
+                }
+
+                // Initial sync
+                updateSliders(catSelect.value);
+
+                // Change selected cat
+                catSelect.onchange = (e) => {
+                    const catId = e.target.value;
+                    updateSliders(catId);
+                    exportBox.classList.add('hidden');
+
+                    // Сбрасываем поворот фигуры в 0 при редактировании, чтобы настраивать в базовой ориентации!
+                    const container = scene.pieces.find(p => p.def.id === catId);
+                    if (container) {
+                        // Возвращаем ячейки к базовому дефу
+                        container.cells = JSON.parse(JSON.stringify(container.def.cells));
+                        
+                        // Сбрасываем поворот кошачьей картинки
+                        const catImg = container.list.find(child => child.isCatImage);
+                        if (catImg) {
+                            catImg.angle = 0;
+                            catImg.x = container.def.offsetX;
+                            catImg.y = container.def.offsetY;
+                            catImg.targetX = container.def.offsetX;
+                            catImg.targetY = container.def.offsetY;
+                            catImg.targetAngle = 0;
+                            catImg.realAngle = 0;
+                        }
+                        
+                        // Сбрасываем поворот блоков
+                        let blockIndex = 0;
+                        container.list.forEach(child => {
+                            if (!child.isCatImage) {
+                                let origCell = container.def.cells[blockIndex++];
+                                child.gridX = origCell[0];
+                                child.gridY = origCell[1];
+                                child.x = origCell[0] * BASE_CS;
+                                child.y = origCell[1] * BASE_CS;
+                            }
+                        });
+
+                        // Обновляем ghost
+                        container.ghost.list.forEach((gChild, index) => {
+                            let cell = container.cells[index];
+                            gChild.x = cell[0] * BASE_CS;
+                            gChild.y = cell[1] * BASE_CS;
+                        });
+                    }
+                };
+
+                // Real-time slider update handler
+                function onSliderChange(key, value) {
+                    const catId = catSelect.value;
+                    const def = PIECE_DEFS.find(p => p.id === catId);
+                    if (!def) return;
+
+                    def[key] = parseFloat(value);
+                    controls[key].val.textContent = value;
+
+                    // Update corresponding sprite on active scene
+                    const container = scene.pieces.find(p => p.def.id === catId);
+                    if (container) {
+                        const catImg = container.list.find(child => child.isCatImage);
+                        if (catImg) {
+                            if (key === 'offsetX') {
+                                catImg.x = def.offsetX;
+                                catImg.targetX = def.offsetX;
+                            }
+                            else if (key === 'offsetY') {
+                                catImg.y = def.offsetY;
+                                catImg.targetY = def.offsetY;
+                            }
+                            else if (key === 'scaleX') catImg.scaleX = def.scaleX;
+                            else if (key === 'scaleY') catImg.scaleY = def.scaleY;
+                            else if (key === 'originX') catImg.originX = def.originX;
+                            else if (key === 'originY') catImg.originY = def.originY;
+                        }
+                    }
+
+                    saveToLocalStorage();
+                }
+
+                // Attach slider listeners
+                for (let key in controls) {
+                    controls[key].slider.oninput = (e) => onSliderChange(key, e.target.value);
+                }
+
+                function saveToLocalStorage() {
+                    const settingsToSave = {};
+                    PIECE_DEFS.forEach(p => {
+                        settingsToSave[p.id] = {
+                            originX: p.originX,
+                            originY: p.originY,
+                            offsetX: p.offsetX,
+                            offsetY: p.offsetY,
+                            scaleX: p.scaleX,
+                            scaleY: p.scaleY
+                        };
+                    });
+                    localStorage.setItem('jellycats_editor_settings', JSON.stringify(settingsToSave));
+                }
+
+                // Reset cat to defaults
+                btnReset.onclick = () => {
+                    const catId = catSelect.value;
+                    const def = PIECE_DEFS.find(p => p.id === catId);
+                    const defaultDef = DEFAULT_SETTINGS[catId];
+                    if (!def || !defaultDef) return;
+
+                    for (let key in defaultDef) {
+                        onSliderChange(key, defaultDef[key]);
+                    }
+                    updateSliders(catId);
+                };
+
+                // Generate and display JSON piece definitions for direct copy-pasting
+                btnExport.onclick = () => {
+                    exportBox.classList.remove('hidden');
+                    
+                    let code = '        const PIECE_DEFS = [\n';
+                    PIECE_DEFS.forEach((p, index) => {
+                        code += '            {\n';
+                        code += `                id: '${p.id}',\n`;
+                        code += `                color: 0x${p.color.toString(16).toLowerCase()},\n`;
+                        code += `                cells: ${JSON.stringify(p.cells)},\n`;
+                        code += `                originX: ${p.originX},\n`;
+                        code += `                originY: ${p.originY},\n`;
+                        code += `                offsetX: ${p.offsetX},\n`;
+                        code += `                offsetY: ${p.offsetY},\n`;
+                        code += `                scaleX: ${p.scaleX},\n`;
+                        code += `                scaleY: ${p.scaleY}\n`;
+                        code += index === PIECE_DEFS.length - 1 ? '            }\n' : '            },\n';
+                    });
+                    code += '        ];';
+
+                    exportTextarea.value = code;
+                    exportTextarea.select();
+                };
+            }
+        }
+
+        // Инициализация Phaser
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            transparent: true,
+            scene: [GameScene],
+            scale: {
+                mode: Phaser.Scale.RESIZE, // Автоматический ресайз
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            }
+        };
+
+        const game = new Phaser.Game(config);
+    </script>
+</body>
+</html>
