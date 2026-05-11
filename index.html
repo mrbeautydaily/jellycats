@@ -283,6 +283,24 @@
                 <input type="range" id="sound-pitch-slider" min="0" max="50" step="5" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
+            <!-- Выбор звука вращения -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">🔄 Звук вращения котиков</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="rotation-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="SFX_Movement_Swoosh_Fast_1">⚡ Быстрый Свуш 1</option>
+                        <option value="SFX_Movement_Swoosh_Fast_2">⚡ Быстрый Свуш 2</option>
+                        <option value="SFX_Movement_Swoosh_Fast_3">⚡ Быстрый Свуш 3</option>
+                        <option value="SFX_Movement_Swoosh_Med_1">💨 Средний Свуш 1</option>
+                        <option value="SFX_Movement_Swoosh_Med_2">💨 Средний Свуш 2</option>
+                        <option value="SFX_Movement_Swoosh_Med_3">💨 Средний Свуш 3</option>
+                    </select>
+                    <button id="btn-play-rotation-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
             <!-- Громкость фоновой музыки -->
             <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
                 <div class="flex justify-between items-center text-xs">
@@ -568,6 +586,19 @@
                     this.load.audio(`twit${num}`, `assets/sounds/twit${num}.wav`);
                 });
 
+                // Load rotation sounds
+                const rotationSounds = [
+                    'SFX_Movement_Swoosh_Fast_1',
+                    'SFX_Movement_Swoosh_Fast_2',
+                    'SFX_Movement_Swoosh_Fast_3',
+                    'SFX_Movement_Swoosh_Med_1',
+                    'SFX_Movement_Swoosh_Med_2',
+                    'SFX_Movement_Swoosh_Med_3'
+                ];
+                rotationSounds.forEach(soundName => {
+                    this.load.audio(soundName, `assets/sounds/${soundName}.wav`);
+                });
+
                 // Load background music
                 this.load.audio('bg_music', 'assets/music/main_theme.ogg');
             }
@@ -622,6 +653,48 @@
                     this.bgMusic.play();
                 } catch (e) {
                     console.warn('Failed to initialize background music:', e);
+                }
+            }
+
+            playMeowSound() {
+                try {
+                    const availableSoundNums = [3, 4, 5];
+                    const randomSoundNum = Phaser.Utils.Array.GetRandom(availableSoundNums);
+                    const soundKey = `twit${randomSoundNum}`;
+                    
+                    let rateVal = 1.0;
+                    if (this.soundPitchRange && this.soundPitchRange > 0) {
+                        rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
+                    }
+                    
+                    if (this.cache.audio.exists(soundKey)) {
+                        this.sound.play(soundKey, { rate: rateVal });
+                    }
+                } catch (e) {
+                    console.warn('Failed to play meow sound:', e);
+                }
+            }
+
+            playRotationSound() {
+                try {
+                    const soundKey = this.selectedRotationSound || 'SFX_Movement_Swoosh_Fast_1';
+                    
+                    let rateVal = 1.0;
+                    if (this.soundPitchRange && this.soundPitchRange > 0) {
+                        rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
+                    }
+                    
+                    // Stop any playing meow/purr sounds to prevent overlap when rotating
+                    const availableSoundNums = [3, 4, 5];
+                    availableSoundNums.forEach(num => {
+                        this.sound.stopByKey(`twit${num}`);
+                    });
+                    
+                    if (this.cache.audio.exists(soundKey)) {
+                        this.sound.play(soundKey, { rate: rateVal });
+                    }
+                } catch (e) {
+                    console.warn('Failed to play rotation sound:', e);
                 }
             }
 
@@ -793,25 +866,21 @@
                 this.input.on('dragstart', (pointer, gameObject) => {
                     let container = gameObject.parentContainer;
                     
-                    // Play random sound from available sounds (with robust error protection and pitch randomization)
-                    try {
-                        const availableSoundNums = [3, 4, 5];
-                        const randomSoundNum = Phaser.Utils.Array.GetRandom(availableSoundNums);
-                        const soundKey = `twit${randomSoundNum}`;
-                        
-                        // Calculate randomized pitch (playback rate) based on user settings
-                        let rateVal = 1.0;
-                        if (this.soundPitchRange && this.soundPitchRange > 0) {
-                            rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
-                        }
-                        
-                        // Check if the sound exists in the cache before playing
-                        if (this.cache.audio.exists(soundKey)) {
-                            this.sound.play(soundKey, { rate: rateVal });
-                        }
-                    } catch (e) {
-                        console.warn('Failed to play interaction sound:', e);
+                    // Clear any previous meow timer if still running
+                    if (container.meowTimer) {
+                        clearTimeout(container.meowTimer);
+                        container.meowTimer = null;
                     }
+
+                    // Start a 120ms delay timer. If user holds the cat for longer than 120ms, 
+                    // we play the meow/purr sound (so it plays on grab/touch down).
+                    // If they release it earlier (quick click/tap to rotate), we cancel the timer
+                    // and play ONLY the rotation sound, completely avoiding audio overlapping!
+                    container.meowTimer = setTimeout(() => {
+                        if (container.isLifted) {
+                            this.playMeowSound();
+                        }
+                    }, 120);
                     
                     // Поднимаем фигуру наверх
                     this.children.bringToTop(container);
@@ -928,6 +997,12 @@
                     let wasDragging = container.isDragging;
                     container.isDragging = false;
                     container.isLifted = false;
+
+                    // Clear meow timer on release to prevent delayed meows after rotation
+                    if (container.meowTimer) {
+                        clearTimeout(container.meowTimer);
+                        container.meowTimer = null;
+                    }
                     
                     this.tweens.killTweensOf(container);
                     
@@ -948,6 +1023,9 @@
                     if (!wasDragging && clickTime < 300) {
                         // Сначала только логически и внутренне поворачиваем фигуру (без анимации x/y всего контейнера)
                         this.rotatePiece(container, pointer, false);
+                        
+                        // Play rotation sound on tap/rotate
+                        this.playRotationSound();
                         
                         // Если фигура стояла на поле, примагничиваем ее к сетке с учетом нового положения
                         if (container.wasPlacedAt) {
@@ -1597,6 +1675,28 @@
                 const savedBgScale = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
                 this.bgScaleMultiplier = savedBgScale;
 
+                // Load rotation sound setting
+                this.selectedRotationSound = localStorage.getItem('jellycats_selected_rotation_sound') || 'SFX_Movement_Swoosh_Fast_1';
+
+                // Set up rotation sound selection controls
+                const soundSelect = document.getElementById('rotation-sound-select');
+                const btnPlaySound = document.getElementById('btn-play-rotation-sound');
+                
+                if (soundSelect) {
+                    soundSelect.value = this.selectedRotationSound;
+                    soundSelect.onchange = (e) => {
+                        this.selectedRotationSound = e.target.value;
+                        localStorage.setItem('jellycats_selected_rotation_sound', this.selectedRotationSound);
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (btnPlaySound) {
+                    btnPlaySound.onclick = () => {
+                        this.playRotationSound();
+                    };
+                }
+
                 // Load jellyness setting
                 this.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '1.0');
                 this.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
@@ -2139,6 +2239,7 @@
                     bgMusicVolume: this.bgMusicVolume,
                     shadowEnabled: this.shadowEnabled,
                     shadowOpacity: this.shadowOpacity,
+                    rotationSound: this.selectedRotationSound || 'SFX_Movement_Swoosh_Fast_1',
                     catSettings: catSettings
                 };
             }
@@ -2171,6 +2272,7 @@
                 if (settings.bgMusicVolume !== undefined) localStorage.setItem('jellycats_bg_music_volume', settings.bgMusicVolume.toString());
                 if (settings.shadowEnabled !== undefined) localStorage.setItem('jellycats_shadow_enabled', settings.shadowEnabled.toString());
                 if (settings.shadowOpacity !== undefined) localStorage.setItem('jellycats_shadow_opacity', settings.shadowOpacity.toString());
+                if (settings.rotationSound !== undefined) localStorage.setItem('jellycats_selected_rotation_sound', settings.rotationSound);
                 
                 if (settings.catSettings) {
                     localStorage.setItem('jellycats_editor_settings', JSON.stringify(settings.catSettings));
@@ -2209,6 +2311,7 @@
                 }
                 if (settings.shadowEnabled !== undefined) this.shadowEnabled = settings.shadowEnabled;
                 if (settings.shadowOpacity !== undefined) this.shadowOpacity = settings.shadowOpacity;
+                if (settings.rotationSound !== undefined) this.selectedRotationSound = settings.rotationSound;
 
                 // Update PIECE_DEFS and game pieces
                 if (settings.catSettings) {
@@ -2334,6 +2437,9 @@
                     updateValue('shadow-opacity-slider', Math.round(settings.shadowOpacity * 100));
                     updateText('shadow-opacity-value-label', `${Math.round(settings.shadowOpacity * 100)}%`);
                 }
+                if (settings.rotationSound !== undefined) {
+                    updateValue('rotation-sound-select', settings.rotationSound);
+                }
 
                 // If cat alignment editor is open, update its sliders too
                 const catSelect = document.getElementById('edit-cat-select');
@@ -2420,6 +2526,7 @@
                     bgMusicVolume: 0.5,
                     shadowEnabled: true,
                     shadowOpacity: 0.25,
+                    rotationSound: 'SFX_Movement_Swoosh_Fast_1',
                     catSettings: {
                         orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
                         creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
