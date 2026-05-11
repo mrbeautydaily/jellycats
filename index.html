@@ -160,6 +160,24 @@
                 <input type="range" id="jelly-damping-slider" min="0.1" max="0.95" step="0.05" value="0.55" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
             </div>
 
+            <!-- Слайдер скорости дыхания котиков -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">💤 Скорость дыхания котиков</span>
+                    <span id="breathe-speed-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="breathe-speed-slider" min="20" max="250" step="10" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Слайдер интенсивности дыхания котиков -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">💨 Интенсивность дыхания</span>
+                    <span id="breathe-amp-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="breathe-amp-slider" min="0" max="300" step="10" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
             <!-- Слайдер размера фона -->
             <div class="flex flex-col gap-1.5">
                 <div class="flex justify-between items-center text-xs">
@@ -669,6 +687,8 @@
                     container.gridX = null;
                     container.gridY = null;
                     container.color = def.color;
+                    container.breathePhase = Phaser.Math.FloatBetween(0, Math.PI * 2);
+                    container.zTimer = Phaser.Math.FloatBetween(500, 2000); // Random delay before first Zzz bubble
                     
                     // Создаем ghost контейнер (полупрозрачный)
                     let ghost = this.add.container(0, 0);
@@ -801,6 +821,7 @@
                     container.dragStartY = container.y;
                     container.pointerDownTime = this.time.now;
                     container.isDragging = false;
+                    container.isLifted = true;
                     
                     // Добавляем эффект белой обводки вокруг картинки котика (свечение по PNG-контуру)
                     const catImg = container.list.find(child => child.isCatImage);
@@ -906,6 +927,7 @@
                     
                     let wasDragging = container.isDragging;
                     container.isDragging = false;
+                    container.isLifted = false;
                     
                     this.tweens.killTweensOf(container);
                     
@@ -1041,6 +1063,36 @@
                     // Обновляем позицию, угол, масштаб и видимость тени котика в реальном времени
                     const catImg = container.list.find(child => child.isCatImage);
                     const catShadow = container.list.find(child => child.isCatShadow);
+
+                    const isSleeping = !container.isDragging && !container.isLifted;
+
+                    if (catImg) {
+                        if (isSleeping) {
+                            // Breathe animation logic
+                            let speedFactor = this.breatheSpeedScale !== undefined ? this.breatheSpeedScale : 1.0;
+                            let ampFactor = this.breatheAmpScale !== undefined ? this.breatheAmpScale : 1.0;
+
+                            let breatheFactorX = Math.sin(time * 0.0012 * speedFactor + container.breathePhase) * 0.005 * ampFactor; // custom speed/amplitude horizontal breath
+                            let breatheFactorY = Math.sin(time * 0.0012 * speedFactor + container.breathePhase - 0.2) * 0.008 * ampFactor; // custom speed/amplitude vertical breath
+                            
+                            catImg.setScale(
+                                container.def.scaleX * (1 + breatheFactorX),
+                                container.def.scaleY * (1 + breatheFactorY)
+                            );
+                            
+                            // Spawn Zzz text particles
+                            if (container.zTimer === undefined) container.zTimer = Phaser.Math.FloatBetween(500, 2000);
+                            container.zTimer -= delta;
+                            if (container.zTimer <= 0) {
+                                container.zTimer = Phaser.Math.FloatBetween(2000, 3500); // reset delay
+                                this.spawnZParticle(container);
+                            }
+                        } else {
+                            // Reset to normal scale when lifted or dragged
+                            catImg.setScale(container.def.scaleX, container.def.scaleY);
+                        }
+                    }
+
                     if (catImg && catShadow) {
                         const isShadowOn = this.shadowEnabled !== false;
                         catShadow.setVisible(isShadowOn);
@@ -1054,7 +1106,9 @@
                             let targetShadowScale = 1.0;
                             let targetOpacity = baseOpacity;
                             
-                            if (container.isDragging) {
+                            const isLifted = container.isDragging || container.isLifted;
+                            
+                            if (isLifted) {
                                 // Кот "поднимается" выше: тень отодвигается дальше и становится немного более прозрачной
                                 targetOffsetX = 12;
                                 targetOffsetY = 18;
@@ -1067,11 +1121,14 @@
                             if (catShadow.currentShadowScale === undefined) catShadow.currentShadowScale = targetShadowScale;
                             if (catShadow.currentOpacity === undefined) catShadow.currentOpacity = targetOpacity;
                             
+                            // Адаптивная скорость возвращения: тень приземляется очень быстро, а взлетает плавно
+                            let lerpFactor = isLifted ? 0.25 : 0.45;
+                            
                             // Плавная линейная интерполяция значений для сглаживания подъема
-                            catShadow.currentOffsetX = Phaser.Math.Linear(catShadow.currentOffsetX, targetOffsetX, 0.15);
-                            catShadow.currentOffsetY = Phaser.Math.Linear(catShadow.currentOffsetY, targetOffsetY, 0.15);
-                            catShadow.currentShadowScale = Phaser.Math.Linear(catShadow.currentShadowScale, targetShadowScale, 0.15);
-                            catShadow.currentOpacity = Phaser.Math.Linear(catShadow.currentOpacity, targetOpacity, 0.15);
+                            catShadow.currentOffsetX = Phaser.Math.Linear(catShadow.currentOffsetX, targetOffsetX, lerpFactor);
+                            catShadow.currentOffsetY = Phaser.Math.Linear(catShadow.currentOffsetY, targetOffsetY, lerpFactor);
+                            catShadow.currentShadowScale = Phaser.Math.Linear(catShadow.currentShadowScale, targetShadowScale, lerpFactor);
+                            catShadow.currentOpacity = Phaser.Math.Linear(catShadow.currentOpacity, targetOpacity, lerpFactor);
                             
                             catShadow.x = catImg.x + catShadow.currentOffsetX;
                             catShadow.y = catImg.y + catShadow.currentOffsetY;
@@ -1545,6 +1602,10 @@
                 this.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
                 this.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
 
+                // Load breathing settings (defaults to 100% / 1.0)
+                this.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.0');
+                this.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.0');
+
                 // Load grid gap and radius settings
                 this.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
                 this.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
@@ -1633,6 +1694,40 @@
                         this.jellyDamping = val;
                         dampingLabel.textContent = `${Math.round(val * 100)}%`;
                         localStorage.setItem('jellycats_damping', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up breathing speed controls
+                const breatheSpeedSlider = document.getElementById('breathe-speed-slider');
+                const breatheSpeedLabel = document.getElementById('breathe-speed-value-label');
+
+                if (breatheSpeedSlider && breatheSpeedLabel) {
+                    breatheSpeedSlider.value = Math.round(this.breatheSpeedScale * 100);
+                    breatheSpeedLabel.textContent = `${Math.round(this.breatheSpeedScale * 100)}%`;
+
+                    breatheSpeedSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value);
+                        this.breatheSpeedScale = val / 100;
+                        breatheSpeedLabel.textContent = `${val}%`;
+                        localStorage.setItem('jellycats_breathe_speed_scale', this.breatheSpeedScale.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up breathing amplitude controls
+                const breatheAmpSlider = document.getElementById('breathe-amp-slider');
+                const breatheAmpLabel = document.getElementById('breathe-amp-value-label');
+
+                if (breatheAmpSlider && breatheAmpLabel) {
+                    breatheAmpSlider.value = Math.round(this.breatheAmpScale * 100);
+                    breatheAmpLabel.textContent = this.breatheAmpScale === 0 ? 'Выкл' : `${Math.round(this.breatheAmpScale * 100)}%`;
+
+                    breatheAmpSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value);
+                        this.breatheAmpScale = val / 100;
+                        breatheAmpLabel.textContent = val === 0 ? 'Выкл' : `${val}%`;
+                        localStorage.setItem('jellycats_breathe_amp_scale', this.breatheAmpScale.toString());
                         this.autosaveActiveProfile();
                     };
                 }
@@ -2033,6 +2128,8 @@
                     jellyMultiplier: this.jellyMultiplier,
                     jellyStiffness: this.jellyStiffness,
                     jellyDamping: this.jellyDamping,
+                    breatheSpeedScale: this.breatheSpeedScale,
+                    breatheAmpScale: this.breatheAmpScale,
                     dustEnabled: this.dustEnabled,
                     dustCount: this.dustCount,
                     dustScale: this.dustScale,
@@ -2063,6 +2160,8 @@
                 if (settings.jellyMultiplier !== undefined) localStorage.setItem('jellycats_jelly_multiplier', settings.jellyMultiplier.toString());
                 if (settings.jellyStiffness !== undefined) localStorage.setItem('jellycats_stiffness', settings.jellyStiffness.toString());
                 if (settings.jellyDamping !== undefined) localStorage.setItem('jellycats_damping', settings.jellyDamping.toString());
+                if (settings.breatheSpeedScale !== undefined) localStorage.setItem('jellycats_breathe_speed_scale', settings.breatheSpeedScale.toString());
+                if (settings.breatheAmpScale !== undefined) localStorage.setItem('jellycats_breathe_amp_scale', settings.breatheAmpScale.toString());
                 if (settings.dustEnabled !== undefined) localStorage.setItem('jellycats_dust_enabled', settings.dustEnabled.toString());
                 if (settings.dustCount !== undefined) localStorage.setItem('jellycats_dust_count', settings.dustCount.toString());
                 if (settings.dustScale !== undefined) localStorage.setItem('jellycats_dust_scale', settings.dustScale.toString());
@@ -2094,6 +2193,8 @@
                 if (settings.jellyMultiplier !== undefined) this.jellyMultiplier = settings.jellyMultiplier;
                 if (settings.jellyStiffness !== undefined) this.jellyStiffness = settings.jellyStiffness;
                 if (settings.jellyDamping !== undefined) this.jellyDamping = settings.jellyDamping;
+                if (settings.breatheSpeedScale !== undefined) this.breatheSpeedScale = settings.breatheSpeedScale;
+                if (settings.breatheAmpScale !== undefined) this.breatheAmpScale = settings.breatheAmpScale;
                 if (settings.dustEnabled !== undefined) this.dustEnabled = settings.dustEnabled;
                 if (settings.dustCount !== undefined) this.dustCount = settings.dustCount;
                 if (settings.dustScale !== undefined) this.dustScale = settings.dustScale;
@@ -2158,6 +2259,14 @@
                 if (settings.jellyDamping !== undefined) {
                     updateValue('jelly-damping-slider', settings.jellyDamping);
                     updateText('jelly-damping-value-label', `${Math.round(settings.jellyDamping * 100)}%`);
+                }
+                if (settings.breatheSpeedScale !== undefined) {
+                    updateValue('breathe-speed-slider', Math.round(settings.breatheSpeedScale * 100));
+                    updateText('breathe-speed-value-label', `${Math.round(settings.breatheSpeedScale * 100)}%`);
+                }
+                if (settings.breatheAmpScale !== undefined) {
+                    updateValue('breathe-amp-slider', Math.round(settings.breatheAmpScale * 100));
+                    updateText('breathe-amp-value-label', settings.breatheAmpScale === 0 ? 'Выкл' : `${Math.round(settings.breatheAmpScale * 100)}%`);
                 }
                 if (settings.bgScaleMultiplier !== undefined) {
                     updateValue('bg-scale-slider', settings.bgScaleMultiplier);
@@ -2300,6 +2409,8 @@
                     jellyMultiplier: 1.0,
                     jellyStiffness: 0.35,
                     jellyDamping: 0.55,
+                    breatheSpeedScale: 1.0,
+                    breatheAmpScale: 1.0,
                     dustEnabled: true,
                     dustCount: 45,
                     dustScale: 1.0,
@@ -2588,6 +2699,55 @@
                     
                     this.dustParticles.push(particle);
                 }
+            }
+
+            spawnZParticle(container) {
+                const catImg = container.list.find(child => child.isCatImage);
+                if (!catImg) return;
+
+                // Calculate the world coordinates of the cat's visual center
+                let scale = container.targetScale;
+                let spawnX = container.x + catImg.x * scale + Phaser.Math.FloatBetween(-15, 15) * scale;
+                let spawnY = container.y + catImg.y * scale - 25 * scale + Phaser.Math.FloatBetween(-10, 10) * scale;
+
+                let zText = Phaser.Utils.Array.GetRandom(['z', 'Z', 'zZ']);
+                let zSize = Phaser.Math.Between(11, 18) * scale;
+
+                let zSprite = this.add.text(spawnX, spawnY, zText, {
+                    fontSize: `${zSize}px`,
+                    fontFamily: '"Outfit", "Segoe UI", sans-serif',
+                    fontWeight: 'bold',
+                    color: '#ffb088', // Soft cozy warm peach color
+                    stroke: '#ffffff',
+                    strokeThickness: 2
+                });
+                zSprite.setOrigin(0.5, 0.5);
+                zSprite.setDepth(20); // Floats above all pieces and grid
+                zSprite.setAlpha(0.85);
+
+                // Vertical float up and fade out
+                this.tweens.add({
+                    targets: zSprite,
+                    y: spawnY - Phaser.Math.FloatBetween(50, 90) * scale,
+                    alpha: 0,
+                    angle: Phaser.Math.FloatBetween(-20, 20),
+                    duration: Phaser.Math.FloatBetween(1800, 2600),
+                    ease: 'Cubic.easeOut',
+                    onComplete: () => {
+                        zSprite.destroy();
+                    }
+                });
+
+                // Horizontal sway (wave) animation
+                let swayDist = Phaser.Math.FloatBetween(8, 18) * scale;
+                this.tweens.add({
+                    targets: zSprite,
+                    x: spawnX + Phaser.Math.FloatBetween(-5, 5) * scale + swayDist,
+                    duration: Phaser.Math.FloatBetween(500, 800),
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
             }
 
             getBackgroundBounds() {
