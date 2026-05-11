@@ -47,6 +47,20 @@
         .scale-in {
             transform: scale(1) !important;
         }
+        /* Custom scrollbar and styling for settings panel */
+        #zoom-control-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        #zoom-control-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #zoom-control-panel::-webkit-scrollbar-thumb {
+            background: rgba(249, 115, 22, 0.3);
+            border-radius: 10px;
+        }
+        #zoom-control-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(249, 115, 22, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -60,90 +74,252 @@
     </button>
 
     <!-- Панель управления масштабом камеры и фона -->
-    <div id="zoom-control-panel" class="fixed top-4 right-4 bg-white/80 backdrop-blur-md text-slate-800 p-4 rounded-3xl shadow-lg border border-slate-200/50 hover:bg-white transition-all z-40 flex flex-col gap-4 min-w-[260px] sm:min-w-[300px]">
+    <div id="zoom-control-panel" class="fixed top-4 right-4 bg-white/80 backdrop-blur-md text-slate-800 p-4 rounded-3xl shadow-lg border border-slate-200/50 hover:bg-white transition-all z-40 flex flex-col gap-4 min-w-[260px] sm:min-w-[300px] max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div class="flex justify-between items-center pb-2 border-b border-slate-100">
             <span class="text-sm font-bold text-slate-800 flex items-center gap-1">⚙️ Настройки отображения</span>
-            <button id="btn-zoom-reset" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 p-1.5 px-3 rounded-xl border border-orange-100 transition-all text-[11px] font-extrabold flex items-center gap-1" title="Сбросить все">
-                Сброс 🔄
-            </button>
+            <div class="flex items-center gap-1.5">
+                <button id="btn-zoom-reset" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 p-1.5 px-2.5 rounded-xl border border-orange-100 transition-all text-[11px] font-extrabold flex items-center gap-1" title="Сбросить все">
+                    Сброс 🔄
+                </button>
+                <button id="btn-zoom-toggle" class="bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 w-7 h-7 flex items-center justify-center rounded-xl transition-all text-xs font-bold" title="Свернуть/Развернуть">
+                    ➖
+                </button>
+            </div>
         </div>
         
-        <!-- Слайдер масштаба игры (камера) -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">🔍 Масштаб игры (Зум)</span>
-                <span id="zoom-value-label" class="font-extrabold text-orange-600">100%</span>
+        <div id="zoom-panel-body" class="flex flex-col gap-4">
+            <!-- Раздел управления профилями и JSON -->
+            <div class="flex flex-col gap-2.5 pb-3 border-b border-slate-100">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">📁 Профили и пресеты</div>
+                
+                <div class="flex gap-1.5 items-center">
+                    <!-- Выбор профиля -->
+                    <select id="profile-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="default">✨ По умолчанию</option>
+                    </select>
+                    
+                    <!-- Удалить профиль -->
+                    <button id="btn-profile-delete" class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-xl border border-red-100 active:scale-95 transition-all text-xs hidden" title="Удалить этот профиль">
+                        🗑️
+                    </button>
+                </div>
+
+                <!-- Сохранение текущего профиля -->
+                <div class="flex gap-1.5 items-center">
+                    <input type="text" id="profile-name-input" placeholder="Имя нового профиля..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-orange-300 placeholder-slate-400">
+                    <button id="btn-profile-save" class="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white py-1.5 px-3 rounded-xl shadow-sm text-xs font-extrabold transition-all shrink-0">
+                        Сохранить 💾
+                    </button>
+                </div>
+
+                <!-- Экспорт / Импорт JSON -->
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <button id="btn-json-export" class="bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 py-1.5 px-2 rounded-xl border border-slate-200 transition-all text-[11px] font-bold flex items-center justify-center gap-1">
+                        📥 Экспорт JSON
+                    </button>
+                    <button id="btn-json-import" class="bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 py-1.5 px-2 rounded-xl border border-slate-200 transition-all text-[11px] font-bold flex items-center justify-center gap-1">
+                        📤 Импорт JSON
+                    </button>
+                    <!-- Скрытый инпут для импорта файлов -->
+                    <input type="file" id="json-file-input" accept=".json" class="hidden">
+                </div>
             </div>
-            <input type="range" id="global-zoom-slider" min="0.3" max="1.5" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
-
-        <!-- Слайдер размера фона -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">🖼️ Размер фона (Обои)</span>
-                <span id="bg-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+            <!-- Слайдер масштаба игры (камера) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🔍 Масштаб игры (Зум)</span>
+                    <span id="zoom-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="global-zoom-slider" min="0.3" max="1.5" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
 
-        <!-- Слайдер разделения клеток (зазоры) -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">📏 Разделение клеток (Зазоры)</span>
-                <span id="grid-gap-value-label" class="font-extrabold text-orange-600">4px</span>
+            <!-- Слайдер уровня желейности котиков -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🍮 Желейность котиков</span>
+                    <span id="jelly-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="jelly-slider" min="0" max="2" step="0.1" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="grid-gap-slider" min="0" max="20" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
 
-        <!-- Слайдер закругления клеток (радиус) -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">📐 Закругление клеток (Радиус)</span>
-                <span id="grid-radius-value-label" class="font-extrabold text-orange-600">4px</span>
+            <!-- Слайдер упругости пружины -->
+            <div class="flex flex-col gap-1.5 pl-3 border-l-2 border-orange-100 -mt-1">
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="font-bold text-slate-400 flex items-center gap-1">⚡ Упругость пружины</span>
+                    <span id="jelly-stiffness-value-label" class="font-extrabold text-orange-500">35%</span>
+                </div>
+                <input type="range" id="jelly-stiffness-slider" min="0.1" max="1.0" step="0.05" value="0.35" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="grid-radius-slider" min="0" max="24" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
 
-        <!-- Слайдер толщины обводки котиков -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">✨ Толщина обводки котиков</span>
-                <span id="glow-thickness-value-label" class="font-extrabold text-orange-600">6px</span>
+            <!-- Слайдер вязкости среды -->
+            <div class="flex flex-col gap-1.5 pl-3 border-l-2 border-orange-100 -mt-1">
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="font-bold text-slate-400 flex items-center gap-1">💧 Вязкость среды</span>
+                    <span id="jelly-damping-value-label" class="font-extrabold text-orange-500">55%</span>
+                </div>
+                <input type="range" id="jelly-damping-slider" min="0.1" max="0.95" step="0.05" value="0.55" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="glow-thickness-slider" min="0" max="12" step="0.5" value="6" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
 
-        <!-- Слайдер размытия обводки котиков -->
-        <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">💨 Размытие обводки (Свечение)</span>
-                <span id="glow-blur-value-label" class="font-extrabold text-orange-600">24px</span>
+            <!-- Слайдер размера фона -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🖼️ Размер фона (Обои)</span>
+                    <span id="bg-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="glow-blur-slider" min="0" max="40" step="1" value="24" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
-        </div>
 
-        <!-- Переключатель видимости подложки блоков -->
-        <div class="flex justify-between items-center text-xs pb-1 border-t border-slate-100 pt-3">
-            <span class="font-bold text-slate-500 flex items-center gap-1">🎨 Показывать подложку блоков</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="show-blocks-toggle" checked class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-            </label>
-        </div>
-
-        <!-- Настройка цвета выделения сетки -->
-        <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
-            <span class="font-bold text-slate-500 flex items-center gap-1">🟢 Цвет занятых ячеек</span>
-            <input type="color" id="grid-color-picker" value="#10b981" class="w-8 h-8 rounded-full border border-slate-200/50 cursor-pointer overflow-hidden bg-transparent">
-        </div>
-
-        <!-- Слайдер толщины рамки ячеек -->
-        <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
-            <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-500">📏 Толщина рамки ячеек</span>
-                <span id="grid-line-value-label" class="font-extrabold text-orange-600">2px</span>
+            <!-- Слайдер разделения клеток (зазоры) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📏 Разделение клеток (Зазоры)</span>
+                    <span id="grid-gap-value-label" class="font-extrabold text-orange-600">4px</span>
+                </div>
+                <input type="range" id="grid-gap-slider" min="0" max="20" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
-            <input type="range" id="grid-line-slider" min="1" max="8" step="1" value="2" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+
+            <!-- Слайдер закругления клеток (радиус) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📐 Закругление клеток (Радиус)</span>
+                    <span id="grid-radius-value-label" class="font-extrabold text-orange-600">4px</span>
+                </div>
+                <input type="range" id="grid-radius-slider" min="0" max="24" step="1" value="4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Слайдер толщины обводки котиков -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">✨ Толщина обводки котиков</span>
+                    <span id="glow-thickness-value-label" class="font-extrabold text-orange-600">6px</span>
+                </div>
+                <input type="range" id="glow-thickness-slider" min="0" max="12" step="0.5" value="6" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Слайдер размытия обводки котиков -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">💨 Размытие обводки (Свечение)</span>
+                    <span id="glow-blur-value-label" class="font-extrabold text-orange-600">24px</span>
+                </div>
+                <input type="range" id="glow-blur-slider" min="0" max="40" step="1" value="24" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Переключатель включения теней котиков -->
+            <div class="flex justify-between items-center text-xs pb-1 border-t border-slate-100 pt-3">
+                <span class="font-bold text-slate-500 flex items-center gap-1">👥 Включить тени котиков</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="shadow-toggle" checked class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+
+            <!-- Слайдер интенсивности теней котиков -->
+            <div id="shadow-opacity-container" class="flex flex-col gap-1.5 pt-1 transition-opacity duration-200">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">👥 Интенсивность теней</span>
+                    <span id="shadow-opacity-value-label" class="font-extrabold text-orange-600">25%</span>
+                </div>
+                <input type="range" id="shadow-opacity-slider" min="0" max="80" step="5" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Переключатель видимости подложки блоков -->
+            <div class="flex justify-between items-center text-xs pb-1 border-t border-slate-100 pt-3">
+                <span class="font-bold text-slate-500 flex items-center gap-1">🎨 Показывать подложку блоков</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="show-blocks-toggle" checked class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+
+            <!-- Переключатель закрашивания занятых ячеек -->
+            <div class="flex justify-between items-center text-xs pb-1 border-t border-slate-100 pt-3">
+                <span class="font-bold text-slate-500 flex items-center gap-1">🟢 Заливка занятых ячеек</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="fill-occupied-toggle" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+
+            <!-- Настройка цвета выделения сетки -->
+            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
+                <span class="font-bold text-slate-500 flex items-center gap-1">🟢 Цвет занятых ячеек</span>
+                <input type="color" id="grid-color-picker" value="#10b981" class="w-8 h-8 rounded-full border border-slate-200/50 cursor-pointer overflow-hidden bg-transparent">
+            </div>
+
+            <!-- Слайдер толщины рамки ячеек -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📏 Толщина рамки ячеек</span>
+                    <span id="grid-line-value-label" class="font-extrabold text-orange-600">2px</span>
+                </div>
+                <input type="range" id="grid-line-slider" min="1" max="8" step="1" value="2" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Настройки звука (Питч) -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🔊 Случайный питч звуков</span>
+                    <span id="sound-pitch-value-label" class="font-extrabold text-orange-600">±20%</span>
+                </div>
+                <input type="range" id="sound-pitch-slider" min="0" max="50" step="5" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость фоновой музыки -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🎵 Громкость фоновой музыки</span>
+                    <span id="bg-music-volume-value-label" class="font-extrabold text-orange-600">50%</span>
+                </div>
+                <input type="range" id="bg-music-volume-slider" min="0" max="100" step="5" value="50" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Включение/выключение пыли -->
+            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
+                <span class="font-bold text-slate-500 flex items-center gap-1">✨ Включить летающую пыль</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="dust-toggle" checked class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+
+            <!-- Слайдер количества пылинок -->
+            <div id="dust-count-container" class="flex flex-col gap-1.5 border-t border-slate-100 pt-3 transition-opacity duration-200">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">✨ Количество пылинок</span>
+                    <span id="dust-count-label" class="font-extrabold text-orange-600">45</span>
+                </div>
+                <input type="range" id="dust-count-slider" min="5" max="120" step="5" value="45" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Слайдер размера пылинок -->
+            <div id="dust-size-container" class="flex flex-col gap-1.5 pt-1 transition-opacity duration-200">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📐 Размер пылинок</span>
+                    <span id="dust-size-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="dust-size-slider" min="0.3" max="2.0" step="0.1" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Распределение пыли по экрану -->
+            <div id="dust-dist-container" class="flex flex-col gap-1.5 pt-1 pb-1 transition-opacity duration-200">
+                <label class="block text-xs font-bold text-slate-500">📍 Распределение пыли</label>
+                <select id="dust-dist-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                    <option value="everywhere">Везде (Равномерно)</option>
+                    <option value="sides">По бокам (Освободить центр)</option>
+                    <option value="top">Сверху (Под потолком)</option>
+                    <option value="bottom">Снизу (У пола)</option>
+                </select>
+            </div>
+
+            <!-- Слайдер ширины зоны у краев для пыли -->
+            <div id="dust-edge-container" class="flex flex-col gap-1.5 pt-1 pb-1 transition-opacity duration-200">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📐 Ширина зоны у краев</span>
+                    <span id="dust-edge-label" class="font-extrabold text-orange-600">25%</span>
+                </div>
+                <input type="range" id="dust-edge-slider" min="5" max="50" step="5" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
         </div>
     </div>
 
@@ -349,6 +525,9 @@
                 this.pieces = [];
                 this.ghosts = [];
                 this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
+                this.jellyMultiplier = 1.0; // По умолчанию нормальный уровень желейности
+                this.jellyStiffness = 0.35; // Жесткость пружины по умолчанию
+                this.jellyDamping = 0.55;   // Затухание пружины по умолчанию
             }
 
             preload() {
@@ -364,6 +543,15 @@
 
                 // Load room background image
                 this.load.image('room_background', 'assets/room-rug-background.png');
+
+                // Load sounds (only the ones that actually exist in assets/sounds)
+                const availableSoundNums = [3, 4, 5];
+                availableSoundNums.forEach(num => {
+                    this.load.audio(`twit${num}`, `assets/sounds/twit${num}.wav`);
+                });
+
+                // Load background music
+                this.load.audio('bg_music', 'assets/music/main_theme.ogg');
             }
 
             create() {
@@ -400,6 +588,23 @@
                 // Инициализация масштабирования камеры
                 this.initZoom();
                 this.updateBlocksVisibility();
+
+                // Инициализация летающей атмосферной пыли
+                this.createDustParticles();
+
+                // Инициализация системы профилей и пресетов
+                this.initProfiles();
+
+                // Initialize background music volume setting
+                this.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
+
+                // Play background music
+                try {
+                    this.bgMusic = this.sound.add('bg_music', { loop: true, volume: this.bgMusicVolume });
+                    this.bgMusic.play();
+                } catch (e) {
+                    console.warn('Failed to initialize background music:', e);
+                }
             }
 
             generateTextures() {
@@ -424,9 +629,6 @@
                 // 2. Текстура кошачьей мордочки (с ушками)
                 let faceG = this.make.graphics({x: 0, y: 0, add: false});
                 
-                // Ушки (белые, закрасятся цветом блока через tint потом, но тут сложнее.
-                // Сделаем ушки полупрозрачными черными/белыми или просто нарисуем мордашку.
-                
                 // Мордочка (глаза и нос)
                 faceG.fillStyle(0x333333, 1); // Темно-серый
                 // Глаза
@@ -447,6 +649,14 @@
                 faceG.moveTo(BASE_CS * 0.75, BASE_CS * 0.65); faceG.lineTo(BASE_CS * 0.95, BASE_CS * 0.65);
 
                 faceG.generateTexture('cat_face', BASE_CS, BASE_CS);
+
+                // 3. Dust particle texture (soft white radial glow)
+                let dustG = this.make.graphics({x: 0, y: 0, add: false});
+                for (let i = 8; i > 0; i--) {
+                    dustG.fillStyle(0xffffff, (9 - i) * 0.1);
+                    dustG.fillCircle(8, 8, i);
+                }
+                dustG.generateTexture('dust_particle', 16, 16);
             }
 
             createPieces() {
@@ -510,6 +720,15 @@
                         ghost.add(gImg);
                     });
 
+                    // Добавляем красивую тень котика (со смещением и темным тинтом)
+                    let catShadow = this.add.image(def.offsetX + 4, def.offsetY + 6, def.id);
+                    catShadow.setOrigin(def.originX, def.originY);
+                    catShadow.setScale(def.scaleX, def.scaleY);
+                    catShadow.setTint(0x110500); // Глубокий, теплый коричнево-черный оттенок тени вместо чисто серого
+                    catShadow.setAlpha(this.shadowOpacity !== undefined ? this.shadowOpacity : 0.25);
+                    catShadow.isCatShadow = true;
+                    container.add(catShadow);
+
                     // Добавляем красивую PNG картинку котика поверх блоков с точной точкой привязки
                     let catImg = this.add.image(def.offsetX, def.offsetY, def.id);
                     catImg.setOrigin(def.originX, def.originY);
@@ -518,8 +737,8 @@
                     catImg.targetX = def.offsetX;
                     catImg.targetY = def.offsetY;
                     catImg.targetAngle = 0;
-                    // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре
-                    catImg.setInteractive({ cursor: 'pointer', draggable: true });
+                    // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре (с учетом прозрачности)
+                    catImg.setInteractive({ pixelPerfect: true, cursor: 'pointer', draggable: true });
 
                     // Надежное свечение при наведении мыши (hover) прямо на котика
                     catImg.on('pointerover', () => {
@@ -554,6 +773,26 @@
                 this.input.on('dragstart', (pointer, gameObject) => {
                     let container = gameObject.parentContainer;
                     
+                    // Play random sound from available sounds (with robust error protection and pitch randomization)
+                    try {
+                        const availableSoundNums = [3, 4, 5];
+                        const randomSoundNum = Phaser.Utils.Array.GetRandom(availableSoundNums);
+                        const soundKey = `twit${randomSoundNum}`;
+                        
+                        // Calculate randomized pitch (playback rate) based on user settings
+                        let rateVal = 1.0;
+                        if (this.soundPitchRange && this.soundPitchRange > 0) {
+                            rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
+                        }
+                        
+                        // Check if the sound exists in the cache before playing
+                        if (this.cache.audio.exists(soundKey)) {
+                            this.sound.play(soundKey, { rate: rateVal });
+                        }
+                    } catch (e) {
+                        console.warn('Failed to play interaction sound:', e);
+                    }
+                    
                     // Поднимаем фигуру наверх
                     this.children.bringToTop(container);
                     
@@ -574,11 +813,29 @@
                         }
                     }
 
-                    // Добавляем эффект "поднятия"
+                    // Отменяем предыдущие анимации желе
+                    this.tweens.killTweensOf(container);
+
+                    // Добавляем эффект моментального поднятия с легким желейным вздохом (растягивание вверх от инерции)
+                    const mult = this.jellyMultiplier !== undefined ? this.jellyMultiplier : 1.0;
                     this.tweens.add({
                         targets: container,
-                        scale: container.targetScale * 1.05,
-                        duration: 100
+                        scaleX: container.targetScale * (1.05 - 0.03 * mult),
+                        scaleY: container.targetScale * (1.05 + 0.06 * mult),
+                        duration: 110,
+                        ease: 'Quad.easeOut',
+                        onComplete: () => {
+                            if (!container.isDragging) {
+                                // Плавно возвращаем к стандартному масштабу "поднятия" в воздухе
+                                this.tweens.add({
+                                    targets: container,
+                                    scaleX: container.targetScale * 1.05,
+                                    scaleY: container.targetScale * 1.05,
+                                    duration: 180,
+                                    ease: 'Back.easeOut'
+                                });
+                            }
+                        }
                     });
 
                     // Сохраняем информацию о том, где стояла фигура
@@ -595,13 +852,36 @@
                     
                     // Move container taking main camera zoom into account
                     const zoom = this.cameras.main.zoom;
-                    container.x += (pointer.position.x - pointer.prevPosition.x) / zoom;
-                    container.y += (pointer.position.y - pointer.prevPosition.y) / zoom;
+                    let dx = (pointer.position.x - pointer.prevPosition.x) / zoom;
+                    let dy = (pointer.position.y - pointer.prevPosition.y) / zoom;
+                    container.x += dx;
+                    container.y += dy;
 
                     // Drag threshold with zoom scaling to maintain consistent physical gesture distance
                     const dragDistScreen = Phaser.Math.Distance.Between(container.dragStartX, container.dragStartY, container.x, container.y) * zoom;
                     if (dragDistScreen > 5) {
-                        container.isDragging = true;
+                        if (!container.isDragging) {
+                            container.isDragging = true;
+                            // Отменяем анимации "хватания", так как потащили
+                            this.tweens.killTweensOf(container);
+                        }
+                        
+                        // --- Желейный эффект при перетаскивании (Установка целей для физики пружины) ---
+                        const mult = this.jellyMultiplier !== undefined ? this.jellyMultiplier : 1.0;
+
+                        // 1. Целевой наклон по ходу движения
+                        let targetRotation = dx * 0.015 * mult;
+                        container.jellyDragRotation = Phaser.Math.Clamp(targetRotation, -0.2 * mult, 0.2 * mult);
+
+                        // 2. Целевое сжатие и растяжение от скорости (squash and stretch)
+                        let speedX = Math.abs(dx);
+                        let speedY = Math.abs(dy);
+                        
+                        let stretchFactorX = 1 + speedX * 0.008 * mult;
+                        let stretchFactorY = 1 + speedY * 0.008 * mult;
+                        
+                        container.jellyDragStretchX = stretchFactorX / stretchFactorY;
+                        container.jellyDragStretchY = stretchFactorY / stretchFactorX;
                     }
 
                     // Обновляем Ghost preview
@@ -624,27 +904,51 @@
 
                     let clickTime = this.time.now - container.pointerDownTime;
                     
-                    // Опускаем фигуру
+                    let wasDragging = container.isDragging;
+                    container.isDragging = false;
+                    
+                    this.tweens.killTweensOf(container);
+                    
+                    const mult = this.jellyMultiplier !== undefined ? this.jellyMultiplier : 1.0;
+                    
+                    // Опускаем фигуру с желейным отскоком
                     this.tweens.add({
                         targets: container,
-                        scale: container.targetScale,
-                        duration: 100
+                        scaleX: container.targetScale,
+                        scaleY: container.targetScale,
+                        rotation: 0,
+                        duration: mult > 0 ? 500 : 150,
+                        ease: mult > 0 ? 'Elastic.easeOut' : 'Quad.easeOut',
+                        easeParams: mult > 0 ? [1.2 * mult, 0.5] : undefined
                     });
 
                     // Логика Тап = Поворот
-                    if (!container.isDragging && clickTime < 300) {
-                        this.rotatePiece(container);
+                    if (!wasDragging && clickTime < 300) {
+                        // Сначала только логически и внутренне поворачиваем фигуру (без анимации x/y всего контейнера)
+                        this.rotatePiece(container, pointer, false);
                         
-                        // Если фигура стояла на поле (используем saved wasPlacedAt), пробуем примагнитить обратно после поворота
-                        // Если не влезает - возвращаем на старт
+                        // Если фигура стояла на поле, примагничиваем ее к сетке с учетом нового положения
                         if (container.wasPlacedAt) {
-                            let oldX = container.wasPlacedAt.x;
-                            let oldY = container.wasPlacedAt.y;
-                            if (this.canPlace(container.cells, oldX, oldY)) {
-                                this.placePiece(container, oldX, oldY);
+                            // Находим ближайшую клетку сетки для нового положения контейнера
+                            let localX = container.targetX_after_rotate - this.boardX - this.cs/2;
+                            let localY = container.targetY_after_rotate - this.boardY - this.cs/2;
+                            let newX = Math.round(localX / this.cs);
+                            let newY = Math.round(localY / this.cs);
+
+                            if (this.canPlace(container.cells, newX, newY)) {
+                                this.placePiece(container, newX, newY);
                             } else {
                                 this.returnToStart(container);
                             }
+                        } else {
+                            // Если фигура не была на сетке, анимируем ее перемещение в рассчитанную точку поворота
+                            this.tweens.add({
+                                targets: container,
+                                x: container.targetX_after_rotate,
+                                y: container.targetY_after_rotate,
+                                duration: 200,
+                                ease: 'Back.easeOut'
+                            });
                         }
                         return;
                     }
@@ -655,17 +959,180 @@
                     let gridX = Math.round(localX / this.cs);
                     let gridY = Math.round(localY / this.cs);
 
+                    let hasOverlapWithGrid = false;
+                    container.cells.forEach(([cx, cy]) => {
+                        let gx = gridX + cx;
+                        let gy = gridY + cy;
+                        if (gx >= 0 && gx < 4 && gy >= 0 && gy < 4) {
+                            hasOverlapWithGrid = true;
+                        }
+                    });
+
                     if (this.canPlace(container.cells, gridX, gridY)) {
                         this.placePiece(container, gridX, gridY);
-                    } else {
+                    } else if (hasOverlapWithGrid) {
                         this.returnToStart(container);
+                    } else {
+                        // Оставляем котика там, где его бросили, если он не над сеткой
+                        container.startX = container.x;
+                        container.startY = container.y;
                     }
                 });
             }
 
-            rotatePiece(container) {
+            update(time, delta) {
+                // Update atmospheric dust particles
+                this.updateDustParticles(time, delta);
+
+                const mult = this.jellyMultiplier !== undefined ? this.jellyMultiplier : 1.0;
+                
+                this.pieces.forEach(container => {
+                    // Обрабатываем желейную физику пружины ТОЛЬКО когда котика тащат
+                    if (container.isDragging) {
+                        if (mult <= 0) {
+                            let baseScale = container.targetScale * 1.05;
+                            container.scaleX = baseScale;
+                            container.scaleY = baseScale;
+                            container.rotation = 0;
+                            return;
+                        }
+
+                        // 1. Плавное затухание "целевой деформации", если мышь остановилась
+                        container.jellyDragStretchX = Phaser.Math.Linear(container.jellyDragStretchX || 1, 1, 0.15);
+                        container.jellyDragStretchY = Phaser.Math.Linear(container.jellyDragStretchY || 1, 1, 0.15);
+                        container.jellyDragRotation = Phaser.Math.Linear(container.jellyDragRotation || 0, 0, 0.15);
+
+                        let baseScale = container.targetScale * 1.05;
+                        let targetScaleX = baseScale * container.jellyDragStretchX;
+                        let targetScaleY = baseScale * container.jellyDragStretchY;
+                        let targetRotation = container.jellyDragRotation;
+
+                        // Ограничения для целей
+                        let minLimit = baseScale * (1 - 0.15 * mult);
+                        let maxLimit = baseScale * (1 + 0.25 * mult);
+                        targetScaleX = Phaser.Math.Clamp(targetScaleX, minLimit, maxLimit);
+                        targetScaleY = Phaser.Math.Clamp(targetScaleY, minLimit, maxLimit);
+
+                        // 2. Симуляция пружины (Spring Physics)
+                        if (!container.jellyVelX) container.jellyVelX = 0;
+                        if (!container.jellyVelY) container.jellyVelY = 0;
+                        if (!container.jellyVelR) container.jellyVelR = 0;
+
+                        // Константы пружины
+                        const stiffness = this.jellyStiffness !== undefined ? this.jellyStiffness : 0.35; // Возвратная сила пружины (жесткость)
+                        const damping = this.jellyDamping !== undefined ? this.jellyDamping : 0.55;   // Затухание пружины (сопротивление среды)
+
+                        // Закон Гука
+                        let forceX = (targetScaleX - container.scaleX) * stiffness;
+                        let forceY = (targetScaleY - container.scaleY) * stiffness;
+                        let forceR = (targetRotation - container.rotation) * stiffness;
+
+                        // Обновление скоростей с затуханием
+                        container.jellyVelX = (container.jellyVelX + forceX) * damping;
+                        container.jellyVelY = (container.jellyVelY + forceY) * damping;
+                        container.jellyVelR = (container.jellyVelR + forceR) * damping;
+
+                        // Применение скоростей
+                        container.scaleX += container.jellyVelX;
+                        container.scaleY += container.jellyVelY;
+                        container.rotation += container.jellyVelR;
+                    }
+
+                    // Обновляем позицию, угол, масштаб и видимость тени котика в реальном времени
+                    const catImg = container.list.find(child => child.isCatImage);
+                    const catShadow = container.list.find(child => child.isCatShadow);
+                    if (catImg && catShadow) {
+                        const isShadowOn = this.shadowEnabled !== false;
+                        catShadow.setVisible(isShadowOn);
+                        
+                        if (isShadowOn) {
+                            let baseOpacity = this.shadowOpacity !== undefined ? this.shadowOpacity : 0.25;
+                            
+                            // Динамический эффект подъема при перетаскивании котика
+                            let targetOffsetX = 4;
+                            let targetOffsetY = 6;
+                            let targetShadowScale = 1.0;
+                            let targetOpacity = baseOpacity;
+                            
+                            if (container.isDragging) {
+                                // Кот "поднимается" выше: тень отодвигается дальше и становится немного более прозрачной
+                                targetOffsetX = 12;
+                                targetOffsetY = 18;
+                                targetShadowScale = 0.95; // Из-за удаления от поверхности
+                                targetOpacity = baseOpacity * 0.7; // Слегка рассеивается
+                            }
+                            
+                            if (catShadow.currentOffsetX === undefined) catShadow.currentOffsetX = targetOffsetX;
+                            if (catShadow.currentOffsetY === undefined) catShadow.currentOffsetY = targetOffsetY;
+                            if (catShadow.currentShadowScale === undefined) catShadow.currentShadowScale = targetShadowScale;
+                            if (catShadow.currentOpacity === undefined) catShadow.currentOpacity = targetOpacity;
+                            
+                            // Плавная линейная интерполяция значений для сглаживания подъема
+                            catShadow.currentOffsetX = Phaser.Math.Linear(catShadow.currentOffsetX, targetOffsetX, 0.15);
+                            catShadow.currentOffsetY = Phaser.Math.Linear(catShadow.currentOffsetY, targetOffsetY, 0.15);
+                            catShadow.currentShadowScale = Phaser.Math.Linear(catShadow.currentShadowScale, targetShadowScale, 0.15);
+                            catShadow.currentOpacity = Phaser.Math.Linear(catShadow.currentOpacity, targetOpacity, 0.15);
+                            
+                            catShadow.x = catImg.x + catShadow.currentOffsetX;
+                            catShadow.y = catImg.y + catShadow.currentOffsetY;
+                            catShadow.angle = catImg.angle;
+                            catShadow.setScale(catImg.scaleX * catShadow.currentShadowScale, catImg.scaleY * catShadow.currentShadowScale);
+                            catShadow.setOrigin(catImg.originX, catImg.originY);
+                            catShadow.setAlpha(catShadow.currentOpacity);
+                        }
+                    }
+                });
+            }
+
+            rotatePiece(container, pointer, shouldTweenXY = true) {
+                let cx, cy;
+                if (!pointer) {
+                    let minX = Math.min(...container.cells.map(c => c[0]));
+                    let maxX = Math.max(...container.cells.map(c => c[0]));
+                    let minY = Math.min(...container.cells.map(c => c[1]));
+                    let maxY = Math.max(...container.cells.map(c => c[1]));
+                    cx = (minX + maxX) / 2;
+                    cy = (minY + maxY) / 2;
+                }
+
                 // Математика поворота 90 град по часовой: (x, y) -> (-y, x)
                 container.cells = container.cells.map(([x, y]) => [-y, x]);
+
+                let targetX, targetY;
+
+                if (pointer) {
+                    // Вращение вокруг курсора (чтобы точка под мышкой осталась на месте)
+                    let lx = (pointer.worldX - container.x) / container.scaleX;
+                    let ly = (pointer.worldY - container.y) / container.scaleY;
+                    targetX = pointer.worldX + ly * container.scaleX;
+                    targetY = pointer.worldY - lx * container.scaleY;
+                } else {
+                    // Программное вращение вокруг геометрического центра
+                    let dx = cx + cy;
+                    let dy = cy - cx;
+                    let shiftX = dx * BASE_CS * container.scaleX;
+                    let shiftY = dy * BASE_CS * container.scaleY;
+                    targetX = container.x + shiftX;
+                    targetY = container.y + shiftY;
+                }
+
+                container.targetX_after_rotate = targetX;
+                container.targetY_after_rotate = targetY;
+
+                if (shouldTweenXY) {
+                    this.tweens.add({
+                        targets: container,
+                        x: targetX,
+                        y: targetY,
+                        duration: 200,
+                        ease: 'Back.easeOut'
+                    });
+                }
+
+                if (!container.isPlaced) {
+                    container.startX = targetX;
+                    container.startY = targetY;
+                }
 
                 // Анимируем перемещение спрайтов внутри контейнера
                 container.list.forEach(child => {
@@ -886,6 +1353,9 @@
                 // Возвращаем фигуры
                 this.pieces.forEach(p => {
                     this.removeFromGrid(p);
+                    // Возвращаем на исходные места в доке
+                    p.startX = p.dockX;
+                    p.startY = p.dockY;
                     this.returnToStart(p);
                 });
             }
@@ -966,14 +1436,31 @@
                     p.setScale(scale);
                     p.ghost.setScale(scale);
                     
-                    p.startX = this.startZones[i].x;
-                    p.startY = this.startZones[i].y;
+                    // Центрируем фигуру в стартовой зоне по ее визуальному центру
+                    let minX = Math.min(...p.cells.map(c => c[0]));
+                    let maxX = Math.max(...p.cells.map(c => c[0]));
+                    let minY = Math.min(...p.cells.map(c => c[1]));
+                    let maxY = Math.max(...p.cells.map(c => c[1]));
+                    let cx = (minX + maxX) / 2;
+                    let cy = (minY + maxY) / 2;
+
+                    p.dockX = this.startZones[i].x - cx * BASE_CS * scale;
+                    p.dockY = this.startZones[i].y - cy * BASE_CS * scale;
+                    
+                    // Если фигура не была поставлена игроком вне сетки
+                    if (!p.isPlaced && p.startX === undefined) {
+                        p.startX = p.dockX;
+                        p.startY = p.dockY;
+                    }
 
                     if (p.isPlaced) {
                         // Перерасчитываем позицию на доске при ресайзе
                         p.x = this.boardX + p.gridX * this.cs + this.cs/2;
                         p.y = this.boardY + p.gridY * this.cs + this.cs/2;
                     } else if (!p.isDragging) {
+                        // Если ресайз, фигуры возвращаются в док для избежания вылета за экран
+                        p.startX = p.dockX;
+                        p.startY = p.dockY;
                         p.x = p.startX;
                         p.y = p.startY;
                     }
@@ -1017,9 +1504,13 @@
                             this.boardGraphic.lineStyle(thickness, color, 0.95);
                             this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
                         } else if (isOccupied) {
-                            // Изысканный выбранный цвет ТОЛЬКО для рамки занятой клетки
-                            // Фон: остается обычным полупрозрачным белым (прозрачность 0.18)
-                            this.boardGraphic.fillStyle(0xffffff, 0.18);
+                            // Изысканный выбранный цвет для занятой клетки
+                            // Фон: остается обычным полупрозрачным белым (прозрачность 0.18) или закрашивается цветом выделения
+                            if (this.fillOccupied) {
+                                this.boardGraphic.fillStyle(highlightColor, 0.22);
+                            } else {
+                                this.boardGraphic.fillStyle(0xffffff, 0.18);
+                            }
                             this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
 
                             // Рамка: яркий выбранный контур (прозрачность 0.95)
@@ -1049,6 +1540,11 @@
                 const savedBgScale = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
                 this.bgScaleMultiplier = savedBgScale;
 
+                // Load jellyness setting
+                this.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '1.0');
+                this.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
+                this.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
+
                 // Load grid gap and radius settings
                 this.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
                 this.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
@@ -1061,9 +1557,19 @@
                 const savedShowBlocks = localStorage.getItem('jellycats_show_blocks');
                 this.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : true;
 
+                // Load fill occupied setting
+                const savedFillOccupied = localStorage.getItem('jellycats_fill_occupied');
+                this.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : false;
+
                 // Load custom grid highlight color and line thickness
                 this.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#10b981';
                 this.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '2');
+
+                // Load sound pitch randomization setting (default is 20% / 0.2)
+                this.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
+
+                // Load background music volume setting (default is 50% / 0.5)
+                this.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
 
                 // Set up global zoom controls
                 const slider = document.getElementById('global-zoom-slider');
@@ -1077,6 +1583,86 @@
                     slider.oninput = (e) => {
                         const zoomVal = parseFloat(e.target.value);
                         this.setGlobalZoom(zoomVal);
+                    };
+                }
+
+                // Set up jellyness controls
+                const jellySlider = document.getElementById('jelly-slider');
+                const jellyLabel = document.getElementById('jelly-value-label');
+
+                if (jellySlider && jellyLabel) {
+                    jellySlider.value = this.jellyMultiplier;
+                    jellyLabel.textContent = `${Math.round(this.jellyMultiplier * 100)}%`;
+
+                    jellySlider.oninput = (e) => {
+                        const jellyVal = parseFloat(e.target.value);
+                        this.jellyMultiplier = jellyVal;
+                        jellyLabel.textContent = `${Math.round(jellyVal * 100)}%`;
+                        localStorage.setItem('jellycats_jelly_multiplier', jellyVal.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up jelly stiffness controls
+                const stiffnessSlider = document.getElementById('jelly-stiffness-slider');
+                const stiffnessLabel = document.getElementById('jelly-stiffness-value-label');
+
+                if (stiffnessSlider && stiffnessLabel) {
+                    stiffnessSlider.value = this.jellyStiffness;
+                    stiffnessLabel.textContent = `${Math.round(this.jellyStiffness * 100)}%`;
+
+                    stiffnessSlider.oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        this.jellyStiffness = val;
+                        stiffnessLabel.textContent = `${Math.round(val * 100)}%`;
+                        localStorage.setItem('jellycats_stiffness', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up jelly damping controls
+                const dampingSlider = document.getElementById('jelly-damping-slider');
+                const dampingLabel = document.getElementById('jelly-damping-value-label');
+
+                if (dampingSlider && dampingLabel) {
+                    dampingSlider.value = this.jellyDamping;
+                    dampingLabel.textContent = `${Math.round(this.jellyDamping * 100)}%`;
+
+                    dampingSlider.oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        this.jellyDamping = val;
+                        dampingLabel.textContent = `${Math.round(val * 100)}%`;
+                        localStorage.setItem('jellycats_damping', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up collapsible settings panel controls
+                const panelToggle = document.getElementById('btn-zoom-toggle');
+                const panelBody = document.getElementById('zoom-panel-body');
+                const panel = document.getElementById('zoom-control-panel');
+
+                if (panelToggle && panelBody && panel) {
+                    // Load state from localStorage
+                    const savedCollapsed = localStorage.getItem('jellycats_zoom_panel_collapsed') === 'true';
+                    if (savedCollapsed) {
+                        panelBody.classList.add('hidden');
+                        panelToggle.textContent = '➕';
+                        panel.classList.remove('gap-4');
+                        panel.classList.add('gap-0');
+                    }
+
+                    panelToggle.onclick = () => {
+                        const isCollapsed = panelBody.classList.toggle('hidden');
+                        panelToggle.textContent = isCollapsed ? '➕' : '➖';
+                        localStorage.setItem('jellycats_zoom_panel_collapsed', isCollapsed.toString());
+                        if (isCollapsed) {
+                            panel.classList.remove('gap-4');
+                            panel.classList.add('gap-0');
+                        } else {
+                            panel.classList.remove('gap-0');
+                            panel.classList.add('gap-4');
+                        }
                     };
                 }
 
@@ -1096,6 +1682,7 @@
                         
                         // Recalculate layout to immediately update background sprite scale
                         this.updateLayout();
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1115,6 +1702,7 @@
                         
                         // Redraw board to reflect changes immediately
                         this.drawBoard();
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1134,6 +1722,7 @@
                         
                         // Redraw board to reflect changes immediately
                         this.drawBoard();
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1150,6 +1739,7 @@
                         this.glowThickness = thickVal;
                         thickLabel.textContent = thickVal === 0 ? 'Выкл' : `${thickVal}px`;
                         localStorage.setItem('jellycats_glow_thickness', thickVal.toString());
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1166,6 +1756,7 @@
                         this.glowBlur = blurVal;
                         blurLabel.textContent = blurVal === 0 ? 'Резкая' : `${blurVal}px`;
                         localStorage.setItem('jellycats_glow_blur', blurVal.toString());
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1180,6 +1771,22 @@
                         this.showBlocks = checked;
                         localStorage.setItem('jellycats_show_blocks', checked.toString());
                         this.updateBlocksVisibility();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up fill occupied toggle controls
+                const fillOccupiedToggle = document.getElementById('fill-occupied-toggle');
+
+                if (fillOccupiedToggle) {
+                    fillOccupiedToggle.checked = this.fillOccupied;
+
+                    fillOccupiedToggle.onchange = (e) => {
+                        const checked = e.target.checked;
+                        this.fillOccupied = checked;
+                        localStorage.setItem('jellycats_fill_occupied', checked.toString());
+                        this.drawBoard();
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1192,6 +1799,7 @@
                         this.gridHighlightColor = hexColor;
                         localStorage.setItem('jellycats_grid_highlight_color', hexColor);
                         this.drawBoard();
+                        this.autosaveActiveProfile();
                     };
                 }
 
@@ -1208,55 +1816,687 @@
                         lineLabel.textContent = `${lineVal}px`;
                         localStorage.setItem('jellycats_grid_line_thickness', lineVal.toString());
                         this.drawBoard();
+                        this.autosaveActiveProfile();
                     };
                 }
 
+                // Set up background music volume slider
+                const musicVolumeSlider = document.getElementById('bg-music-volume-slider');
+                const musicVolumeLabel = document.getElementById('bg-music-volume-value-label');
+                if (musicVolumeSlider && musicVolumeLabel) {
+                    musicVolumeSlider.value = Math.round(this.bgMusicVolume * 100);
+                    musicVolumeLabel.textContent = `${Math.round(this.bgMusicVolume * 100)}%`;
+
+                    musicVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value);
+                        this.bgMusicVolume = val / 100;
+                        musicVolumeLabel.textContent = `${val}%`;
+                        localStorage.setItem('jellycats_bg_music_volume', this.bgMusicVolume.toString());
+                        
+                        if (this.bgMusic) {
+                            this.bgMusic.setVolume(this.bgMusicVolume);
+                        }
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up sound pitch range slider
+                const pitchSlider = document.getElementById('sound-pitch-slider');
+                const pitchLabel = document.getElementById('sound-pitch-value-label');
+                if (pitchSlider && pitchLabel) {
+                    pitchSlider.value = Math.round(this.soundPitchRange * 100);
+                    pitchLabel.textContent = `±${Math.round(this.soundPitchRange * 100)}%`;
+
+                    pitchSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value);
+                        this.soundPitchRange = val / 100;
+                        pitchLabel.textContent = `±${val}%`;
+                        localStorage.setItem('jellycats_sound_pitch_range', this.soundPitchRange.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Load dust settings
+                const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
+                this.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
+                
+                this.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '45');
+                this.dustScale = parseFloat(localStorage.getItem('jellycats_dust_scale') || '1.0');
+                this.dustDistribution = localStorage.getItem('jellycats_dust_distribution') || 'everywhere';
+                this.dustEdgeRatio = parseFloat(localStorage.getItem('jellycats_dust_edge_ratio') || '0.25');
+
+                // Bind dust UI controls
+                const dustToggle = document.getElementById('dust-toggle');
+                const dustCountSlider = document.getElementById('dust-count-slider');
+                const dustCountLabel = document.getElementById('dust-count-label');
+                const dustSizeSlider = document.getElementById('dust-size-slider');
+                const dustSizeLabel = document.getElementById('dust-size-label');
+                const dustDistSelect = document.getElementById('dust-dist-select');
+                const dustEdgeSlider = document.getElementById('dust-edge-slider');
+                const dustEdgeLabel = document.getElementById('dust-edge-label');
+
+                const updateDustUIState = () => {
+                    const enabled = this.dustEnabled;
+                    const isEverywhere = this.dustDistribution === 'everywhere';
+                    
+                    const elCount = document.getElementById('dust-count-container');
+                    const elSize = document.getElementById('dust-size-container');
+                    const elDist = document.getElementById('dust-dist-container');
+                    const elEdge = document.getElementById('dust-edge-container');
+
+                    if (elCount) { elCount.style.opacity = enabled ? '1' : '0.4'; elCount.style.pointerEvents = enabled ? 'auto' : 'none'; }
+                    if (elSize) { elSize.style.opacity = enabled ? '1' : '0.4'; elSize.style.pointerEvents = enabled ? 'auto' : 'none'; }
+                    if (elDist) { elDist.style.opacity = enabled ? '1' : '0.4'; elDist.style.pointerEvents = enabled ? 'auto' : 'none'; }
+                    
+                    const showEdge = enabled && !isEverywhere;
+                    if (elEdge) { elEdge.style.opacity = showEdge ? '1' : '0.4'; elEdge.style.pointerEvents = showEdge ? 'auto' : 'none'; }
+                };
+
+                this.updateDustUIState = updateDustUIState; // Save to instance to allow reset usage
+
+                if (dustToggle) {
+                    dustToggle.checked = this.dustEnabled;
+                    dustToggle.onchange = (e) => {
+                        this.dustEnabled = e.target.checked;
+                        localStorage.setItem('jellycats_dust_enabled', this.dustEnabled.toString());
+                        updateDustUIState();
+                        this.createDustParticles();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (dustCountSlider && dustCountLabel) {
+                    dustCountSlider.value = this.dustCount;
+                    dustCountLabel.textContent = this.dustCount;
+                    dustCountSlider.oninput = (e) => {
+                        this.dustCount = parseInt(e.target.value);
+                        dustCountLabel.textContent = this.dustCount;
+                        localStorage.setItem('jellycats_dust_count', this.dustCount.toString());
+                        this.createDustParticles();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (dustSizeSlider && dustSizeLabel) {
+                    dustSizeSlider.value = this.dustScale;
+                    dustSizeLabel.textContent = `${Math.round(this.dustScale * 100)}%`;
+                    dustSizeSlider.oninput = (e) => {
+                        this.dustScale = parseFloat(e.target.value);
+                        dustSizeLabel.textContent = `${Math.round(this.dustScale * 100)}%`;
+                        localStorage.setItem('jellycats_dust_scale', this.dustScale.toString());
+                        this.createDustParticles();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (dustDistSelect) {
+                    dustDistSelect.value = this.dustDistribution;
+                    dustDistSelect.onchange = (e) => {
+                        this.dustDistribution = e.target.value;
+                        localStorage.setItem('jellycats_dust_distribution', this.dustDistribution);
+                        updateDustUIState();
+                        this.createDustParticles();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (dustEdgeSlider && dustEdgeLabel) {
+                    dustEdgeSlider.value = Math.round(this.dustEdgeRatio * 100);
+                    dustEdgeLabel.textContent = `${Math.round(this.dustEdgeRatio * 100)}%`;
+                    dustEdgeSlider.oninput = (e) => {
+                        const percent = parseInt(e.target.value);
+                        this.dustEdgeRatio = percent / 100;
+                        dustEdgeLabel.textContent = `${percent}%`;
+                        localStorage.setItem('jellycats_dust_edge_ratio', this.dustEdgeRatio.toString());
+                        this.createDustParticles();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                updateDustUIState();
+
+                // Bind shadow UI controls
+                const shadowToggle = document.getElementById('shadow-toggle');
+                const shadowOpacitySlider = document.getElementById('shadow-opacity-slider');
+                const shadowOpacityLabel = document.getElementById('shadow-opacity-value-label');
+                const shadowOpacityContainer = document.getElementById('shadow-opacity-container');
+
+                const updateShadowUIState = () => {
+                    const enabled = this.shadowEnabled;
+                    if (shadowOpacityContainer) {
+                        shadowOpacityContainer.style.opacity = enabled ? '1' : '0.4';
+                        shadowOpacityContainer.style.pointerEvents = enabled ? 'auto' : 'none';
+                    }
+                };
+
+                this.updateShadowUIState = updateShadowUIState;
+
+                if (shadowToggle) {
+                    shadowToggle.checked = this.shadowEnabled;
+                    shadowToggle.onchange = (e) => {
+                        this.shadowEnabled = e.target.checked;
+                        localStorage.setItem('jellycats_shadow_enabled', this.shadowEnabled.toString());
+                        updateShadowUIState();
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (shadowOpacitySlider && shadowOpacityLabel) {
+                    shadowOpacitySlider.value = Math.round(this.shadowOpacity * 100);
+                    shadowOpacityLabel.textContent = `${Math.round(this.shadowOpacity * 100)}%`;
+                    shadowOpacitySlider.oninput = (e) => {
+                        const val = parseInt(e.target.value);
+                        this.shadowOpacity = val / 100;
+                        shadowOpacityLabel.textContent = `${val}%`;
+                        localStorage.setItem('jellycats_shadow_opacity', this.shadowOpacity.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                updateShadowUIState();
+
                 if (btnReset) {
                     btnReset.onclick = () => {
-                        this.setGlobalZoom(1.0);
-                        if (slider) slider.value = 1.0;
-
-                        this.bgScaleMultiplier = 1.0;
-                        if (bgSlider) bgSlider.value = 1.0;
-                        if (bgLabel) bgLabel.textContent = '100%';
-                        localStorage.setItem('jellycats_bg_scale_multiplier', '1.0');
-
-                        this.gridGap = 4;
-                        if (gapSlider) gapSlider.value = 4;
-                        if (gapLabel) gapLabel.textContent = '4px';
-                        localStorage.setItem('jellycats_grid_gap', '4');
-
-                        this.gridRadius = 4;
-                        if (radiusSlider) radiusSlider.value = 4;
-                        if (radiusLabel) radiusLabel.textContent = '4px';
-                        localStorage.setItem('jellycats_grid_radius', '4');
-
-                        this.glowThickness = 6;
-                        if (thickSlider) thickSlider.value = 6;
-                        if (thickLabel) thickLabel.textContent = '6px';
-                        localStorage.setItem('jellycats_glow_thickness', '6');
-
-                        this.glowBlur = 24;
-                        if (blurSlider) blurSlider.value = 24;
-                        if (blurLabel) blurLabel.textContent = '24px';
-                        localStorage.setItem('jellycats_glow_blur', '24');
-
-                        this.showBlocks = true;
-                        if (showBlocksToggle) showBlocksToggle.checked = true;
-                        localStorage.setItem('jellycats_show_blocks', 'true');
-                        this.updateBlocksVisibility();
-
-                        this.gridHighlightColor = '#10b981';
-                        if (colorPicker) colorPicker.value = '#10b981';
-                        localStorage.setItem('jellycats_grid_highlight_color', '#10b981');
-
-                        this.gridLineThickness = 2;
-                        if (lineSlider) lineSlider.value = 2;
-                        if (lineLabel) lineLabel.textContent = '2px';
-                        localStorage.setItem('jellycats_grid_line_thickness', '2');
-
-                        this.updateLayout();
+                        const profileSelect = document.getElementById('profile-select');
+                        if (profileSelect) {
+                            profileSelect.value = 'default';
+                            profileSelect.onchange();
+                        }
                     };
+                }
+            }
+
+            getCurrentSettingsState() {
+                const catSettings = {};
+                PIECE_DEFS.forEach(p => {
+                    catSettings[p.id] = {
+                        originX: p.originX,
+                        originY: p.originY,
+                        offsetX: p.offsetX,
+                        offsetY: p.offsetY,
+                        scaleX: p.scaleX,
+                        scaleY: p.scaleY
+                    };
+                });
+
+                return {
+                    globalZoom: this.currentZoom,
+                    bgScaleMultiplier: this.bgScaleMultiplier,
+                    gridGap: this.gridGap,
+                    gridRadius: this.gridRadius,
+                    glowThickness: this.glowThickness,
+                    glowBlur: this.glowBlur,
+                    showBlocks: this.showBlocks,
+                    fillOccupied: this.fillOccupied,
+                    gridHighlightColor: this.gridHighlightColor,
+                    gridLineThickness: this.gridLineThickness,
+                    jellyMultiplier: this.jellyMultiplier,
+                    jellyStiffness: this.jellyStiffness,
+                    jellyDamping: this.jellyDamping,
+                    dustEnabled: this.dustEnabled,
+                    dustCount: this.dustCount,
+                    dustScale: this.dustScale,
+                    dustDistribution: this.dustDistribution,
+                    dustEdgeRatio: this.dustEdgeRatio,
+                    soundPitchRange: this.soundPitchRange,
+                    bgMusicVolume: this.bgMusicVolume,
+                    shadowEnabled: this.shadowEnabled,
+                    shadowOpacity: this.shadowOpacity,
+                    catSettings: catSettings
+                };
+            }
+
+            applySettingsState(settings) {
+                if (!settings) return;
+
+                // 1. Update localStorage
+                if (settings.globalZoom !== undefined) localStorage.setItem('jellycats_global_zoom', settings.globalZoom.toString());
+                if (settings.bgScaleMultiplier !== undefined) localStorage.setItem('jellycats_bg_scale_multiplier', settings.bgScaleMultiplier.toString());
+                if (settings.gridGap !== undefined) localStorage.setItem('jellycats_grid_gap', settings.gridGap.toString());
+                if (settings.gridRadius !== undefined) localStorage.setItem('jellycats_grid_radius', settings.gridRadius.toString());
+                if (settings.glowThickness !== undefined) localStorage.setItem('jellycats_glow_thickness', settings.glowThickness.toString());
+                if (settings.glowBlur !== undefined) localStorage.setItem('jellycats_glow_blur', settings.glowBlur.toString());
+                if (settings.showBlocks !== undefined) localStorage.setItem('jellycats_show_blocks', settings.showBlocks.toString());
+                if (settings.fillOccupied !== undefined) localStorage.setItem('jellycats_fill_occupied', settings.fillOccupied.toString());
+                if (settings.gridHighlightColor !== undefined) localStorage.setItem('jellycats_grid_highlight_color', settings.gridHighlightColor);
+                if (settings.gridLineThickness !== undefined) localStorage.setItem('jellycats_grid_line_thickness', settings.gridLineThickness.toString());
+                if (settings.jellyMultiplier !== undefined) localStorage.setItem('jellycats_jelly_multiplier', settings.jellyMultiplier.toString());
+                if (settings.jellyStiffness !== undefined) localStorage.setItem('jellycats_stiffness', settings.jellyStiffness.toString());
+                if (settings.jellyDamping !== undefined) localStorage.setItem('jellycats_damping', settings.jellyDamping.toString());
+                if (settings.dustEnabled !== undefined) localStorage.setItem('jellycats_dust_enabled', settings.dustEnabled.toString());
+                if (settings.dustCount !== undefined) localStorage.setItem('jellycats_dust_count', settings.dustCount.toString());
+                if (settings.dustScale !== undefined) localStorage.setItem('jellycats_dust_scale', settings.dustScale.toString());
+                if (settings.dustDistribution !== undefined) localStorage.setItem('jellycats_dust_distribution', settings.dustDistribution);
+                if (settings.dustEdgeRatio !== undefined) localStorage.setItem('jellycats_dust_edge_ratio', settings.dustEdgeRatio.toString());
+                if (settings.soundPitchRange !== undefined) localStorage.setItem('jellycats_sound_pitch_range', settings.soundPitchRange.toString());
+                if (settings.bgMusicVolume !== undefined) localStorage.setItem('jellycats_bg_music_volume', settings.bgMusicVolume.toString());
+                if (settings.shadowEnabled !== undefined) localStorage.setItem('jellycats_shadow_enabled', settings.shadowEnabled.toString());
+                if (settings.shadowOpacity !== undefined) localStorage.setItem('jellycats_shadow_opacity', settings.shadowOpacity.toString());
+                
+                if (settings.catSettings) {
+                    localStorage.setItem('jellycats_editor_settings', JSON.stringify(settings.catSettings));
+                }
+
+                // 2. Update Scene Variables
+                if (settings.globalZoom !== undefined) {
+                    this.currentZoom = settings.globalZoom;
+                    this.cameras.main.setZoom(this.currentZoom);
+                }
+                if (settings.bgScaleMultiplier !== undefined) this.bgScaleMultiplier = settings.bgScaleMultiplier;
+                if (settings.gridGap !== undefined) this.gridGap = settings.gridGap;
+                if (settings.gridRadius !== undefined) this.gridRadius = settings.gridRadius;
+                if (settings.glowThickness !== undefined) this.glowThickness = settings.glowThickness;
+                if (settings.glowBlur !== undefined) this.glowBlur = settings.glowBlur;
+                if (settings.showBlocks !== undefined) this.showBlocks = settings.showBlocks;
+                if (settings.fillOccupied !== undefined) this.fillOccupied = settings.fillOccupied;
+                if (settings.gridHighlightColor !== undefined) this.gridHighlightColor = settings.gridHighlightColor;
+                if (settings.gridLineThickness !== undefined) this.gridLineThickness = settings.gridLineThickness;
+                if (settings.jellyMultiplier !== undefined) this.jellyMultiplier = settings.jellyMultiplier;
+                if (settings.jellyStiffness !== undefined) this.jellyStiffness = settings.jellyStiffness;
+                if (settings.jellyDamping !== undefined) this.jellyDamping = settings.jellyDamping;
+                if (settings.dustEnabled !== undefined) this.dustEnabled = settings.dustEnabled;
+                if (settings.dustCount !== undefined) this.dustCount = settings.dustCount;
+                if (settings.dustScale !== undefined) this.dustScale = settings.dustScale;
+                if (settings.dustDistribution !== undefined) this.dustDistribution = settings.dustDistribution;
+                if (settings.dustEdgeRatio !== undefined) this.dustEdgeRatio = settings.dustEdgeRatio;
+                if (settings.soundPitchRange !== undefined) this.soundPitchRange = settings.soundPitchRange;
+                if (settings.bgMusicVolume !== undefined) {
+                    this.bgMusicVolume = settings.bgMusicVolume;
+                    if (this.bgMusic) {
+                        this.bgMusic.setVolume(this.bgMusicVolume);
+                    }
+                }
+                if (settings.shadowEnabled !== undefined) this.shadowEnabled = settings.shadowEnabled;
+                if (settings.shadowOpacity !== undefined) this.shadowOpacity = settings.shadowOpacity;
+
+                // Update PIECE_DEFS and game pieces
+                if (settings.catSettings) {
+                    PIECE_DEFS.forEach(p => {
+                        const catSet = settings.catSettings[p.id];
+                        if (catSet) {
+                            p.originX = catSet.originX;
+                            p.originY = catSet.originY;
+                            p.offsetX = catSet.offsetX;
+                            p.offsetY = catSet.offsetY;
+                            p.scaleX = catSet.scaleX;
+                            p.scaleY = catSet.scaleY;
+
+                            // Apply immediately to the active scene piece
+                            const container = this.pieces.find(pc => pc.def.id === p.id);
+                            if (container) {
+                                const catImg = container.list.find(child => child.isCatImage);
+                                if (catImg) {
+                                    catImg.setOrigin(p.originX, p.originY);
+                                    catImg.setScale(p.scaleX, p.scaleY);
+                                    catImg.x = p.offsetX;
+                                    catImg.y = p.offsetY;
+                                    catImg.targetX = p.offsetX;
+                                    catImg.targetY = p.offsetY;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 3. Update HTML Inputs
+                const updateValue = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+                const updateText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                const updateChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+
+                if (settings.globalZoom !== undefined) {
+                    updateValue('global-zoom-slider', settings.globalZoom);
+                    updateText('zoom-value-label', `${Math.round(settings.globalZoom * 100)}%`);
+                }
+                if (settings.jellyMultiplier !== undefined) {
+                    updateValue('jelly-slider', settings.jellyMultiplier);
+                    updateText('jelly-value-label', `${Math.round(settings.jellyMultiplier * 100)}%`);
+                }
+                if (settings.jellyStiffness !== undefined) {
+                    updateValue('jelly-stiffness-slider', settings.jellyStiffness);
+                    updateText('jelly-stiffness-value-label', `${Math.round(settings.jellyStiffness * 100)}%`);
+                }
+                if (settings.jellyDamping !== undefined) {
+                    updateValue('jelly-damping-slider', settings.jellyDamping);
+                    updateText('jelly-damping-value-label', `${Math.round(settings.jellyDamping * 100)}%`);
+                }
+                if (settings.bgScaleMultiplier !== undefined) {
+                    updateValue('bg-scale-slider', settings.bgScaleMultiplier);
+                    updateText('bg-scale-value-label', `${Math.round(settings.bgScaleMultiplier * 100)}%`);
+                }
+                if (settings.gridGap !== undefined) {
+                    updateValue('grid-gap-slider', settings.gridGap);
+                    updateText('grid-gap-value-label', `${settings.gridGap}px`);
+                }
+                if (settings.gridRadius !== undefined) {
+                    updateValue('grid-radius-slider', settings.gridRadius);
+                    updateText('grid-radius-value-label', `${settings.gridRadius}px`);
+                }
+                if (settings.glowThickness !== undefined) {
+                    updateValue('glow-thickness-slider', settings.glowThickness);
+                    updateText('glow-thickness-value-label', settings.glowThickness === 0 ? 'Выкл' : `${settings.glowThickness}px`);
+                }
+                if (settings.glowBlur !== undefined) {
+                    updateValue('glow-blur-slider', settings.glowBlur);
+                    updateText('glow-blur-value-label', settings.glowBlur === 0 ? 'Резкая' : `${settings.glowBlur}px`);
+                }
+                if (settings.showBlocks !== undefined) {
+                    updateChecked('show-blocks-toggle', settings.showBlocks);
+                }
+                if (settings.fillOccupied !== undefined) {
+                    updateChecked('fill-occupied-toggle', settings.fillOccupied);
+                }
+                if (settings.gridHighlightColor !== undefined) {
+                    updateValue('grid-color-picker', settings.gridHighlightColor);
+                }
+                if (settings.gridLineThickness !== undefined) {
+                    updateValue('grid-line-slider', settings.gridLineThickness);
+                    updateText('grid-line-value-label', `${settings.gridLineThickness}px`);
+                }
+                if (settings.dustEnabled !== undefined) {
+                    updateChecked('dust-toggle', settings.dustEnabled);
+                }
+                if (settings.dustCount !== undefined) {
+                    updateValue('dust-count-slider', settings.dustCount);
+                    updateText('dust-count-label', settings.dustCount);
+                }
+                if (settings.dustScale !== undefined) {
+                    updateValue('dust-size-slider', settings.dustScale);
+                    updateText('dust-size-label', `${Math.round(settings.dustScale * 100)}%`);
+                }
+                if (settings.soundPitchRange !== undefined) {
+                    updateValue('sound-pitch-slider', Math.round(settings.soundPitchRange * 100));
+                    updateText('sound-pitch-value-label', `±${Math.round(settings.soundPitchRange * 100)}%`);
+                }
+                if (settings.bgMusicVolume !== undefined) {
+                    updateValue('bg-music-volume-slider', Math.round(settings.bgMusicVolume * 100));
+                    updateText('bg-music-volume-value-label', `${Math.round(settings.bgMusicVolume * 100)}%`);
+                }
+                if (settings.dustDistribution !== undefined) {
+                    updateValue('dust-dist-select', settings.dustDistribution);
+                }
+                if (settings.dustEdgeRatio !== undefined) {
+                    updateValue('dust-edge-slider', Math.round(settings.dustEdgeRatio * 100));
+                    updateText('dust-edge-label', `${Math.round(settings.dustEdgeRatio * 100)}%`);
+                }
+                if (settings.shadowEnabled !== undefined) {
+                    updateChecked('shadow-toggle', settings.shadowEnabled);
+                }
+                if (settings.shadowOpacity !== undefined) {
+                    updateValue('shadow-opacity-slider', Math.round(settings.shadowOpacity * 100));
+                    updateText('shadow-opacity-value-label', `${Math.round(settings.shadowOpacity * 100)}%`);
+                }
+
+                // If cat alignment editor is open, update its sliders too
+                const catSelect = document.getElementById('edit-cat-select');
+                if (catSelect) {
+                    const currentCatId = catSelect.value;
+                    const def = PIECE_DEFS.find(p => p.id === currentCatId);
+                    if (def) {
+                        const sliderX = document.getElementById('slider-offsetX');
+                        const labelX = document.getElementById('val-offsetX');
+                        if (sliderX && labelX) { sliderX.value = def.offsetX; labelX.textContent = def.offsetX; }
+
+                        const sliderY = document.getElementById('slider-offsetY');
+                        const labelY = document.getElementById('val-offsetY');
+                        if (sliderY && labelY) { sliderY.value = def.offsetY; labelY.textContent = def.offsetY; }
+
+                        const sliderScaleX = document.getElementById('slider-scaleX');
+                        const labelScaleX = document.getElementById('val-scaleX');
+                        if (sliderScaleX && labelScaleX) { sliderScaleX.value = def.scaleX; labelScaleX.textContent = def.scaleX; }
+
+                        const sliderScaleY = document.getElementById('slider-scaleY');
+                        const labelScaleY = document.getElementById('val-scaleY');
+                        if (sliderScaleY && labelScaleY) { sliderScaleY.value = def.scaleY; labelScaleY.textContent = def.scaleY; }
+
+                        const sliderOriginX = document.getElementById('slider-originX');
+                        const labelOriginX = document.getElementById('val-originX');
+                        if (sliderOriginX && labelOriginX) { sliderOriginX.value = def.originX; labelOriginX.textContent = def.originX; }
+
+                        const sliderOriginY = document.getElementById('slider-originY');
+                        const labelOriginY = document.getElementById('val-originY');
+                        if (sliderOriginY && labelOriginY) { sliderOriginY.value = def.originY; labelOriginY.textContent = def.originY; }
+                    }
+                }
+
+                // 4. Trigger scene updates
+                if (this.updateDustUIState) this.updateDustUIState();
+                if (this.updateShadowUIState) this.updateShadowUIState();
+                this.updateBlocksVisibility();
+                this.updateLayout(); // This will also call drawBoard() and refresh background scaling
+                this.createDustParticles();
+            }
+
+            autosaveActiveProfile() {
+                const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+                if (activeProfile && activeProfile !== 'default') {
+                    const profiles = JSON.parse(localStorage.getItem('jellycats_profiles') || '{}');
+                    profiles[activeProfile] = this.getCurrentSettingsState();
+                    localStorage.setItem('jellycats_profiles', JSON.stringify(profiles));
+                }
+            }
+
+            initProfiles() {
+                const scene = this;
+                const profileSelect = document.getElementById('profile-select');
+                const btnSave = document.getElementById('btn-profile-save');
+                const btnDelete = document.getElementById('btn-profile-delete');
+                const profileNameInput = document.getElementById('profile-name-input');
+                const btnExport = document.getElementById('btn-json-export');
+                const btnImport = document.getElementById('btn-json-import');
+                const fileInput = document.getElementById('json-file-input');
+
+                // Define default backup settings state (for Reset/Default profile)
+                const defaultState = {
+                    globalZoom: 1.0,
+                    bgScaleMultiplier: 1.0,
+                    gridGap: 4,
+                    gridRadius: 4,
+                    glowThickness: 6,
+                    glowBlur: 24,
+                    showBlocks: true,
+                    fillOccupied: false,
+                    gridHighlightColor: '#10b981',
+                    gridLineThickness: 2,
+                    jellyMultiplier: 1.0,
+                    jellyStiffness: 0.35,
+                    jellyDamping: 0.55,
+                    dustEnabled: true,
+                    dustCount: 45,
+                    dustScale: 1.0,
+                    dustDistribution: 'everywhere',
+                    dustEdgeRatio: 0.25,
+                    soundPitchRange: 0.2,
+                    bgMusicVolume: 0.5,
+                    shadowEnabled: true,
+                    shadowOpacity: 0.25,
+                    catSettings: {
+                        orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
+                        creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
+                        graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
+                        calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
+                        blackLong: { originX: 0.5, originY: 0.5, offsetX: 9, offsetY: 15, scaleX: 0.5, scaleY: 0.7 }
+                    }
+                };
+
+                // Load profiles dictionary from localStorage
+                function getSavedProfiles() {
+                    return JSON.parse(localStorage.getItem('jellycats_profiles') || '{}');
+                }
+
+                function saveProfiles(profiles) {
+                    localStorage.setItem('jellycats_profiles', JSON.stringify(profiles));
+                }
+
+                // Render profiles select options
+                function renderProfiles() {
+                    // Clear select
+                    profileSelect.innerHTML = '<option value="default">✨ По умолчанию</option>';
+                    
+                    const profiles = getSavedProfiles();
+                    for (let name in profiles) {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = `📁 ${name}`;
+                        profileSelect.appendChild(option);
+                    }
+
+                    // Restore selected profile from localStorage
+                    const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+                    if (profiles[activeProfile] || activeProfile === 'default') {
+                        profileSelect.value = activeProfile;
+                    } else {
+                        profileSelect.value = 'default';
+                        localStorage.setItem('jellycats_active_profile', 'default');
+                    }
+
+                    // Toggle delete button
+                    if (profileSelect.value === 'default') {
+                        btnDelete.classList.add('hidden');
+                    } else {
+                        btnDelete.classList.remove('hidden');
+                    }
+                }
+
+                // 1. Handle profile selection
+                profileSelect.onchange = () => {
+                    const selected = profileSelect.value;
+                    localStorage.setItem('jellycats_active_profile', selected);
+                    
+                    if (selected === 'default') {
+                        scene.applySettingsState(defaultState);
+                        btnDelete.classList.add('hidden');
+                    } else {
+                        const profiles = getSavedProfiles();
+                        const state = profiles[selected];
+                        if (state) {
+                            scene.applySettingsState(state);
+                        }
+                        btnDelete.classList.remove('hidden');
+                    }
+                };
+
+                // 2. Save profile
+                btnSave.onclick = () => {
+                    let name = profileNameInput.value.trim();
+                    if (!name) {
+                        alert('Мой господин, пожалуйста, введите имя для нового профиля.');
+                        return;
+                    }
+
+                    const state = scene.getCurrentSettingsState();
+                    const profiles = getSavedProfiles();
+                    profiles[name] = state;
+                    saveProfiles(profiles);
+
+                    localStorage.setItem('jellycats_active_profile', name);
+                    profileNameInput.value = '';
+                    renderProfiles();
+                };
+
+                // 3. Delete profile
+                btnDelete.onclick = () => {
+                    const selected = profileSelect.value;
+                    if (selected === 'default') return;
+
+                    if (confirm(`Мой господин, вы уверены, что хотите удалить профиль "${selected}"?`)) {
+                        const profiles = getSavedProfiles();
+                        delete profiles[selected];
+                        saveProfiles(profiles);
+                        
+                        localStorage.setItem('jellycats_active_profile', 'default');
+                        renderProfiles();
+                        scene.applySettingsState(defaultState);
+                    }
+                };
+
+                // 4. Export to JSON file
+                btnExport.onclick = () => {
+                    const state = scene.getCurrentSettingsState();
+                    const activeName = profileSelect.value === 'default' ? 'Default' : profileSelect.value;
+                    const exportData = {
+                        app: 'Jellycats',
+                        version: 'v2',
+                        profileName: activeName,
+                        settings: state
+                    };
+
+                    const jsonString = JSON.stringify(exportData, null, 4);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `jellycats_settings_${activeName.replace(/[^a-z0-9а-яё_-]/gi, '_')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                // 5. Import from JSON file
+                btnImport.onclick = () => {
+                    fileInput.click();
+                };
+
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (data.app !== 'Jellycats') {
+                                throw new Error('Некорректный формат файла настроек.');
+                            }
+
+                            const importedSettings = data.settings;
+                            if (!importedSettings) {
+                                throw new Error('В файле отсутствуют настройки.');
+                            }
+
+                            // Use file name or saved profile name
+                            let profileName = data.profileName || 'Импортированный';
+                            if (profileName === 'Default') profileName = 'Импортированный дефолт';
+
+                            // Ensure name uniqueness
+                            const profiles = getSavedProfiles();
+                            let uniqueName = profileName;
+                            let counter = 1;
+                            while (profiles[uniqueName] || uniqueName === 'default') {
+                                uniqueName = `${profileName} (${counter})`;
+                                counter++;
+                            }
+
+                            // Save as a new custom profile
+                            profiles[uniqueName] = importedSettings;
+                            saveProfiles(profiles);
+
+                            // Apply imported settings immediately
+                            localStorage.setItem('jellycats_active_profile', uniqueName);
+                            renderProfiles();
+                            scene.applySettingsState(importedSettings);
+
+                            // Clear input
+                            fileInput.value = '';
+                        } catch (err) {
+                            alert(`Ошибка импорта настроек: ${err.message}`);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+                // Initialize dropdown options
+                renderProfiles();
+                
+                // If startup profile is not default, apply it!
+                const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+                if (activeProfile !== 'default') {
+                    const profiles = getSavedProfiles();
+                    const state = profiles[activeProfile];
+                    if (state) {
+                        scene.applySettingsState(state);
+                    }
                 }
             }
 
@@ -1293,6 +2533,186 @@
 
                 // Save to localStorage
                 localStorage.setItem('jellycats_global_zoom', zoomVal.toString());
+            }
+
+            createDustParticles() {
+                // Clear any existing particles
+                if (this.dustParticles) {
+                    this.dustParticles.forEach(p => p.destroy());
+                }
+                this.dustParticles = [];
+
+                if (!this.dustEnabled) return;
+
+                const numParticles = this.dustCount !== undefined ? this.dustCount : 45;
+                const sizeMult = this.dustScale !== undefined ? this.dustScale : 1.0;
+
+                for (let i = 0; i < numParticles; i++) {
+                    let coords = this.getParticleCoordsByDistribution(this.dustDistribution || 'everywhere');
+                    let particle = this.add.image(coords.x, coords.y, 'dust_particle');
+                    
+                    // Apply user-defined size multiplier to scale range (base range is 0.25 to 1.0)
+                    let scale = Phaser.Math.FloatBetween(0.25, 1.0) * sizeMult;
+                    particle.setScale(scale);
+                    
+                    // Background particles (scale < 0.5 * sizeMult) placed at -5 (behind pieces, in front of wallpaper)
+                    // Foreground particles placed at 15 (floating in front of cats and grid!)
+                    let depth = scale < 0.5 * sizeMult ? -5 : 15;
+                    particle.setDepth(depth);
+                    
+                    // Higher alpha values so particles are clearly visible on the light rug background
+                    let maxAlpha = Phaser.Math.FloatBetween(0.35, 0.75);
+                    particle.maxAlpha = maxAlpha;
+                    particle.setAlpha(0); // Start at 0 to fade in smoothly
+                    
+                    // Add beautiful soft warm tints representing cozy sunlit room dust
+                    const warmTints = [0xffffff, 0xfff9e6, 0xfff2d4, 0xffe9be];
+                    let randomTint = Phaser.Utils.Array.GetRandom(warmTints);
+                    particle.setTint(randomTint);
+                    
+                    // Save particle properties
+                    particle.baseSpeedX = Phaser.Math.FloatBetween(-0.25, 0.25);
+                    particle.baseSpeedY = Phaser.Math.FloatBetween(-0.15, -0.6); // Drifts upwards
+                    
+                    particle.swaySpeed = Phaser.Math.FloatBetween(0.0008, 0.0025);
+                    particle.swayAmount = Phaser.Math.FloatBetween(0.3, 1.0);
+                    particle.swayPhase = Phaser.Math.FloatBetween(0, Math.PI * 2);
+                    
+                    // Interactive velocity (for mouse push)
+                    particle.vx = 0;
+                    particle.vy = 0;
+                    
+                    // Smooth fade-in progress on startup
+                    particle.fadeInProgress = 0;
+                    particle.fadeInSpeed = Phaser.Math.FloatBetween(0.01, 0.025);
+                    
+                    this.dustParticles.push(particle);
+                }
+            }
+
+            getBackgroundBounds() {
+                let w = this.scale.width;
+                let h = this.scale.height;
+                let centerX = this.boardX + (this.cs * 4) / 2;
+                let centerY = this.boardY + (this.cs * 4) / 2;
+
+                // Calculate current scaled background size
+                let targetBgScale = (this.cs * 4) / 480;
+                let minScaleX = Math.max(2 * centerX / 1672, 2 * (w - centerX) / 1672);
+                let minScaleY = Math.max(2 * centerY / 941, 2 * (h - centerY) / 941);
+                let minScale = Math.max(minScaleX, minScaleY);
+                let bgMultiplier = this.bgScaleMultiplier !== undefined ? this.bgScaleMultiplier : parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+                let baseScale = Math.max(targetBgScale, minScale);
+                let finalBgScale = baseScale * bgMultiplier;
+
+                let bgW = 1672 * finalBgScale;
+                let bgH = 941 * finalBgScale;
+
+                return {
+                    left: centerX - bgW / 2,
+                    right: centerX + bgW / 2,
+                    top: centerY - bgH / 2,
+                    bottom: centerY + bgH / 2,
+                    width: bgW,
+                    height: bgH
+                };
+            }
+
+            getParticleCoordsByDistribution(dist) {
+                let bounds = this.getBackgroundBounds();
+                let x, y;
+                
+                // Use dustEdgeRatio setting, defaulting to 25% (0.25)
+                let edgeRatio = this.dustEdgeRatio !== undefined ? this.dustEdgeRatio : 0.25;
+
+                if (dist === 'sides') {
+                    // Left edgeRatio or Right edgeRatio of the background width
+                    if (Phaser.Math.Between(0, 1) === 0) {
+                        x = Phaser.Math.Between(bounds.left, bounds.left + bounds.width * edgeRatio);
+                    } else {
+                        x = Phaser.Math.Between(bounds.right - bounds.width * edgeRatio, bounds.right);
+                    }
+                    y = Phaser.Math.Between(bounds.top, bounds.bottom);
+                } else if (dist === 'top') {
+                    // Top edgeRatio of the background height
+                    x = Phaser.Math.Between(bounds.left, bounds.right);
+                    y = Phaser.Math.Between(bounds.top, bounds.top + bounds.height * edgeRatio);
+                } else if (dist === 'bottom') {
+                    // Bottom edgeRatio of the background height
+                    x = Phaser.Math.Between(bounds.left, bounds.right);
+                    y = Phaser.Math.Between(bounds.bottom - bounds.height * edgeRatio, bounds.bottom);
+                } else {
+                    // everywhere across the physical background
+                    x = Phaser.Math.Between(bounds.left, bounds.right);
+                    y = Phaser.Math.Between(bounds.top, bounds.bottom);
+                }
+
+                return { x, y };
+            }
+
+            updateDustParticles(time, delta) {
+                if (!this.dustEnabled || !this.dustParticles) {
+                    if (this.dustParticles && this.dustParticles.length > 0) {
+                        this.dustParticles.forEach(p => p.destroy());
+                        this.dustParticles = [];
+                    }
+                    return;
+                }
+
+                // Get physical background bounds once per frame for optimal performance
+                let bounds = this.getBackgroundBounds();
+                let pointer = this.input.activePointer;
+
+                this.dustParticles.forEach(p => {
+                    // 1. Gently fade in on start
+                    if (p.fadeInProgress < 1) {
+                        p.fadeInProgress += p.fadeInSpeed * (delta / 16.6);
+                        p.setAlpha(Phaser.Math.Linear(0, p.maxAlpha, Math.min(p.fadeInProgress, 1)));
+                    } else {
+                        // Breathe effect: slow alpha pulsation so they look alive
+                        let breathe = Math.sin(time * p.swaySpeed + p.swayPhase) * 0.15;
+                        p.setAlpha(Phaser.Math.Clamp(p.maxAlpha + breathe, 0.2, 0.85));
+                    }
+
+                    // 2. Slow natural drift + sinusoidal horizontal sway
+                    let sway = Math.sin(time * p.swaySpeed + p.swayPhase) * p.swayAmount;
+                    let driftX = p.baseSpeedX + sway;
+                    let driftY = p.baseSpeedY;
+
+                    // 3. Mouse repulsion (interactive wind)
+                    let dx = p.x - pointer.worldX;
+                    let dy = p.y - pointer.worldY;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    const pushRadius = 150; // Distance of mouse influence
+
+                    if (dist < pushRadius && dist > 1) {
+                        // Stronger push the closer the mouse is
+                        let force = (pushRadius - dist) / pushRadius;
+                        let pushAngle = Math.atan2(dy, dx);
+                        
+                        // Add to velocity
+                        p.vx += Math.cos(pushAngle) * force * 0.6 * (delta / 16.6);
+                        p.vy += Math.sin(pushAngle) * force * 0.6 * (delta / 16.6);
+                    }
+
+                    // Apply velocities with damping (friction)
+                    p.x += (driftX + p.vx) * (delta / 16.6);
+                    p.y += (driftY + p.vy) * (delta / 16.6);
+
+                    // Slow down repulsion velocity over time (friction)
+                    p.vx *= 0.93;
+                    p.vy *= 0.93;
+
+                    // 4. Wrap around physical background edges smoothly within distribution zone
+                    const margin = 20;
+                    if (p.y < bounds.top - margin || p.y > bounds.bottom + margin || p.x < bounds.left - margin || p.x > bounds.right + margin) {
+                        let coords = this.getParticleCoordsByDistribution(this.dustDistribution);
+                        p.x = coords.x;
+                        p.y = coords.y;
+                        p.fadeInProgress = 0;
+                        p.setAlpha(0);
+                    }
+                });
             }
 
             initEditor() {
@@ -1414,6 +2834,7 @@
                     }
 
                     saveToLocalStorage();
+                    scene.autosaveActiveProfile();
                 }
 
                 // Attach slider listeners
