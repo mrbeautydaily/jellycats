@@ -77,14 +77,14 @@ class SoundManager {
         const scene = this.scene;
         scene.sfxVolume = parseFloat(localStorage.getItem('jellycats_sfx_volume') || '0.8');
         scene.meowVolume = parseFloat(localStorage.getItem('jellycats_meow_volume') || '0.8');
-        scene.swooshVolume = parseFloat(localStorage.getItem('jellycats_swoosh_volume') || '0.8');
-        scene.putVolume = parseFloat(localStorage.getItem('jellycats_put_volume') || '0.8');
+        scene.swooshVolume = parseFloat(localStorage.getItem('jellycats_swoosh_volume') || '0.6');
+        scene.putVolume = parseFloat(localStorage.getItem('jellycats_put_volume') || '0.25');
         scene.returnVolume = parseFloat(localStorage.getItem('jellycats_return_volume') || '0.8');
-        scene.winVolume = parseFloat(localStorage.getItem('jellycats_win_volume') || '0.8');
-        scene.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'card-place-1';
-        scene.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Fast_1';
-        scene.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_achievement_pop';
-        scene.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
+        scene.winVolume = parseFloat(localStorage.getItem('jellycats_win_volume') || '0.5');
+        scene.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
+        scene.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
+        scene.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
+        scene.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
     }
 
     /**

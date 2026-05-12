@@ -6,23 +6,23 @@ class ProfileManager {
     constructor(scene) {
         this.scene = scene;
         this.defaultState = {
-            globalZoom: 1.0, bgScaleMultiplier: 1.0, gridGap: 4, gridRadius: 4,
-            glowThickness: 6, glowBlur: 24, showBlocks: true, fillOccupied: false,
-            gridHighlightColor: '#10b981', gridLineThickness: 2,
-            jellyMultiplier: 1.0, jellyStiffness: 0.35, jellyDamping: 0.55,
-            breatheSpeedScale: 1.0, breatheAmpScale: 1.0,
-            dustEnabled: true, dustCount: 45, dustScale: 1.0, dustDistribution: 'everywhere', dustEdgeRatio: 0.25,
-            soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.8,
-            putVolume: 0.8, returnVolume: 0.8, winVolume: 0.8, bgMusicVolume: 0.5,
+            globalZoom: 0.6, bgScaleMultiplier: 1.0, gridGap: 7, gridRadius: 4,
+            glowThickness: 6, glowBlur: 3, showBlocks: false, fillOccupied: true,
+            gridHighlightColor: '#3cc85f', gridLineThickness: 3,
+            jellyMultiplier: 0.6, jellyStiffness: 0.35, jellyDamping: 0.55,
+            breatheSpeedScale: 1.2, breatheAmpScale: 1.2,
+            dustEnabled: true, dustCount: 85, dustScale: 1.0, dustDistribution: 'sides', dustEdgeRatio: 0.25,
+            soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.6,
+            putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, bgMusicVolume: 0.6,
             shadowEnabled: true, shadowOpacity: 0.25,
-            rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Fast_1',
-            placementSound: 'card-place-1', winSound: 'win_achievement_pop',
+            rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
+            placementSound: 'click3', winSound: 'win_levelup_05',
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
                 creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
                 graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
                 calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
-                blackLong: { originX: 0.5, originY: 0.5, offsetX: 9, offsetY: 15, scaleX: 0.5, scaleY: 0.7 }
+                blackLong: { originX: 0.5, originY: 0.5, offsetX: -1, offsetY: 147, scaleX: 0.5, scaleY: 0.7 }
             }
         };
     }

@@ -4,13 +4,49 @@ const DEFAULT_SETTINGS = {
     creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
     graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
     calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
-    blackLong: { originX: 0.5, originY: 0.5, offsetX: 9, offsetY: 15, scaleX: 0.5, scaleY: 0.7 }
+    blackLong: { originX: 0.5, originY: 0.5, offsetX: -1, offsetY: 147, scaleX: 0.5, scaleY: 0.7 }
 };
 
-// Ensure new custom offsets are loaded by clearing old localStorage once
-if (localStorage.getItem('jellycats_settings_version') !== 'v2') {
-    localStorage.removeItem('jellycats_editor_settings');
-    localStorage.setItem('jellycats_settings_version', 'v2');
+// Ensure updated defaults are loaded once without deleting saved profiles.
+if (localStorage.getItem('jellycats_settings_version') !== 'v3') {
+    [
+        'jellycats_editor_settings',
+        'jellycats_global_zoom',
+        'jellycats_bg_scale_multiplier',
+        'jellycats_selected_rotation_sound',
+        'jellycats_selected_return_sound',
+        'jellycats_selected_placement_sound',
+        'jellycats_selected_win_sound',
+        'jellycats_jelly_multiplier',
+        'jellycats_stiffness',
+        'jellycats_damping',
+        'jellycats_breathe_speed_scale',
+        'jellycats_breathe_amp_scale',
+        'jellycats_grid_gap',
+        'jellycats_grid_radius',
+        'jellycats_glow_thickness',
+        'jellycats_glow_blur',
+        'jellycats_show_blocks',
+        'jellycats_fill_occupied',
+        'jellycats_grid_highlight_color',
+        'jellycats_grid_line_thickness',
+        'jellycats_sound_pitch_range',
+        'jellycats_sfx_volume',
+        'jellycats_meow_volume',
+        'jellycats_swoosh_volume',
+        'jellycats_put_volume',
+        'jellycats_return_volume',
+        'jellycats_win_volume',
+        'jellycats_bg_music_volume',
+        'jellycats_shadow_enabled',
+        'jellycats_shadow_opacity',
+        'jellycats_dust_enabled',
+        'jellycats_dust_count',
+        'jellycats_dust_scale',
+        'jellycats_dust_distribution',
+        'jellycats_dust_edge_ratio'
+    ].forEach(key => localStorage.removeItem(key));
+    localStorage.setItem('jellycats_settings_version', 'v3');
 }
 
 // Load modified settings from localStorage (if any)

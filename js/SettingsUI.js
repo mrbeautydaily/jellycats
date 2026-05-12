@@ -11,36 +11,39 @@ class SettingsUI {
         const s = this.scene; // shorthand
 
         // --- Load all settings from localStorage ---
-        s.currentZoom = parseFloat(localStorage.getItem('jellycats_global_zoom') || '1.0');
+        s.currentZoom = parseFloat(localStorage.getItem('jellycats_global_zoom') || '0.6');
         s.cameras.main.setZoom(s.currentZoom);
         s.bgScaleMultiplier = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
         s.selectedRotationSound = localStorage.getItem('jellycats_selected_rotation_sound') || 'SFX_Movement_Swoosh_Fast_1';
-        s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Fast_1';
-        s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'card-place-1';
-        s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_achievement_pop';
-        s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '1.0');
+        s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
+        s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
+        s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
+        s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '0.6');
         s.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
         s.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
-        s.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.0');
-        s.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.0');
-        s.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
+        s.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.2');
+        s.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.2');
+        s.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '7');
         s.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
         s.glowThickness = parseFloat(localStorage.getItem('jellycats_glow_thickness') || '6');
-        s.glowBlur = parseInt(localStorage.getItem('jellycats_glow_blur') || '24');
+        s.glowBlur = parseInt(localStorage.getItem('jellycats_glow_blur') || '3');
         const savedShowBlocks = localStorage.getItem('jellycats_show_blocks');
-        s.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : true;
+        s.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : false;
         const savedFillOccupied = localStorage.getItem('jellycats_fill_occupied');
-        s.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : false;
-        s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#10b981';
-        s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '2');
+        s.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : true;
+        s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#3cc85f';
+        s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '3');
         s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
-        s.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
+        s.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
         const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
         s.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
-        s.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '45');
+        s.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '85');
         s.dustScale = parseFloat(localStorage.getItem('jellycats_dust_scale') || '1.0');
-        s.dustDistribution = localStorage.getItem('jellycats_dust_distribution') || 'everywhere';
+        s.dustDistribution = localStorage.getItem('jellycats_dust_distribution') || 'sides';
         s.dustEdgeRatio = parseFloat(localStorage.getItem('jellycats_dust_edge_ratio') || '0.25');
+        const savedShadowEnabled = localStorage.getItem('jellycats_shadow_enabled');
+        s.shadowEnabled = savedShadowEnabled !== null ? savedShadowEnabled === 'true' : true;
+        s.shadowOpacity = parseFloat(localStorage.getItem('jellycats_shadow_opacity') || '0.25');
 
         // --- Bind all UI controls ---
         this._bindSoundSelectors();
@@ -166,13 +169,13 @@ class SettingsUI {
         // Meow volume
         this._bindVolumeSlider('meow-volume-slider', 'meow-volume-value-label', 'meowVolume', 'jellycats_meow_volume');
         // Swoosh volume
-        this._bindVolumeSlider('swoosh-volume-slider', 'swoosh-volume-value-label', 'swooshVolume', 'jellycats_swoosh_volume');
+        this._bindVolumeSlider('swoosh-volume-slider', 'swoosh-volume-value-label', 'swooshVolume', 'jellycats_swoosh_volume', 0.6);
         // Put volume
-        this._bindVolumeSlider('put-volume-slider', 'put-volume-value-label', 'putVolume', 'jellycats_put_volume');
+        this._bindVolumeSlider('put-volume-slider', 'put-volume-value-label', 'putVolume', 'jellycats_put_volume', 0.25);
         // Return volume
         this._bindVolumeSlider('return-volume-slider', 'return-volume-value-label', 'returnVolume', 'jellycats_return_volume');
         // Win volume
-        this._bindVolumeSlider('win-volume-slider', 'win-volume-value-label', 'winVolume', 'jellycats_win_volume');
+        this._bindVolumeSlider('win-volume-slider', 'win-volume-value-label', 'winVolume', 'jellycats_win_volume', 0.5);
 
         // Grid highlight color
         const colorPicker = document.getElementById('grid-color-picker');
@@ -388,12 +391,12 @@ class SettingsUI {
         }
     }
 
-    _bindVolumeSlider(sliderId, labelId, propName, storageKey) {
+    _bindVolumeSlider(sliderId, labelId, propName, storageKey, defaultValue = 0.8) {
         const s = this.scene;
         const slider = document.getElementById(sliderId);
         const label = document.getElementById(labelId);
         if (slider) {
-            slider.value = Math.round((s[propName] !== undefined ? s[propName] : 0.8) * 100);
+            slider.value = Math.round((s[propName] !== undefined ? s[propName] : defaultValue) * 100);
             if (label) label.textContent = `${slider.value}%`;
             slider.oninput = (e) => {
                 const val = parseInt(e.target.value) / 100;
