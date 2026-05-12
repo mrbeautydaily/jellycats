@@ -1,0 +1,311 @@
+/**
+ * ProfileManager — manages settings profiles: save/load/delete, export/import JSON, autosave.
+ * Includes getCurrentState() and applyState() for full settings snapshots.
+ */
+class ProfileManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.defaultState = {
+            globalZoom: 1.0, bgScaleMultiplier: 1.0, gridGap: 4, gridRadius: 4,
+            glowThickness: 6, glowBlur: 24, showBlocks: true, fillOccupied: false,
+            gridHighlightColor: '#10b981', gridLineThickness: 2,
+            jellyMultiplier: 1.0, jellyStiffness: 0.35, jellyDamping: 0.55,
+            breatheSpeedScale: 1.0, breatheAmpScale: 1.0,
+            dustEnabled: true, dustCount: 45, dustScale: 1.0, dustDistribution: 'everywhere', dustEdgeRatio: 0.25,
+            soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.8,
+            putVolume: 0.8, returnVolume: 0.8, winVolume: 0.8, bgMusicVolume: 0.5,
+            shadowEnabled: true, shadowOpacity: 0.25,
+            rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Fast_1',
+            placementSound: 'card-place-1', winSound: 'win_achievement_pop',
+            catSettings: {
+                orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
+                creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
+                graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
+                calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
+                blackLong: { originX: 0.5, originY: 0.5, offsetX: 9, offsetY: 15, scaleX: 0.5, scaleY: 0.7 }
+            }
+        };
+    }
+
+    init() {
+        const scene = this.scene;
+        const self = this;
+        const profileSelect = document.getElementById('profile-select');
+        const btnSave = document.getElementById('btn-profile-save');
+        const btnDelete = document.getElementById('btn-profile-delete');
+        const profileNameInput = document.getElementById('profile-name-input');
+        const btnExport = document.getElementById('btn-json-export');
+        const btnImport = document.getElementById('btn-json-import');
+        const fileInput = document.getElementById('json-file-input');
+
+        function getSavedProfiles() { return JSON.parse(localStorage.getItem('jellycats_profiles') || '{}'); }
+        function saveProfiles(profiles) { localStorage.setItem('jellycats_profiles', JSON.stringify(profiles)); }
+
+        function renderProfiles() {
+            profileSelect.innerHTML = '<option value="default">✨ По умолчанию</option>';
+            const profiles = getSavedProfiles();
+            for (let name in profiles) {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = `📁 ${name}`;
+                profileSelect.appendChild(option);
+            }
+            const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+            if (profiles[activeProfile] || activeProfile === 'default') {
+                profileSelect.value = activeProfile;
+            } else {
+                profileSelect.value = 'default';
+                localStorage.setItem('jellycats_active_profile', 'default');
+            }
+            btnDelete.classList.toggle('hidden', profileSelect.value === 'default');
+        }
+
+        profileSelect.onchange = () => {
+            const selected = profileSelect.value;
+            localStorage.setItem('jellycats_active_profile', selected);
+            if (selected === 'default') {
+                self.applyState(self.defaultState);
+                btnDelete.classList.add('hidden');
+            } else {
+                const state = getSavedProfiles()[selected];
+                if (state) self.applyState(state);
+                btnDelete.classList.remove('hidden');
+            }
+        };
+
+        btnSave.onclick = () => {
+            let name = profileNameInput.value.trim();
+            if (!name) { alert('Мой господин, пожалуйста, введите имя для нового профиля.'); return; }
+            const profiles = getSavedProfiles();
+            profiles[name] = self.getCurrentState();
+            saveProfiles(profiles);
+            localStorage.setItem('jellycats_active_profile', name);
+            profileNameInput.value = '';
+            renderProfiles();
+        };
+
+        btnDelete.onclick = () => {
+            const selected = profileSelect.value;
+            if (selected === 'default') return;
+            if (confirm(`Мой господин, вы уверены, что хотите удалить профиль "${selected}"?`)) {
+                const profiles = getSavedProfiles();
+                delete profiles[selected];
+                saveProfiles(profiles);
+                localStorage.setItem('jellycats_active_profile', 'default');
+                renderProfiles();
+                self.applyState(self.defaultState);
+            }
+        };
+
+        btnExport.onclick = () => {
+            const state = self.getCurrentState();
+            const activeName = profileSelect.value === 'default' ? 'Default' : profileSelect.value;
+            const exportData = { app: 'Jellycats', version: 'v2', profileName: activeName, settings: state };
+            const blob = new Blob([JSON.stringify(exportData, null, 4)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jellycats_settings_${activeName.replace(/[^a-z0-9а-яё_-]/gi, '_')}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        btnImport.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.app !== 'Jellycats') throw new Error('Некорректный формат файла настроек.');
+                    if (!data.settings) throw new Error('В файле отсутствуют настройки.');
+                    let profileName = data.profileName || 'Импортированный';
+                    if (profileName === 'Default') profileName = 'Импортированный дефолт';
+                    const profiles = getSavedProfiles();
+                    let uniqueName = profileName; let counter = 1;
+                    while (profiles[uniqueName] || uniqueName === 'default') { uniqueName = `${profileName} (${counter})`; counter++; }
+                    profiles[uniqueName] = data.settings;
+                    saveProfiles(profiles);
+                    localStorage.setItem('jellycats_active_profile', uniqueName);
+                    renderProfiles();
+                    self.applyState(data.settings);
+                    fileInput.value = '';
+                } catch (err) { alert(`Ошибка импорта настроек: ${err.message}`); }
+            };
+            reader.readAsText(file);
+        };
+
+        renderProfiles();
+        const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+        if (activeProfile !== 'default') {
+            const state = getSavedProfiles()[activeProfile];
+            if (state) self.applyState(state);
+        }
+    }
+
+    autosave() {
+        const activeProfile = localStorage.getItem('jellycats_active_profile') || 'default';
+        if (activeProfile && activeProfile !== 'default') {
+            const profiles = JSON.parse(localStorage.getItem('jellycats_profiles') || '{}');
+            profiles[activeProfile] = this.getCurrentState();
+            localStorage.setItem('jellycats_profiles', JSON.stringify(profiles));
+        }
+    }
+
+    getCurrentState() {
+        const s = this.scene;
+        const catSettings = {};
+        PIECE_DEFS.forEach(p => {
+            catSettings[p.id] = { originX: p.originX, originY: p.originY, offsetX: p.offsetX, offsetY: p.offsetY, scaleX: p.scaleX, scaleY: p.scaleY };
+        });
+        return {
+            globalZoom: s.currentZoom, bgScaleMultiplier: s.bgScaleMultiplier,
+            gridGap: s.gridGap, gridRadius: s.gridRadius, glowThickness: s.glowThickness, glowBlur: s.glowBlur,
+            showBlocks: s.showBlocks, fillOccupied: s.fillOccupied,
+            gridHighlightColor: s.gridHighlightColor, gridLineThickness: s.gridLineThickness,
+            jellyMultiplier: s.jellyMultiplier, jellyStiffness: s.jellyStiffness, jellyDamping: s.jellyDamping,
+            breatheSpeedScale: s.breatheSpeedScale, breatheAmpScale: s.breatheAmpScale,
+            dustEnabled: s.dustEnabled, dustCount: s.dustCount, dustScale: s.dustScale,
+            dustDistribution: s.dustDistribution, dustEdgeRatio: s.dustEdgeRatio,
+            soundPitchRange: s.soundPitchRange,
+            sfxVolume: s.sfxVolume !== undefined ? s.sfxVolume : 0.8,
+            meowVolume: s.meowVolume !== undefined ? s.meowVolume : 0.8,
+            swooshVolume: s.swooshVolume !== undefined ? s.swooshVolume : 0.8,
+            putVolume: s.putVolume !== undefined ? s.putVolume : 0.8,
+            returnVolume: s.returnVolume !== undefined ? s.returnVolume : 0.8,
+            winVolume: s.winVolume !== undefined ? s.winVolume : 0.8,
+            bgMusicVolume: s.bgMusicVolume,
+            shadowEnabled: s.shadowEnabled, shadowOpacity: s.shadowOpacity,
+            rotationSound: s.selectedRotationSound || 'SFX_Movement_Swoosh_Fast_1',
+            returnSound: s.selectedReturnSound || 'SFX_Movement_Swoosh_Fast_1',
+            placementSound: s.selectedPlacementSound || 'card-place-1',
+            winSound: s.selectedWinSound || 'win_achievement_pop',
+            catSettings: catSettings
+        };
+    }
+
+    applyState(settings) {
+        if (!settings) return;
+        const s = this.scene;
+
+        // 1. Update localStorage
+        const lsMap = {
+            globalZoom: 'jellycats_global_zoom', bgScaleMultiplier: 'jellycats_bg_scale_multiplier',
+            gridGap: 'jellycats_grid_gap', gridRadius: 'jellycats_grid_radius',
+            glowThickness: 'jellycats_glow_thickness', glowBlur: 'jellycats_glow_blur',
+            showBlocks: 'jellycats_show_blocks', fillOccupied: 'jellycats_fill_occupied',
+            gridHighlightColor: 'jellycats_grid_highlight_color', gridLineThickness: 'jellycats_grid_line_thickness',
+            jellyMultiplier: 'jellycats_jelly_multiplier', jellyStiffness: 'jellycats_stiffness', jellyDamping: 'jellycats_damping',
+            breatheSpeedScale: 'jellycats_breathe_speed_scale', breatheAmpScale: 'jellycats_breathe_amp_scale',
+            dustEnabled: 'jellycats_dust_enabled', dustCount: 'jellycats_dust_count', dustScale: 'jellycats_dust_scale',
+            dustDistribution: 'jellycats_dust_distribution', dustEdgeRatio: 'jellycats_dust_edge_ratio',
+            soundPitchRange: 'jellycats_sound_pitch_range',
+            sfxVolume: 'jellycats_sfx_volume', meowVolume: 'jellycats_meow_volume', swooshVolume: 'jellycats_swoosh_volume',
+            putVolume: 'jellycats_put_volume', returnVolume: 'jellycats_return_volume', winVolume: 'jellycats_win_volume',
+            bgMusicVolume: 'jellycats_bg_music_volume',
+            shadowEnabled: 'jellycats_shadow_enabled', shadowOpacity: 'jellycats_shadow_opacity',
+            rotationSound: 'jellycats_selected_rotation_sound', returnSound: 'jellycats_selected_return_sound',
+            placementSound: 'jellycats_selected_placement_sound', winSound: 'jellycats_selected_win_sound'
+        };
+        for (let key in lsMap) {
+            if (settings[key] !== undefined) localStorage.setItem(lsMap[key], settings[key].toString());
+        }
+        if (settings.catSettings) localStorage.setItem('jellycats_editor_settings', JSON.stringify(settings.catSettings));
+
+        // 2. Update scene variables
+        if (settings.globalZoom !== undefined) { s.currentZoom = settings.globalZoom; s.cameras.main.setZoom(s.currentZoom); }
+        const directProps = ['bgScaleMultiplier','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
+            'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
+            'breatheSpeedScale','breatheAmpScale','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','shadowEnabled','shadowOpacity'];
+        directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
+        if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
+        if (settings.rotationSound !== undefined) s.selectedRotationSound = settings.rotationSound;
+        if (settings.returnSound !== undefined) s.selectedReturnSound = settings.returnSound;
+        if (settings.placementSound !== undefined) s.selectedPlacementSound = settings.placementSound;
+        if (settings.winSound !== undefined) s.selectedWinSound = settings.winSound;
+
+        // 3. Update PIECE_DEFS and game pieces
+        if (settings.catSettings) {
+            PIECE_DEFS.forEach(p => {
+                const catSet = settings.catSettings[p.id];
+                if (catSet) {
+                    p.originX = catSet.originX; p.originY = catSet.originY;
+                    p.offsetX = catSet.offsetX; p.offsetY = catSet.offsetY;
+                    p.scaleX = catSet.scaleX; p.scaleY = catSet.scaleY;
+                    const container = s.pieces.find(pc => pc.def.id === p.id);
+                    if (container) {
+                        const catImg = container.list.find(child => child.isCatImage);
+                        if (catImg) {
+                            catImg.setOrigin(p.originX, p.originY); catImg.setScale(p.scaleX, p.scaleY);
+                            catImg.x = p.offsetX; catImg.y = p.offsetY;
+                            catImg.targetX = p.offsetX; catImg.targetY = p.offsetY;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. Update HTML inputs
+        const uv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        const ut = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const uc = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+
+        if (settings.globalZoom !== undefined) { uv('global-zoom-slider', settings.globalZoom); ut('zoom-value-label', `${Math.round(settings.globalZoom * 100)}%`); }
+        if (settings.jellyMultiplier !== undefined) { uv('jelly-slider', settings.jellyMultiplier); ut('jelly-value-label', `${Math.round(settings.jellyMultiplier * 100)}%`); }
+        if (settings.jellyStiffness !== undefined) { uv('jelly-stiffness-slider', settings.jellyStiffness); ut('jelly-stiffness-value-label', `${Math.round(settings.jellyStiffness * 100)}%`); }
+        if (settings.jellyDamping !== undefined) { uv('jelly-damping-slider', settings.jellyDamping); ut('jelly-damping-value-label', `${Math.round(settings.jellyDamping * 100)}%`); }
+        if (settings.breatheSpeedScale !== undefined) { uv('breathe-speed-slider', Math.round(settings.breatheSpeedScale * 100)); ut('breathe-speed-value-label', `${Math.round(settings.breatheSpeedScale * 100)}%`); }
+        if (settings.breatheAmpScale !== undefined) { uv('breathe-amp-slider', Math.round(settings.breatheAmpScale * 100)); ut('breathe-amp-value-label', settings.breatheAmpScale === 0 ? 'Выкл' : `${Math.round(settings.breatheAmpScale * 100)}%`); }
+        if (settings.bgScaleMultiplier !== undefined) { uv('bg-scale-slider', settings.bgScaleMultiplier); ut('bg-scale-value-label', `${Math.round(settings.bgScaleMultiplier * 100)}%`); }
+        if (settings.gridGap !== undefined) { uv('grid-gap-slider', settings.gridGap); ut('grid-gap-value-label', `${settings.gridGap}px`); }
+        if (settings.gridRadius !== undefined) { uv('grid-radius-slider', settings.gridRadius); ut('grid-radius-value-label', `${settings.gridRadius}px`); }
+        if (settings.glowThickness !== undefined) { uv('glow-thickness-slider', settings.glowThickness); ut('glow-thickness-value-label', settings.glowThickness === 0 ? 'Выкл' : `${settings.glowThickness}px`); }
+        if (settings.glowBlur !== undefined) { uv('glow-blur-slider', settings.glowBlur); ut('glow-blur-value-label', settings.glowBlur === 0 ? 'Резкая' : `${settings.glowBlur}px`); }
+        if (settings.showBlocks !== undefined) uc('show-blocks-toggle', settings.showBlocks);
+        if (settings.fillOccupied !== undefined) uc('fill-occupied-toggle', settings.fillOccupied);
+        if (settings.gridHighlightColor !== undefined) uv('grid-color-picker', settings.gridHighlightColor);
+        if (settings.gridLineThickness !== undefined) { uv('grid-line-slider', settings.gridLineThickness); ut('grid-line-value-label', `${settings.gridLineThickness}px`); }
+        if (settings.dustEnabled !== undefined) uc('dust-toggle', settings.dustEnabled);
+        if (settings.dustCount !== undefined) { uv('dust-count-slider', settings.dustCount); ut('dust-count-label', settings.dustCount); }
+        if (settings.dustScale !== undefined) { uv('dust-size-slider', settings.dustScale); ut('dust-size-label', `${Math.round(settings.dustScale * 100)}%`); }
+        if (settings.dustDistribution !== undefined) uv('dust-dist-select', settings.dustDistribution);
+        if (settings.dustEdgeRatio !== undefined) { uv('dust-edge-slider', Math.round(settings.dustEdgeRatio * 100)); ut('dust-edge-label', `${Math.round(settings.dustEdgeRatio * 100)}%`); }
+        if (settings.soundPitchRange !== undefined) { uv('sound-pitch-slider', Math.round(settings.soundPitchRange * 100)); ut('sound-pitch-value-label', `±${Math.round(settings.soundPitchRange * 100)}%`); }
+        if (settings.bgMusicVolume !== undefined) { uv('bg-music-volume-slider', Math.round(settings.bgMusicVolume * 100)); ut('bg-music-volume-value-label', `${Math.round(settings.bgMusicVolume * 100)}%`); }
+        if (settings.sfxVolume !== undefined) { uv('sfx-volume-slider', Math.round(settings.sfxVolume * 100)); ut('sfx-volume-value-label', `${Math.round(settings.sfxVolume * 100)}%`); }
+        if (settings.meowVolume !== undefined) { uv('meow-volume-slider', Math.round(settings.meowVolume * 100)); ut('meow-volume-value-label', `${Math.round(settings.meowVolume * 100)}%`); }
+        if (settings.swooshVolume !== undefined) { uv('swoosh-volume-slider', Math.round(settings.swooshVolume * 100)); ut('swoosh-volume-value-label', `${Math.round(settings.swooshVolume * 100)}%`); }
+        if (settings.putVolume !== undefined) { uv('put-volume-slider', Math.round(settings.putVolume * 100)); ut('put-volume-value-label', `${Math.round(settings.putVolume * 100)}%`); }
+        if (settings.returnVolume !== undefined) { uv('return-volume-slider', Math.round(settings.returnVolume * 100)); ut('return-volume-value-label', `${Math.round(settings.returnVolume * 100)}%`); }
+        if (settings.winVolume !== undefined) { uv('win-volume-slider', Math.round(settings.winVolume * 100)); ut('win-volume-value-label', `${Math.round(settings.winVolume * 100)}%`); }
+        if (settings.shadowEnabled !== undefined) uc('shadow-toggle', settings.shadowEnabled);
+        if (settings.shadowOpacity !== undefined) { uv('shadow-opacity-slider', Math.round(settings.shadowOpacity * 100)); ut('shadow-opacity-value-label', `${Math.round(settings.shadowOpacity * 100)}%`); }
+        if (settings.rotationSound !== undefined) uv('rotation-sound-select', settings.rotationSound);
+        if (settings.placementSound !== undefined) uv('placement-sound-select', settings.placementSound);
+        if (settings.returnSound !== undefined) uv('return-sound-select', settings.returnSound);
+        if (settings.winSound !== undefined) uv('win-sound-select', settings.winSound);
+
+        // Update cat editor sliders if open
+        const catSelect = document.getElementById('edit-cat-select');
+        if (catSelect) {
+            const def = PIECE_DEFS.find(p => p.id === catSelect.value);
+            if (def) {
+                uv('slider-offsetX', def.offsetX); ut('val-offsetX', def.offsetX);
+                uv('slider-offsetY', def.offsetY); ut('val-offsetY', def.offsetY);
+                uv('slider-scaleX', def.scaleX); ut('val-scaleX', def.scaleX);
+                uv('slider-scaleY', def.scaleY); ut('val-scaleY', def.scaleY);
+                uv('slider-originX', def.originX); ut('val-originX', def.originX);
+                uv('slider-originY', def.originY); ut('val-originY', def.originY);
+            }
+        }
+
+        // 5. Trigger scene updates
+        if (s.updateDustUIState) s.updateDustUIState();
+        if (s.updateShadowUIState) s.updateShadowUIState();
+        s.updateBlocksVisibility();
+        s.updateLayout();
+        s.dustSystem.createParticles();
+    }
+}

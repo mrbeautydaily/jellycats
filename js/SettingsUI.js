@@ -1,0 +1,407 @@
+/**
+ * SettingsUI — initializes ALL settings panel controls (sliders, toggles, selectors).
+ * All properties are stored on the scene object for easy access from other modules.
+ */
+class SettingsUI {
+    constructor(scene) {
+        this.scene = scene;
+    }
+
+    init() {
+        const s = this.scene; // shorthand
+
+        // --- Load all settings from localStorage ---
+        s.currentZoom = parseFloat(localStorage.getItem('jellycats_global_zoom') || '1.0');
+        s.cameras.main.setZoom(s.currentZoom);
+        s.bgScaleMultiplier = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+        s.selectedRotationSound = localStorage.getItem('jellycats_selected_rotation_sound') || 'SFX_Movement_Swoosh_Fast_1';
+        s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Fast_1';
+        s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'card-place-1';
+        s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_achievement_pop';
+        s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '1.0');
+        s.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
+        s.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
+        s.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.0');
+        s.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.0');
+        s.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '4');
+        s.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
+        s.glowThickness = parseFloat(localStorage.getItem('jellycats_glow_thickness') || '6');
+        s.glowBlur = parseInt(localStorage.getItem('jellycats_glow_blur') || '24');
+        const savedShowBlocks = localStorage.getItem('jellycats_show_blocks');
+        s.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : true;
+        const savedFillOccupied = localStorage.getItem('jellycats_fill_occupied');
+        s.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : false;
+        s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#10b981';
+        s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '2');
+        s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
+        s.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
+        const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
+        s.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
+        s.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '45');
+        s.dustScale = parseFloat(localStorage.getItem('jellycats_dust_scale') || '1.0');
+        s.dustDistribution = localStorage.getItem('jellycats_dust_distribution') || 'everywhere';
+        s.dustEdgeRatio = parseFloat(localStorage.getItem('jellycats_dust_edge_ratio') || '0.25');
+
+        // --- Bind all UI controls ---
+        this._bindSoundSelectors();
+        this._bindSliders();
+        this._bindToggles();
+        this._bindPanelCollapse();
+        this._bindDustControls();
+        this._bindShadowControls();
+        this._bindResetButton();
+    }
+
+    _bindSoundSelectors() {
+        const s = this.scene;
+
+        // Rotation sound
+        this._bindSelect('rotation-sound-select', s.selectedRotationSound, (val) => {
+            s.selectedRotationSound = val;
+            localStorage.setItem('jellycats_selected_rotation_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-rotation-sound', () => s.soundManager.playRotation());
+
+        // Return sound
+        this._bindSelect('return-sound-select', s.selectedReturnSound, (val) => {
+            s.selectedReturnSound = val;
+            localStorage.setItem('jellycats_selected_return_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-return-sound', () => s.soundManager.playReturn());
+
+        // Placement sound
+        this._bindSelect('placement-sound-select', s.selectedPlacementSound, (val) => {
+            s.selectedPlacementSound = val;
+            localStorage.setItem('jellycats_selected_placement_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-placement-sound', () => s.soundManager.playPlacement());
+
+        // Win sound
+        this._bindSelect('win-sound-select', s.selectedWinSound, (val) => {
+            s.selectedWinSound = val;
+            localStorage.setItem('jellycats_selected_win_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-win-sound', () => s.soundManager.playWin());
+    }
+
+    _bindSliders() {
+        const s = this.scene;
+
+        // Global zoom
+        this._bindRangeSlider('global-zoom-slider', 'zoom-value-label', s.currentZoom,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.setGlobalZoom(parseFloat(val)); s.autosaveActiveProfile(); }, true);
+
+        // Jellyness
+        this._bindRangeSlider('jelly-slider', 'jelly-value-label', s.jellyMultiplier,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.jellyMultiplier = parseFloat(val); localStorage.setItem('jellycats_jelly_multiplier', val); s.autosaveActiveProfile(); });
+
+        // Stiffness
+        this._bindRangeSlider('jelly-stiffness-slider', 'jelly-stiffness-value-label', s.jellyStiffness,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.jellyStiffness = parseFloat(val); localStorage.setItem('jellycats_stiffness', val); s.autosaveActiveProfile(); });
+
+        // Damping
+        this._bindRangeSlider('jelly-damping-slider', 'jelly-damping-value-label', s.jellyDamping,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.jellyDamping = parseFloat(val); localStorage.setItem('jellycats_damping', val); s.autosaveActiveProfile(); });
+
+        // Breathe speed
+        this._bindRangeSlider('breathe-speed-slider', 'breathe-speed-value-label', Math.round(s.breatheSpeedScale * 100),
+            (val) => `${val}%`,
+            (val) => { s.breatheSpeedScale = parseInt(val) / 100; localStorage.setItem('jellycats_breathe_speed_scale', s.breatheSpeedScale.toString()); s.autosaveActiveProfile(); });
+
+        // Breathe amplitude
+        this._bindRangeSlider('breathe-amp-slider', 'breathe-amp-value-label', Math.round(s.breatheAmpScale * 100),
+            (val) => parseInt(val) === 0 ? 'Выкл' : `${val}%`,
+            (val) => { s.breatheAmpScale = parseInt(val) / 100; localStorage.setItem('jellycats_breathe_amp_scale', s.breatheAmpScale.toString()); s.autosaveActiveProfile(); });
+
+        // Background scale
+        this._bindRangeSlider('bg-scale-slider', 'bg-scale-value-label', s.bgScaleMultiplier,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.bgScaleMultiplier = parseFloat(val); localStorage.setItem('jellycats_bg_scale_multiplier', val); s.updateLayout(); s.autosaveActiveProfile(); });
+
+        // Grid gap
+        this._bindRangeSlider('grid-gap-slider', 'grid-gap-value-label', s.gridGap,
+            (val) => `${val}px`,
+            (val) => { s.gridGap = parseInt(val); localStorage.setItem('jellycats_grid_gap', val); s.drawBoard(); s.autosaveActiveProfile(); });
+
+        // Grid radius
+        this._bindRangeSlider('grid-radius-slider', 'grid-radius-value-label', s.gridRadius,
+            (val) => `${val}px`,
+            (val) => { s.gridRadius = parseInt(val); localStorage.setItem('jellycats_grid_radius', val); s.drawBoard(); s.autosaveActiveProfile(); });
+
+        // Glow thickness
+        this._bindRangeSlider('glow-thickness-slider', 'glow-thickness-value-label', s.glowThickness,
+            (val) => parseFloat(val) === 0 ? 'Выкл' : `${val}px`,
+            (val) => { s.glowThickness = parseFloat(val); localStorage.setItem('jellycats_glow_thickness', val); s.autosaveActiveProfile(); });
+
+        // Glow blur
+        this._bindRangeSlider('glow-blur-slider', 'glow-blur-value-label', s.glowBlur,
+            (val) => parseInt(val) === 0 ? 'Резкая' : `${val}px`,
+            (val) => { s.glowBlur = parseInt(val); localStorage.setItem('jellycats_glow_blur', val); s.autosaveActiveProfile(); });
+
+        // Grid line thickness
+        this._bindRangeSlider('grid-line-slider', 'grid-line-value-label', s.gridLineThickness,
+            (val) => `${val}px`,
+            (val) => { s.gridLineThickness = parseInt(val); localStorage.setItem('jellycats_grid_line_thickness', val); s.drawBoard(); s.autosaveActiveProfile(); });
+
+        // Background music volume
+        this._bindRangeSlider('bg-music-volume-slider', 'bg-music-volume-value-label', Math.round(s.bgMusicVolume * 100),
+            (val) => `${val}%`,
+            (val) => { s.bgMusicVolume = parseInt(val) / 100; localStorage.setItem('jellycats_bg_music_volume', s.bgMusicVolume.toString()); if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); s.autosaveActiveProfile(); });
+
+        // Sound pitch range
+        this._bindRangeSlider('sound-pitch-slider', 'sound-pitch-value-label', Math.round(s.soundPitchRange * 100),
+            (val) => `±${val}%`,
+            (val) => { s.soundPitchRange = parseInt(val) / 100; localStorage.setItem('jellycats_sound_pitch_range', s.soundPitchRange.toString()); s.autosaveActiveProfile(); });
+
+        // SFX volume
+        this._bindVolumeSlider('sfx-volume-slider', 'sfx-volume-value-label', 'sfxVolume', 'jellycats_sfx_volume');
+        // Meow volume
+        this._bindVolumeSlider('meow-volume-slider', 'meow-volume-value-label', 'meowVolume', 'jellycats_meow_volume');
+        // Swoosh volume
+        this._bindVolumeSlider('swoosh-volume-slider', 'swoosh-volume-value-label', 'swooshVolume', 'jellycats_swoosh_volume');
+        // Put volume
+        this._bindVolumeSlider('put-volume-slider', 'put-volume-value-label', 'putVolume', 'jellycats_put_volume');
+        // Return volume
+        this._bindVolumeSlider('return-volume-slider', 'return-volume-value-label', 'returnVolume', 'jellycats_return_volume');
+        // Win volume
+        this._bindVolumeSlider('win-volume-slider', 'win-volume-value-label', 'winVolume', 'jellycats_win_volume');
+
+        // Grid highlight color
+        const colorPicker = document.getElementById('grid-color-picker');
+        if (colorPicker) {
+            colorPicker.value = s.gridHighlightColor;
+            colorPicker.onchange = (e) => {
+                s.gridHighlightColor = e.target.value;
+                localStorage.setItem('jellycats_grid_highlight_color', e.target.value);
+                s.drawBoard();
+                s.autosaveActiveProfile();
+            };
+        }
+    }
+
+    _bindToggles() {
+        const s = this.scene;
+
+        // Show blocks
+        const showBlocksToggle = document.getElementById('show-blocks-toggle');
+        if (showBlocksToggle) {
+            showBlocksToggle.checked = s.showBlocks;
+            showBlocksToggle.onchange = (e) => {
+                s.showBlocks = e.target.checked;
+                localStorage.setItem('jellycats_show_blocks', s.showBlocks.toString());
+                s.updateBlocksVisibility();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        // Fill occupied
+        const fillOccupiedToggle = document.getElementById('fill-occupied-toggle');
+        if (fillOccupiedToggle) {
+            fillOccupiedToggle.checked = s.fillOccupied;
+            fillOccupiedToggle.onchange = (e) => {
+                s.fillOccupied = e.target.checked;
+                localStorage.setItem('jellycats_fill_occupied', s.fillOccupied.toString());
+                s.drawBoard();
+                s.autosaveActiveProfile();
+            };
+        }
+    }
+
+    _bindPanelCollapse() {
+        const panelToggle = document.getElementById('btn-zoom-toggle');
+        const panelBody = document.getElementById('zoom-panel-body');
+        const panel = document.getElementById('zoom-control-panel');
+
+        if (panelToggle && panelBody && panel) {
+            const savedCollapsed = localStorage.getItem('jellycats_zoom_panel_collapsed') === 'true';
+            if (savedCollapsed) {
+                panelBody.classList.add('hidden');
+                panelToggle.textContent = '➕';
+                panel.classList.remove('gap-4');
+                panel.classList.add('gap-0');
+            }
+
+            panelToggle.onclick = () => {
+                const isCollapsed = panelBody.classList.toggle('hidden');
+                panelToggle.textContent = isCollapsed ? '➕' : '➖';
+                localStorage.setItem('jellycats_zoom_panel_collapsed', isCollapsed.toString());
+                if (isCollapsed) {
+                    panel.classList.remove('gap-4');
+                    panel.classList.add('gap-0');
+                } else {
+                    panel.classList.remove('gap-0');
+                    panel.classList.add('gap-4');
+                }
+            };
+        }
+    }
+
+    _bindDustControls() {
+        const s = this.scene;
+
+        const updateDustUIState = () => {
+            const enabled = s.dustEnabled;
+            const isEverywhere = s.dustDistribution === 'everywhere';
+            
+            const elCount = document.getElementById('dust-count-container');
+            const elSize = document.getElementById('dust-size-container');
+            const elDist = document.getElementById('dust-dist-container');
+            const elEdge = document.getElementById('dust-edge-container');
+
+            if (elCount) { elCount.style.opacity = enabled ? '1' : '0.4'; elCount.style.pointerEvents = enabled ? 'auto' : 'none'; }
+            if (elSize) { elSize.style.opacity = enabled ? '1' : '0.4'; elSize.style.pointerEvents = enabled ? 'auto' : 'none'; }
+            if (elDist) { elDist.style.opacity = enabled ? '1' : '0.4'; elDist.style.pointerEvents = enabled ? 'auto' : 'none'; }
+            
+            const showEdge = enabled && !isEverywhere;
+            if (elEdge) { elEdge.style.opacity = showEdge ? '1' : '0.4'; elEdge.style.pointerEvents = showEdge ? 'auto' : 'none'; }
+        };
+
+        s.updateDustUIState = updateDustUIState;
+
+        const dustToggle = document.getElementById('dust-toggle');
+        if (dustToggle) {
+            dustToggle.checked = s.dustEnabled;
+            dustToggle.onchange = (e) => {
+                s.dustEnabled = e.target.checked;
+                localStorage.setItem('jellycats_dust_enabled', s.dustEnabled.toString());
+                updateDustUIState();
+                s.dustSystem.createParticles();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        this._bindRangeSlider('dust-count-slider', 'dust-count-label', s.dustCount,
+            (val) => `${val}`,
+            (val) => { s.dustCount = parseInt(val); localStorage.setItem('jellycats_dust_count', val); s.dustSystem.createParticles(); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('dust-size-slider', 'dust-size-label', s.dustScale,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.dustScale = parseFloat(val); localStorage.setItem('jellycats_dust_scale', val); s.dustSystem.createParticles(); s.autosaveActiveProfile(); });
+
+        const dustDistSelect = document.getElementById('dust-dist-select');
+        if (dustDistSelect) {
+            dustDistSelect.value = s.dustDistribution;
+            dustDistSelect.onchange = (e) => {
+                s.dustDistribution = e.target.value;
+                localStorage.setItem('jellycats_dust_distribution', s.dustDistribution);
+                updateDustUIState();
+                s.dustSystem.createParticles();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        this._bindRangeSlider('dust-edge-slider', 'dust-edge-label', Math.round(s.dustEdgeRatio * 100),
+            (val) => `${val}%`,
+            (val) => { s.dustEdgeRatio = parseInt(val) / 100; localStorage.setItem('jellycats_dust_edge_ratio', s.dustEdgeRatio.toString()); s.dustSystem.createParticles(); s.autosaveActiveProfile(); });
+
+        updateDustUIState();
+    }
+
+    _bindShadowControls() {
+        const s = this.scene;
+        const shadowOpacityContainer = document.getElementById('shadow-opacity-container');
+
+        const updateShadowUIState = () => {
+            const enabled = s.shadowEnabled;
+            if (shadowOpacityContainer) {
+                shadowOpacityContainer.style.opacity = enabled ? '1' : '0.4';
+                shadowOpacityContainer.style.pointerEvents = enabled ? 'auto' : 'none';
+            }
+        };
+
+        s.updateShadowUIState = updateShadowUIState;
+
+        const shadowToggle = document.getElementById('shadow-toggle');
+        if (shadowToggle) {
+            shadowToggle.checked = s.shadowEnabled;
+            shadowToggle.onchange = (e) => {
+                s.shadowEnabled = e.target.checked;
+                localStorage.setItem('jellycats_shadow_enabled', s.shadowEnabled.toString());
+                updateShadowUIState();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        const shadowOpacitySlider = document.getElementById('shadow-opacity-slider');
+        const shadowOpacityLabel = document.getElementById('shadow-opacity-value-label');
+        if (shadowOpacitySlider && shadowOpacityLabel) {
+            shadowOpacitySlider.value = Math.round(s.shadowOpacity * 100);
+            shadowOpacityLabel.textContent = `${Math.round(s.shadowOpacity * 100)}%`;
+            shadowOpacitySlider.oninput = (e) => {
+                const val = parseInt(e.target.value);
+                s.shadowOpacity = val / 100;
+                shadowOpacityLabel.textContent = `${val}%`;
+                localStorage.setItem('jellycats_shadow_opacity', s.shadowOpacity.toString());
+                s.autosaveActiveProfile();
+            };
+        }
+
+        updateShadowUIState();
+    }
+
+    _bindResetButton() {
+        const btnReset = document.getElementById('btn-zoom-reset');
+        if (btnReset) {
+            btnReset.onclick = () => {
+                const profileSelect = document.getElementById('profile-select');
+                if (profileSelect) {
+                    profileSelect.value = 'default';
+                    profileSelect.onchange();
+                }
+            };
+        }
+    }
+
+    // --- Helper methods ---
+
+    _bindSelect(selectId, initialValue, onChange) {
+        const el = document.getElementById(selectId);
+        if (el) {
+            el.value = initialValue;
+            el.onchange = (e) => onChange(e.target.value);
+        }
+    }
+
+    _bindButton(btnId, onClick) {
+        const el = document.getElementById(btnId);
+        if (el) el.onclick = onClick;
+    }
+
+    _bindRangeSlider(sliderId, labelId, initialValue, formatLabel, onChange, skipAutoProfile) {
+        const slider = document.getElementById(sliderId);
+        const label = document.getElementById(labelId);
+        if (slider && label) {
+            slider.value = initialValue;
+            label.textContent = formatLabel(initialValue);
+            slider.oninput = (e) => {
+                label.textContent = formatLabel(e.target.value);
+                onChange(e.target.value);
+            };
+        }
+    }
+
+    _bindVolumeSlider(sliderId, labelId, propName, storageKey) {
+        const s = this.scene;
+        const slider = document.getElementById(sliderId);
+        const label = document.getElementById(labelId);
+        if (slider) {
+            slider.value = Math.round((s[propName] !== undefined ? s[propName] : 0.8) * 100);
+            if (label) label.textContent = `${slider.value}%`;
+            slider.oninput = (e) => {
+                const val = parseInt(e.target.value) / 100;
+                s[propName] = val;
+                if (label) label.textContent = `${e.target.value}%`;
+                localStorage.setItem(storageKey, val.toString());
+                s.autosaveActiveProfile();
+            };
+        }
+    }
+}

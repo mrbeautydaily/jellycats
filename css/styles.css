@@ -1,0 +1,52 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #2a2a2a;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    touch-action: none; /* Запрещаем скролл на мобильных устройствах */
+}
+#game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+/* UI слой поверх игры */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Пропускаем клики сквозь UI, когда он скрыт */
+}
+.pointer-events-auto {
+    pointer-events: auto;
+}
+
+/* Плавное появление */
+.fade-in {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+.scale-in {
+    transform: scale(1) !important;
+}
+/* Custom scrollbar and styling for settings panel */
+#zoom-control-panel::-webkit-scrollbar {
+    width: 6px;
+}
+#zoom-control-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+#zoom-control-panel::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.3);
+    border-radius: 10px;
+}
+#zoom-control-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.6);
+}
