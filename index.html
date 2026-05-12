@@ -301,6 +301,122 @@
                 </div>
             </div>
 
+            <!-- Выбор звука возврата -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">❌ Звук возврата котика</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="return-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="SFX_Movement_Swoosh_Fast_1">⚡ Быстрый Свуш 1</option>
+                        <option value="SFX_Movement_Swoosh_Fast_2">⚡ Быстрый Свуш 2</option>
+                        <option value="SFX_Movement_Swoosh_Fast_3">⚡ Быстрый Свуш 3</option>
+                        <option value="SFX_Movement_Swoosh_Med_1">💨 Средний Свуш 1</option>
+                        <option value="SFX_Movement_Swoosh_Med_2">💨 Средний Свуш 2</option>
+                        <option value="SFX_Movement_Swoosh_Med_3">💨 Средний Свуш 3</option>
+                    </select>
+                    <button id="btn-play-return-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
+            <!-- Выбор звука укладывания -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">📥 Звук укладывания котика</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="placement-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="card-place-1">🚪 Карточное место 1</option>
+                        <option value="card-place-2">🚪 Карточное место 2</option>
+                        <option value="card-slide-1">🛷 Скольжение 1</option>
+                        <option value="card-slide-6">🛷 Скольжение 2</option>
+                        <option value="click1">🖱️ Щелчок 1</option>
+                        <option value="click2">🖱️ Щелчок 2</option>
+                        <option value="click3">🖱️ Щелчок 3</option>
+                    </select>
+                    <button id="btn-play-placement-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
+            <!-- Выбор звука победы -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">🏆 Звук победы в уровне</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="win-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="win_achievement_pop">🌟 Achievement Pop</option>
+                        <option value="win_marimba">🎵 Маримба Win</option>
+                        <option value="win_levelup_05">📈 Level Up Retro</option>
+                        <option value="synth_win_01_cute_arpeggio">⚡ Синт: Cute Arpeggio</option>
+                        <option value="synth_win_02_magic_sparkle">✨ Синт: Magic Sparkle</option>
+                        <option value="synth_win_03_rising_chords">🎹 Синт: Rising Chords</option>
+                        <option value="synth_win_04_retro_level_up">🎮 Синт: NES Level Up</option>
+                        <option value="synth_win_05_happy_melody">🎈 Синт: Happy Melody</option>
+                        <option value="synth_win_06_cosmic_success">🚀 Синт: Cosmic Success</option>
+                        <option value="synth_win_07_triumphant_fanfare">🎺 Синт: Brass Fanfare</option>
+                        <option value="synth_win_08_gentle_bell">🔔 Синт: Gentle Bell</option>
+                        <option value="synth_win_09_sparkling_cascade">💫 Синт: Sparkle Cascade</option>
+                        <option value="synth_win_10_jelly_bounce">🍮 Синт: Jelly Bounce</option>
+                    </select>
+                    <button id="btn-play-win-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
+            <!-- Громкость звуковых эффектов -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🔊 Общая громкость звуков</span>
+                    <span id="sfx-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="sfx-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость мяуканья -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🐱 Громкость мяуканья</span>
+                    <span id="meow-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="meow-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость звуков вращения -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🔄 Громкость вращения котиков</span>
+                    <span id="swoosh-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="swoosh-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость укладывания котиков -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">📥 Громкость укладывания котиков</span>
+                    <span id="put-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="put-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость возврата котиков -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">❌ Громкость возврата котика</span>
+                    <span id="return-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="return-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <!-- Громкость победных звуков -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🏆 Громкость победы в уровне</span>
+                    <span id="win-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="win-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
             <!-- Громкость фоновой музыки -->
             <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
                 <div class="flex justify-between items-center text-xs">
@@ -599,8 +715,43 @@
                     this.load.audio(soundName, `assets/sounds/${soundName}.wav`);
                 });
 
+                // Load placement sounds
+                const putSounds = [
+                    'card-place-1',
+                    'card-place-2',
+                    'card-slide-1',
+                    'card-slide-6',
+                    'click1',
+                    'click2',
+                    'click3'
+                ];
+                putSounds.forEach(soundName => {
+                    this.load.audio(soundName, `assets/sounds/put/${soundName}.ogg`);
+                });
+
                 // Load background music
                 this.load.audio('bg_music', 'assets/music/main_theme.ogg');
+
+                // Load win sounds
+                const winSounds = [
+                    { key: 'win_achievement_pop', file: 'SFX_UI_Success_Achievement_Pop_1.wav' },
+                    { key: 'win_marimba', file: 'floraphonic-marimba-win-f-2-209688.mp3' },
+                    { key: 'win_levelup_05', file: 'universfield-level-up-05-326133.mp3' },
+                    { key: 'synth_win_01_cute_arpeggio', file: 'synth_win_01_cute_arpeggio.wav' },
+                    { key: 'synth_win_02_magic_sparkle', file: 'synth_win_02_magic_sparkle.wav' },
+                    { key: 'synth_win_03_rising_chords', file: 'synth_win_03_rising_chords.wav' },
+                    { key: 'synth_win_04_retro_level_up', file: 'synth_win_04_retro_level_up.wav' },
+                    { key: 'synth_win_05_happy_melody', file: 'synth_win_05_happy_melody.wav' },
+                    { key: 'synth_win_06_cosmic_success', file: 'synth_win_06_cosmic_success.wav' },
+                    { key: 'synth_win_07_triumphant_fanfare', file: 'synth_win_07_triumphant_fanfare.wav' },
+                    { key: 'synth_win_08_gentle_bell', file: 'synth_win_08_gentle_bell.wav' },
+                    { key: 'synth_win_09_sparkling_cascade', file: 'synth_win_09_sparkling_cascade.wav' },
+                    { key: 'synth_win_10_jelly_bounce', file: 'synth_win_10_jelly_bounce.wav' }
+                ];
+                winSounds.forEach(sound => {
+                    this.load.audio(sound.key, `assets/sounds/win/${sound.file}`);
+                });
+
             }
 
             create() {
@@ -644,6 +795,17 @@
                 // Инициализация системы профилей и пресетов
                 this.initProfiles();
 
+                // Initialize sfx volume setting
+                this.sfxVolume = parseFloat(localStorage.getItem('jellycats_sfx_volume') || '0.8');
+                this.meowVolume = parseFloat(localStorage.getItem('jellycats_meow_volume') || '0.8');
+                this.swooshVolume = parseFloat(localStorage.getItem('jellycats_swoosh_volume') || '0.8');
+                this.putVolume = parseFloat(localStorage.getItem('jellycats_put_volume') || '0.8');
+                this.returnVolume = parseFloat(localStorage.getItem('jellycats_return_volume') || '0.8');
+                this.winVolume = parseFloat(localStorage.getItem('jellycats_win_volume') || '0.8');
+                this.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'card-place-1';
+                this.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Fast_1';
+                this.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_achievement_pop';
+
                 // Initialize background music volume setting
                 this.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.5');
 
@@ -668,7 +830,8 @@
                     }
                     
                     if (this.cache.audio.exists(soundKey)) {
-                        this.sound.play(soundKey, { rate: rateVal });
+                        const finalVolume = (this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * (this.meowVolume !== undefined ? this.meowVolume : 0.8);
+                        this.sound.play(soundKey, { rate: rateVal, volume: finalVolume });
                     }
                 } catch (e) {
                     console.warn('Failed to play meow sound:', e);
@@ -691,10 +854,60 @@
                     });
                     
                     if (this.cache.audio.exists(soundKey)) {
-                        this.sound.play(soundKey, { rate: rateVal });
+                        const finalVolume = (this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * (this.swooshVolume !== undefined ? this.swooshVolume : 0.8);
+                        this.sound.play(soundKey, { rate: rateVal, volume: finalVolume });
                     }
                 } catch (e) {
                     console.warn('Failed to play rotation sound:', e);
+                }
+            }
+
+            playPlacementSound() {
+                try {
+                    const soundKey = this.selectedPlacementSound || 'card-place-1';
+                    
+                    let rateVal = 1.0;
+                    if (this.soundPitchRange && this.soundPitchRange > 0) {
+                        rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
+                    }
+                    
+                    if (this.cache.audio.exists(soundKey)) {
+                        const finalVolume = (this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * (this.putVolume !== undefined ? this.putVolume : 0.8);
+                        this.sound.play(soundKey, { rate: rateVal, volume: finalVolume });
+                    }
+                } catch (e) {
+                    console.warn('Failed to play placement sound:', e);
+                }
+            }
+
+            playReturnSound() {
+                try {
+                    const soundKey = this.selectedReturnSound || 'SFX_Movement_Swoosh_Fast_1';
+                    
+                    let rateVal = 1.0;
+                    if (this.soundPitchRange && this.soundPitchRange > 0) {
+                        rateVal = Phaser.Math.FloatBetween(1.0 - this.soundPitchRange, 1.0 + this.soundPitchRange);
+                    }
+                    
+                    if (this.cache.audio.exists(soundKey)) {
+                        const finalVolume = (this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * (this.returnVolume !== undefined ? this.returnVolume : 0.8);
+                        this.sound.play(soundKey, { rate: rateVal, volume: finalVolume });
+                    }
+                } catch (e) {
+                    console.warn('Failed to play return sound:', e);
+                }
+            }
+
+            playWinSound() {
+                try {
+                    const soundKey = this.selectedWinSound || 'win_achievement_pop';
+                    
+                    if (this.cache.audio.exists(soundKey)) {
+                        const finalVolume = (this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * (this.winVolume !== undefined ? this.winVolume : 0.8);
+                        this.sound.play(soundKey, { rate: 1.0, volume: finalVolume });
+                    }
+                } catch (e) {
+                    console.warn('Failed to play win sound:', e);
                 }
             }
 
@@ -1038,7 +1251,7 @@
                             if (this.canPlace(container.cells, newX, newY)) {
                                 this.placePiece(container, newX, newY);
                             } else {
-                                this.returnToStart(container);
+                                this.returnToStart(container, true);
                             }
                         } else {
                             // Если фигура не была на сетке, анимируем ее перемещение в рассчитанную точку поворота
@@ -1071,7 +1284,7 @@
                     if (this.canPlace(container.cells, gridX, gridY)) {
                         this.placePiece(container, gridX, gridY);
                     } else if (hasOverlapWithGrid) {
-                        this.returnToStart(container);
+                        this.returnToStart(container, true);
                     } else {
                         // Оставляем котика там, где его бросили, если он не над сеткой
                         container.startX = container.x;
@@ -1402,6 +1615,9 @@
                     ease: 'Quad.easeOut'
                 });
 
+                // Play placement sound
+                this.playPlacementSound();
+
                 // Записываем в логическую сетку
                 container.cells.forEach(([cx, cy]) => {
                     this.grid[gridY + cy][gridX + cx] = container.def.id;
@@ -1432,7 +1648,10 @@
                 this.drawBoard();
             }
 
-            returnToStart(container) {
+            returnToStart(container, playSound = false) {
+                if (playSound) {
+                    this.playReturnSound();
+                }
                 this.tweens.add({
                     targets: container,
                     x: container.startX,
@@ -1445,6 +1664,9 @@
             checkWin() {
                 let isFull = this.grid.every(row => row.every(cell => cell !== null));
                 if (isFull) {
+                    // Play win sound
+                    this.playWinSound();
+
                     // Мягкая реакция котиков (прыжок)
                     this.pieces.forEach((p, i) => {
                         this.time.delayedCall(i * 100, () => {
@@ -1694,6 +1916,72 @@
                 if (btnPlaySound) {
                     btnPlaySound.onclick = () => {
                         this.playRotationSound();
+                    };
+                }
+
+                // Load return sound setting
+                this.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Fast_1';
+
+                // Set up return sound selection controls
+                const returnSoundSelect = document.getElementById('return-sound-select');
+                const btnPlayReturnSound = document.getElementById('btn-play-return-sound');
+                
+                if (returnSoundSelect) {
+                    returnSoundSelect.value = this.selectedReturnSound;
+                    returnSoundSelect.onchange = (e) => {
+                        this.selectedReturnSound = e.target.value;
+                        localStorage.setItem('jellycats_selected_return_sound', this.selectedReturnSound);
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (btnPlayReturnSound) {
+                    btnPlayReturnSound.onclick = () => {
+                        this.playReturnSound();
+                    };
+                }
+
+                // Load placement sound setting
+                this.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'card-place-1';
+
+                // Set up placement sound selection controls
+                const placementSoundSelect = document.getElementById('placement-sound-select');
+                const btnPlayPlacementSound = document.getElementById('btn-play-placement-sound');
+                
+                if (placementSoundSelect) {
+                    placementSoundSelect.value = this.selectedPlacementSound;
+                    placementSoundSelect.onchange = (e) => {
+                        this.selectedPlacementSound = e.target.value;
+                        localStorage.setItem('jellycats_selected_placement_sound', this.selectedPlacementSound);
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (btnPlayPlacementSound) {
+                    btnPlayPlacementSound.onclick = () => {
+                        this.playPlacementSound();
+                    };
+                }
+
+                // Load win sound setting
+                this.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_achievement_pop';
+
+                // Set up win sound selection controls
+                const winSoundSelect = document.getElementById('win-sound-select');
+                const btnPlayWinSound = document.getElementById('btn-play-win-sound');
+                
+                if (winSoundSelect) {
+                    winSoundSelect.value = this.selectedWinSound;
+                    winSoundSelect.onchange = (e) => {
+                        this.selectedWinSound = e.target.value;
+                        localStorage.setItem('jellycats_selected_win_sound', this.selectedWinSound);
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                if (btnPlayWinSound) {
+                    btnPlayWinSound.onclick = () => {
+                        this.playWinSound();
                     };
                 }
 
@@ -2051,6 +2339,120 @@
                     };
                 }
 
+                // Set up SFX volume slider
+                const sfxVolumeSlider = document.getElementById('sfx-volume-slider');
+                const sfxVolumeLabel = document.getElementById('sfx-volume-value-label');
+                if (sfxVolumeSlider) {
+                    sfxVolumeSlider.value = Math.round((this.sfxVolume !== undefined ? this.sfxVolume : 0.8) * 100);
+                    if (sfxVolumeLabel) {
+                        sfxVolumeLabel.textContent = `${sfxVolumeSlider.value}%`;
+                    }
+                    sfxVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.sfxVolume = val;
+                        if (sfxVolumeLabel) {
+                            sfxVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_sfx_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up Meow volume slider
+                const meowVolumeSlider = document.getElementById('meow-volume-slider');
+                const meowVolumeLabel = document.getElementById('meow-volume-value-label');
+                if (meowVolumeSlider) {
+                    meowVolumeSlider.value = Math.round((this.meowVolume !== undefined ? this.meowVolume : 0.8) * 100);
+                    if (meowVolumeLabel) {
+                        meowVolumeLabel.textContent = `${meowVolumeSlider.value}%`;
+                    }
+                    meowVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.meowVolume = val;
+                        if (meowVolumeLabel) {
+                            meowVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_meow_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up Swoosh volume slider
+                const swooshVolumeSlider = document.getElementById('swoosh-volume-slider');
+                const swooshVolumeLabel = document.getElementById('swoosh-volume-value-label');
+                if (swooshVolumeSlider) {
+                    swooshVolumeSlider.value = Math.round((this.swooshVolume !== undefined ? this.swooshVolume : 0.8) * 100);
+                    if (swooshVolumeLabel) {
+                        swooshVolumeLabel.textContent = `${swooshVolumeSlider.value}%`;
+                    }
+                    swooshVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.swooshVolume = val;
+                        if (swooshVolumeLabel) {
+                            swooshVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_swoosh_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up Put volume slider
+                const putVolumeSlider = document.getElementById('put-volume-slider');
+                const putVolumeLabel = document.getElementById('put-volume-value-label');
+                if (putVolumeSlider) {
+                    putVolumeSlider.value = Math.round((this.putVolume !== undefined ? this.putVolume : 0.8) * 100);
+                    if (putVolumeLabel) {
+                        putVolumeLabel.textContent = `${putVolumeSlider.value}%`;
+                    }
+                    putVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.putVolume = val;
+                        if (putVolumeLabel) {
+                            putVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_put_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up Return volume slider
+                const returnVolumeSlider = document.getElementById('return-volume-slider');
+                const returnVolumeLabel = document.getElementById('return-volume-value-label');
+                if (returnVolumeSlider) {
+                    returnVolumeSlider.value = Math.round((this.returnVolume !== undefined ? this.returnVolume : 0.8) * 100);
+                    if (returnVolumeLabel) {
+                        returnVolumeLabel.textContent = `${returnVolumeSlider.value}%`;
+                    }
+                    returnVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.returnVolume = val;
+                        if (returnVolumeLabel) {
+                            returnVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_return_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
+                // Set up Win volume slider
+                const winVolumeSlider = document.getElementById('win-volume-slider');
+                const winVolumeLabel = document.getElementById('win-volume-value-label');
+                if (winVolumeSlider) {
+                    winVolumeSlider.value = Math.round((this.winVolume !== undefined ? this.winVolume : 0.8) * 100);
+                    if (winVolumeLabel) {
+                        winVolumeLabel.textContent = `${winVolumeSlider.value}%`;
+                    }
+                    winVolumeSlider.oninput = (e) => {
+                        const val = parseInt(e.target.value) / 100;
+                        this.winVolume = val;
+                        if (winVolumeLabel) {
+                            winVolumeLabel.textContent = `${e.target.value}%`;
+                        }
+                        localStorage.setItem('jellycats_win_volume', val.toString());
+                        this.autosaveActiveProfile();
+                    };
+                }
+
                 // Load dust settings
                 const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
                 this.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
@@ -2236,10 +2638,19 @@
                     dustDistribution: this.dustDistribution,
                     dustEdgeRatio: this.dustEdgeRatio,
                     soundPitchRange: this.soundPitchRange,
+                    sfxVolume: this.sfxVolume !== undefined ? this.sfxVolume : 0.8,
+                    meowVolume: this.meowVolume !== undefined ? this.meowVolume : 0.8,
+                    swooshVolume: this.swooshVolume !== undefined ? this.swooshVolume : 0.8,
+                    putVolume: this.putVolume !== undefined ? this.putVolume : 0.8,
+                    returnVolume: this.returnVolume !== undefined ? this.returnVolume : 0.8,
+                    winVolume: this.winVolume !== undefined ? this.winVolume : 0.8,
                     bgMusicVolume: this.bgMusicVolume,
                     shadowEnabled: this.shadowEnabled,
                     shadowOpacity: this.shadowOpacity,
                     rotationSound: this.selectedRotationSound || 'SFX_Movement_Swoosh_Fast_1',
+                    returnSound: this.selectedReturnSound || 'SFX_Movement_Swoosh_Fast_1',
+                    placementSound: this.selectedPlacementSound || 'card-place-1',
+                    winSound: this.selectedWinSound || 'win_achievement_pop',
                     catSettings: catSettings
                 };
             }
@@ -2269,10 +2680,19 @@
                 if (settings.dustDistribution !== undefined) localStorage.setItem('jellycats_dust_distribution', settings.dustDistribution);
                 if (settings.dustEdgeRatio !== undefined) localStorage.setItem('jellycats_dust_edge_ratio', settings.dustEdgeRatio.toString());
                 if (settings.soundPitchRange !== undefined) localStorage.setItem('jellycats_sound_pitch_range', settings.soundPitchRange.toString());
+                if (settings.sfxVolume !== undefined) localStorage.setItem('jellycats_sfx_volume', settings.sfxVolume.toString());
+                if (settings.meowVolume !== undefined) localStorage.setItem('jellycats_meow_volume', settings.meowVolume.toString());
+                if (settings.swooshVolume !== undefined) localStorage.setItem('jellycats_swoosh_volume', settings.swooshVolume.toString());
+                if (settings.putVolume !== undefined) localStorage.setItem('jellycats_put_volume', settings.putVolume.toString());
+                if (settings.returnVolume !== undefined) localStorage.setItem('jellycats_return_volume', settings.returnVolume.toString());
+                if (settings.winVolume !== undefined) localStorage.setItem('jellycats_win_volume', settings.winVolume.toString());
                 if (settings.bgMusicVolume !== undefined) localStorage.setItem('jellycats_bg_music_volume', settings.bgMusicVolume.toString());
                 if (settings.shadowEnabled !== undefined) localStorage.setItem('jellycats_shadow_enabled', settings.shadowEnabled.toString());
                 if (settings.shadowOpacity !== undefined) localStorage.setItem('jellycats_shadow_opacity', settings.shadowOpacity.toString());
                 if (settings.rotationSound !== undefined) localStorage.setItem('jellycats_selected_rotation_sound', settings.rotationSound);
+                if (settings.returnSound !== undefined) localStorage.setItem('jellycats_selected_return_sound', settings.returnSound);
+                if (settings.placementSound !== undefined) localStorage.setItem('jellycats_selected_placement_sound', settings.placementSound);
+                if (settings.winSound !== undefined) localStorage.setItem('jellycats_selected_win_sound', settings.winSound);
                 
                 if (settings.catSettings) {
                     localStorage.setItem('jellycats_editor_settings', JSON.stringify(settings.catSettings));
@@ -2303,6 +2723,12 @@
                 if (settings.dustDistribution !== undefined) this.dustDistribution = settings.dustDistribution;
                 if (settings.dustEdgeRatio !== undefined) this.dustEdgeRatio = settings.dustEdgeRatio;
                 if (settings.soundPitchRange !== undefined) this.soundPitchRange = settings.soundPitchRange;
+                if (settings.sfxVolume !== undefined) this.sfxVolume = settings.sfxVolume;
+                if (settings.meowVolume !== undefined) this.meowVolume = settings.meowVolume;
+                if (settings.swooshVolume !== undefined) this.swooshVolume = settings.swooshVolume;
+                if (settings.putVolume !== undefined) this.putVolume = settings.putVolume;
+                if (settings.returnVolume !== undefined) this.returnVolume = settings.returnVolume;
+                if (settings.winVolume !== undefined) this.winVolume = settings.winVolume;
                 if (settings.bgMusicVolume !== undefined) {
                     this.bgMusicVolume = settings.bgMusicVolume;
                     if (this.bgMusic) {
@@ -2312,6 +2738,9 @@
                 if (settings.shadowEnabled !== undefined) this.shadowEnabled = settings.shadowEnabled;
                 if (settings.shadowOpacity !== undefined) this.shadowOpacity = settings.shadowOpacity;
                 if (settings.rotationSound !== undefined) this.selectedRotationSound = settings.rotationSound;
+                if (settings.returnSound !== undefined) this.selectedReturnSound = settings.returnSound;
+                if (settings.placementSound !== undefined) this.selectedPlacementSound = settings.placementSound;
+                if (settings.winSound !== undefined) this.selectedWinSound = settings.winSound;
 
                 // Update PIECE_DEFS and game pieces
                 if (settings.catSettings) {
@@ -2423,6 +2852,18 @@
                     updateValue('bg-music-volume-slider', Math.round(settings.bgMusicVolume * 100));
                     updateText('bg-music-volume-value-label', `${Math.round(settings.bgMusicVolume * 100)}%`);
                 }
+                if (settings.sfxVolume !== undefined) {
+                    updateValue('sfx-volume-slider', Math.round(settings.sfxVolume * 100));
+                    updateText('sfx-volume-value-label', `${Math.round(settings.sfxVolume * 100)}%`);
+                }
+                if (settings.meowVolume !== undefined) {
+                    updateValue('meow-volume-slider', Math.round(settings.meowVolume * 100));
+                    updateText('meow-volume-value-label', `${Math.round(settings.meowVolume * 100)}%`);
+                }
+                if (settings.swooshVolume !== undefined) {
+                    updateValue('swoosh-volume-slider', Math.round(settings.swooshVolume * 100));
+                    updateText('swoosh-volume-value-label', `${Math.round(settings.swooshVolume * 100)}%`);
+                }
                 if (settings.dustDistribution !== undefined) {
                     updateValue('dust-dist-select', settings.dustDistribution);
                 }
@@ -2439,6 +2880,27 @@
                 }
                 if (settings.rotationSound !== undefined) {
                     updateValue('rotation-sound-select', settings.rotationSound);
+                }
+                if (settings.putVolume !== undefined) {
+                    updateValue('put-volume-slider', Math.round(settings.putVolume * 100));
+                    updateText('put-volume-value-label', `${Math.round(settings.putVolume * 100)}%`);
+                }
+                if (settings.returnVolume !== undefined) {
+                    updateValue('return-volume-slider', Math.round(settings.returnVolume * 100));
+                    updateText('return-volume-value-label', `${Math.round(settings.returnVolume * 100)}%`);
+                }
+                if (settings.winVolume !== undefined) {
+                    updateValue('win-volume-slider', Math.round(settings.winVolume * 100));
+                    updateText('win-volume-value-label', `${Math.round(settings.winVolume * 100)}%`);
+                }
+                if (settings.placementSound !== undefined) {
+                    updateValue('placement-sound-select', settings.placementSound);
+                }
+                if (settings.returnSound !== undefined) {
+                    updateValue('return-sound-select', settings.returnSound);
+                }
+                if (settings.winSound !== undefined) {
+                    updateValue('win-sound-select', settings.winSound);
                 }
 
                 // If cat alignment editor is open, update its sliders too
@@ -2523,10 +2985,19 @@
                     dustDistribution: 'everywhere',
                     dustEdgeRatio: 0.25,
                     soundPitchRange: 0.2,
+                    sfxVolume: 0.8,
+                    meowVolume: 0.8,
+                    swooshVolume: 0.8,
+                    putVolume: 0.8,
+                    returnVolume: 0.8,
+                    winVolume: 0.8,
                     bgMusicVolume: 0.5,
                     shadowEnabled: true,
                     shadowOpacity: 0.25,
                     rotationSound: 'SFX_Movement_Swoosh_Fast_1',
+                    returnSound: 'SFX_Movement_Swoosh_Fast_1',
+                    placementSound: 'card-place-1',
+                    winSound: 'win_achievement_pop',
                     catSettings: {
                         orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
                         creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
