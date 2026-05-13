@@ -7,6 +7,7 @@
                 this.currentLevel = null;
                 this.levelManager = new LevelManager();
                 this.obstacles = [];
+                this.victoryJumpMode = 'sequential';
                 this.obstacleSprites = [];
                 this.obstacleVisualMode = localStorage.getItem('jellycats_obstacle_visual_mode') || 'soft-pad';
                 this.obstacleAssetSet = localStorage.getItem('jellycats_obstacle_asset_set') || 'current';
@@ -1346,6 +1347,31 @@
                 });
             }
 
+            playVictoryJump() {
+                const mode = this.victoryJumpMode || 'sequential';
+                if (mode === 'off') return;
+
+                const tweenPiece = (piece) => {
+                    if (!piece || !piece.active) return;
+                    this.tweens.add({
+                        targets: piece,
+                        y: piece.y - 15,
+                        yoyo: true,
+                        duration: 200,
+                        ease: 'Sine.easeInOut'
+                    });
+                };
+
+                if (mode === 'simultaneous') {
+                    this.pieces.forEach(piece => tweenPiece(piece));
+                    return;
+                }
+
+                this.pieces.forEach((piece, i) => {
+                    this.time.delayedCall(i * 100, () => tweenPiece(piece));
+                });
+            }
+
             checkWin() {
                 let isFull = this.grid.every(row => row.every(cell => cell !== null));
                 if (isFull) {
@@ -1354,17 +1380,7 @@
                     if (this.victoryEffects) this.victoryEffects.play(this.selectedVictoryEffect);
 
                     // Мягкая реакция котиков (прыжок)
-                    this.pieces.forEach((p, i) => {
-                        this.time.delayedCall(i * 100, () => {
-                            this.tweens.add({
-                                targets: p,
-                                y: p.y - 15,
-                                yoyo: true,
-                                duration: 200,
-                                ease: 'Sine.easeInOut'
-                            });
-                        });
-                    });
+                    this.playVictoryJump();
 
                     // Показываем UI
                     setTimeout(() => {

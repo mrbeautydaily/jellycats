@@ -19,6 +19,7 @@ class SettingsUI {
         s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
         s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
+        s.victoryJumpMode = localStorage.getItem('jellycats_victory_jump_mode') || 'sequential';
         s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
         s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '0.6');
         s.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
@@ -103,6 +104,11 @@ class SettingsUI {
         });
         this._bindButton('btn-preview-victory-effect', () => {
             if (s.victoryEffects) s.victoryEffects.preview();
+        });
+        this._bindSelect('victory-jump-mode-select', s.victoryJumpMode, (val) => {
+            s.victoryJumpMode = val;
+            localStorage.setItem('jellycats_victory_jump_mode', val);
+            s.autosaveActiveProfile();
         });
         this._bindRangeSlider('victory-fade-slider', 'victory-fade-value-label', s.victoryFadeDuration,
             (val) => `${val}ms`,
