@@ -38,6 +38,58 @@ class LevelFactoryPanel {
         document.getElementById('btn-level-regenerate').onclick = () => this.regenerateActiveCandidate();
         document.getElementById('btn-level-rebuild').onclick = () => this.rebuildFromManualSettings();
         document.getElementById('btn-level-export').onclick = () => this.exportLevels();
+        const obstacleVisual = document.getElementById('level-obstacle-visual');
+        if (obstacleVisual) {
+            obstacleVisual.value = this.scene.obstacleVisualMode || 'soft-pad';
+            const syncObstacleVisual = () => this.scene.setObstacleVisualMode(obstacleVisual.value);
+            obstacleVisual.onchange = syncObstacleVisual;
+            obstacleVisual.oninput = syncObstacleVisual;
+        }
+        const obstacleAssetSet = document.getElementById('level-obstacle-asset-set');
+        if (obstacleAssetSet) {
+            obstacleAssetSet.value = this.scene.obstacleAssetSet || 'current';
+            const syncObstacleAssetSet = () => this.scene.setObstacleAssetSet(obstacleAssetSet.value);
+            obstacleAssetSet.onchange = syncObstacleAssetSet;
+            obstacleAssetSet.oninput = syncObstacleAssetSet;
+        }
+        const obstacleTopLayer = document.getElementById('obstacle-top-layer-toggle');
+        if (obstacleTopLayer) {
+            obstacleTopLayer.checked = !!this.scene.obstaclesAboveCats;
+            obstacleTopLayer.onchange = () => this.scene.setObstaclesAboveCats(obstacleTopLayer.checked);
+        }
+        this.bindObstacleShadowControls();
+    }
+
+    bindObstacleShadowControls() {
+        const controls = [
+            { id: 'obstacle-x-offset', label: 'obstacle-x-offset-label', suffix: 'px', key: 'xOffset', get: () => this.scene.obstacleXOffset || 0, set: value => this.scene.setObstacleXOffset(value) },
+            { id: 'obstacle-y-offset', label: 'obstacle-y-offset-label', suffix: 'px', key: 'yOffset', get: () => this.scene.obstacleYOffset || 0, set: value => this.scene.setObstacleYOffset(value) },
+            { id: 'obstacle-scale', label: 'obstacle-scale-label', suffix: '%', key: 'scale', get: () => this.scene.obstacleScalePercent || 100, set: value => this.scene.setObstacleScalePercent(value) },
+            { id: 'obstacle-shadow-angle', label: 'obstacle-shadow-angle-label', suffix: '°', key: 'angle' },
+            { id: 'obstacle-shadow-distance', label: 'obstacle-shadow-distance-label', suffix: 'px', key: 'distance' },
+            { id: 'obstacle-shadow-opacity', label: 'obstacle-shadow-opacity-label', suffix: '%', key: 'opacity' },
+            { id: 'obstacle-shadow-size', label: 'obstacle-shadow-size-label', suffix: '%', key: 'size' }
+        ];
+        const settings = this.scene.obstacleShadowSettings || this.scene.loadObstacleShadowSettings();
+        controls.forEach(control => {
+            const input = document.getElementById(control.id);
+            const label = document.getElementById(control.label);
+            if (!input) return;
+            const currentValue = control.get ? control.get() : settings[control.key];
+            input.value = currentValue;
+            if (label) label.textContent = `${currentValue}${control.suffix}`;
+            const sync = () => {
+                const value = parseInt(input.value, 10);
+                if (label) label.textContent = `${value}${control.suffix}`;
+                if (control.set) {
+                    control.set(value);
+                } else {
+                    this.scene.setObstacleShadowSettings({ [control.key]: value });
+                }
+            };
+            input.oninput = sync;
+            input.onchange = sync;
+        });
     }
 
     renderPieces() {

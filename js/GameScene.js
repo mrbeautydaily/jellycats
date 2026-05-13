@@ -6,6 +6,14 @@
                 this.activeGridRows = GRID_ROWS;
                 this.currentLevel = null;
                 this.obstacles = [];
+                this.obstacleSprites = [];
+                this.obstacleVisualMode = localStorage.getItem('jellycats_obstacle_visual_mode') || 'soft-pad';
+                this.obstacleAssetSet = localStorage.getItem('jellycats_obstacle_asset_set') || 'current';
+                this.obstacleXOffset = parseInt(localStorage.getItem('jellycats_obstacle_x_offset') || '0', 10);
+                this.obstacleYOffset = parseInt(localStorage.getItem('jellycats_obstacle_y_offset') || '0', 10);
+                this.obstacleScalePercent = parseInt(localStorage.getItem('jellycats_obstacle_scale') || '100', 10);
+                this.obstaclesAboveCats = localStorage.getItem('jellycats_obstacles_above_cats') === 'true';
+                this.obstacleShadowSettings = this.loadObstacleShadowSettings();
                 this.grid = this.createEmptyGrid();
                 this.pieces = [];
                 this.ghosts = [];
@@ -26,6 +34,18 @@
 
                 // Load room background image
                 this.load.image('room_background', 'assets/room-rug-background.png');
+                for (let i = 1; i <= 15; i++) {
+                    const suffix = String(i).padStart(2, '0');
+                    this.load.image(`obstacle_plant_${suffix}`, `assets/obstacles/icon_${suffix}.png`);
+                }
+                for (let i = 1; i <= 2; i++) {
+                    const suffix = String(i).padStart(2, '0');
+                    this.load.image(`obstacle_topdown_${suffix}`, `assets/obstacles/topdown_${suffix}.png`);
+                }
+                for (let i = 1; i <= 4; i++) {
+                    const suffix = String(i).padStart(2, '0');
+                    this.load.image(`obstacle_imagegen_${suffix}`, `assets/obstacles/imagegen_topdown_${suffix}.png`);
+                }
 
                 // Load sounds (only the ones that actually exist in assets/sounds)
                 const availableSoundNums = [3, 4, 5];
@@ -96,6 +116,7 @@
                 
                 // Графика поля (ковер)
                 this.boardGraphic = this.add.graphics();
+                this.boardGraphic.setDepth(-2);
                 
                 // Создаем игровые объекты
                 this.createPieces();
@@ -171,6 +192,144 @@
                 this.activeGridRows = GRID_ROWS;
                 this.obstacles = [];
                 this.rebuildPiecesFromDefs();
+            }
+
+            clearObstacleSprites() {
+                (this.obstacleSprites || []).forEach(sprite => sprite.destroy());
+                this.obstacleSprites = [];
+            }
+
+            loadObstacleShadowSettings() {
+                return {
+                    angle: parseInt(localStorage.getItem('jellycats_obstacle_shadow_angle') || '135', 10),
+                    distance: parseInt(localStorage.getItem('jellycats_obstacle_shadow_distance') || '14', 10),
+                    opacity: parseInt(localStorage.getItem('jellycats_obstacle_shadow_opacity') || '24', 10),
+                    size: parseInt(localStorage.getItem('jellycats_obstacle_shadow_size') || '78', 10)
+                };
+            }
+
+            setObstacleShadowSettings(settings) {
+                this.obstacleShadowSettings = { ...this.obstacleShadowSettings, ...settings };
+                localStorage.setItem('jellycats_obstacle_shadow_angle', this.obstacleShadowSettings.angle);
+                localStorage.setItem('jellycats_obstacle_shadow_distance', this.obstacleShadowSettings.distance);
+                localStorage.setItem('jellycats_obstacle_shadow_opacity', this.obstacleShadowSettings.opacity);
+                localStorage.setItem('jellycats_obstacle_shadow_size', this.obstacleShadowSettings.size);
+                this.renderObstacleSprites();
+            }
+
+            renderObstacleSprites() {
+                this.clearObstacleSprites();
+                if (!this.obstacles || this.obstacles.length === 0) return;
+                const mode = this.getObstacleVisualMode();
+                const shadow = this.obstacleShadowSettings || this.loadObstacleShadowSettings();
+
+                this.obstacles.forEach((obstacle, index) => {
+                    if (obstacle.x < 0 || obstacle.x >= this.activeGridCols || obstacle.y < 0 || obstacle.y >= this.activeGridRows) return;
+                    const textureKey = obstacle.assetKey || this.getObstacleTextureKey(obstacle, index);
+                    if (!this.textures.exists(textureKey)) return;
+                    const centerX = this.boardX + obstacle.x * this.cs + this.cs / 2;
+                    const centerY = this.boardY + obstacle.y * this.cs + this.cs / 2;
+                    const depthBase = this.obstaclesAboveCats ? 30 : -1;
+                    const plantDepth = depthBase + obstacle.y * 0.1 + obstacle.x * 0.001;
+                    const shadowDepth = plantDepth - 0.05;
+                    if (shadow.opacity > 0 && shadow.size > 0) {
+                        const radians = Phaser.Math.DegToRad(shadow.angle);
+                        const dx = Math.cos(radians) * shadow.distance;
+                        const dy = Math.sin(radians) * shadow.distance;
+                        const shadowGraphic = this.add.graphics();
+                        shadowGraphic.setDepth(shadowDepth);
+                        shadowGraphic.fillStyle(0x3c1f18, shadow.opacity / 100);
+                        shadowGraphic.fillEllipse(
+                            centerX + this.obstacleXOffset + dx,
+                            centerY + this.obstacleYOffset + dy + this.cs * 0.18,
+                            this.cs * (shadow.size / 100),
+                            this.cs * (shadow.size / 100) * 0.38
+                        );
+                        this.obstacleSprites.push(shadowGraphic);
+                    }
+
+                    const sprite = this.add.image(
+                        centerX + this.obstacleXOffset,
+                        centerY + this.obstacleYOffset,
+                        textureKey
+                    );
+                    sprite.setDepth(plantDepth);
+                    sprite.setOrigin(0.5, mode === 'plant-only' ? 0.55 : 0.58);
+                    const sizeRatio = mode === 'plant-only' ? 1.08 : mode === 'muted-cell' ? 0.72 : 0.9;
+                    const maxSize = this.cs * sizeRatio * (this.obstacleScalePercent / 100);
+                    const scale = Math.min(maxSize / sprite.width, maxSize / sprite.height);
+                    sprite.setScale(scale);
+                    this.obstacleSprites.push(sprite);
+                });
+            }
+
+            setObstacleVisualMode(mode) {
+                this.obstacleVisualMode = mode || 'soft-pad';
+                localStorage.setItem('jellycats_obstacle_visual_mode', this.obstacleVisualMode);
+                this.drawBoard();
+                this.renderObstacleSprites();
+            }
+
+            setObstacleAssetSet(assetSet) {
+                this.obstacleAssetSet = assetSet || 'current';
+                localStorage.setItem('jellycats_obstacle_asset_set', this.obstacleAssetSet);
+                this.renderObstacleSprites();
+            }
+
+            setObstacleXOffset(offset) {
+                this.obstacleXOffset = parseInt(offset || 0, 10);
+                localStorage.setItem('jellycats_obstacle_x_offset', this.obstacleXOffset);
+                this.renderObstacleSprites();
+            }
+
+            setObstacleYOffset(offset) {
+                this.obstacleYOffset = parseInt(offset || 0, 10);
+                localStorage.setItem('jellycats_obstacle_y_offset', this.obstacleYOffset);
+                this.renderObstacleSprites();
+            }
+
+            setObstacleScalePercent(scalePercent) {
+                this.obstacleScalePercent = parseInt(scalePercent || 100, 10);
+                localStorage.setItem('jellycats_obstacle_scale', this.obstacleScalePercent);
+                this.renderObstacleSprites();
+            }
+
+            setObstaclesAboveCats(isAbove) {
+                this.obstaclesAboveCats = !!isAbove;
+                localStorage.setItem('jellycats_obstacles_above_cats', this.obstaclesAboveCats.toString());
+                this.renderObstacleSprites();
+            }
+
+            getObstacleVisualMode() {
+                const select = document.getElementById('level-obstacle-visual');
+                if (select && select.value && select.value !== this.obstacleVisualMode) {
+                    this.obstacleVisualMode = select.value;
+                }
+                return this.obstacleVisualMode || 'soft-pad';
+            }
+
+            getObstacleTextureKey(obstacle, index) {
+                const levelId = this.currentLevel && this.currentLevel.id ? this.currentLevel.id : 'preview';
+                let hash = 0;
+                const source = `${levelId}:${obstacle.x},${obstacle.y}:${index}`;
+                for (let i = 0; i < source.length; i++) {
+                    hash = ((hash << 5) - hash + source.charCodeAt(i)) | 0;
+                }
+                const assetSet = this.obstacleAssetSet || 'current';
+                if (assetSet === 'imagegen') {
+                    const assetIndex = Math.abs(hash % 4) + 1;
+                    return `obstacle_imagegen_${String(assetIndex).padStart(2, '0')}`;
+                }
+                if (assetSet === 'topdown') {
+                    const assetIndex = Math.abs(hash % 2) + 1;
+                    return `obstacle_topdown_${String(assetIndex).padStart(2, '0')}`;
+                }
+                if (assetSet === 'mixed' && Math.abs(hash % 3) === 0) {
+                    const assetIndex = Math.abs(hash % 4) + 1;
+                    return `obstacle_imagegen_${String(assetIndex).padStart(2, '0')}`;
+                }
+                const assetIndex = Math.abs(hash % 15) + 1;
+                return `obstacle_plant_${String(assetIndex).padStart(2, '0')}`;
             }
 
             updateBlocksVisibility() {
@@ -258,6 +417,7 @@
                     container.def = def;
                     container.cells = JSON.parse(JSON.stringify(def.cells)); // Клонируем ячейки
                     container.isPlaced = false;
+                    container.setDepth(40);
                     container.gridX = null;
                     container.gridY = null;
                     container.color = def.color;
@@ -403,6 +563,7 @@
                 (level.placements || []).forEach(placement => {
                     const container = this.pieces.find(piece => piece.def.id === placement.pieceId);
                     if (!container) return;
+                    container.setDepth(0);
                     container.cells = JSON.parse(JSON.stringify(placement.cells));
                     this.applyContainerShape(container, placement.cells, placement.rotation || 0);
                     container.isPlaced = true;
@@ -417,6 +578,7 @@
                     });
                 });
                 this.drawBoard();
+                this.renderObstacleSprites();
             }
 
             applyContainerShape(container, cells, rotation = 0) {
@@ -474,6 +636,10 @@
                 });
             }
 
+            getPieceRestingDepth(container) {
+                return container && container.isPlaced ? 0 : 40;
+            }
+
             setupInput() {
                 this.input.on('dragstart', (pointer, gameObject) => {
                     let container = gameObject.parentContainer;
@@ -496,6 +662,7 @@
                     
                     // Поднимаем фигуру наверх
                     this.children.bringToTop(container);
+                    container.setDepth(50);
                     
                     // Запоминаем начальные данные для клика/возврата
                     container.dragStartX = container.x;
@@ -650,7 +817,7 @@
                             if (this.canPlace(container.cells, newX, newY)) {
                                 this.placePiece(container, newX, newY);
                             } else {
-                                this.returnToStart(container, true);
+                                this.returnToStart(container, true, true);
                             }
                         } else {
                             // Если фигура не была на сетке, анимируем ее перемещение в рассчитанную точку поворота
@@ -659,7 +826,8 @@
                                 x: container.targetX_after_rotate,
                                 y: container.targetY_after_rotate,
                                 duration: 200,
-                                ease: 'Back.easeOut'
+                                ease: 'Back.easeOut',
+                                onComplete: () => container.setDepth(this.getPieceRestingDepth(container))
                             });
                         }
                         return;
@@ -683,11 +851,12 @@
                     if (this.canPlace(container.cells, gridX, gridY)) {
                         this.placePiece(container, gridX, gridY);
                     } else if (hasOverlapWithGrid) {
-                        this.returnToStart(container, true);
+                        this.returnToStart(container, true, true);
                     } else {
                         // Оставляем котика там, где его бросили, если он не над сеткой
                         container.startX = container.x;
                         container.startY = container.y;
+                    container.setDepth(40);
                     }
                 });
             }
@@ -999,6 +1168,7 @@
 
             placePiece(container, gridX, gridY) {
                 container.isPlaced = true;
+                container.setDepth(0);
                 container.gridX = gridX;
                 container.gridY = gridY;
 
@@ -1047,7 +1217,7 @@
                 this.drawBoard();
             }
 
-            returnToStart(container, playSound = false) {
+            returnToStart(container, playSound = false, restoreDepthOnComplete = false) {
                 if (playSound) {
                     this.soundManager.playReturn();
                 }
@@ -1056,7 +1226,10 @@
                     x: container.startX,
                     y: container.startY,
                     duration: 300,
-                    ease: 'Back.easeOut'
+                    ease: 'Back.easeOut',
+                    onComplete: () => {
+                        if (restoreDepthOnComplete) container.setDepth(this.getPieceRestingDepth(container));
+                    }
                 });
             }
 
@@ -1174,6 +1347,8 @@
                 this.drawBoard();
 
                 // Обновляем позицию и масштаб фонового изображения комнаты
+                this.renderObstacleSprites();
+
                 if (this.bgImage) {
                     let centerX = w / 2;
                     let centerY = h * 0.12 + maxBoardHeight() / 2;
@@ -1275,14 +1450,18 @@
                             this.boardGraphic.lineStyle(thickness, color, 0.95);
                             this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
                         } else if (isObstacle) {
-                            this.boardGraphic.fillStyle(0xf7c6d9, 0.9);
-                            this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
-                            this.boardGraphic.lineStyle(thickness, 0xdb7093, 0.95);
-                            this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
-                            this.boardGraphic.fillStyle(0xffffff, 0.75);
-                            this.boardGraphic.fillCircle(cellX + cellSize * 0.5, cellY + cellSize * 0.5, cellSize * 0.18);
-                            this.boardGraphic.fillStyle(0xfff3a6, 0.95);
-                            this.boardGraphic.fillCircle(cellX + cellSize * 0.5, cellY + cellSize * 0.5, cellSize * 0.08);
+                            const obstacleMode = this.getObstacleVisualMode();
+                            if (obstacleMode === 'soft-pad') {
+                                this.boardGraphic.fillStyle(0x5a2f2b, 0.22);
+                                this.boardGraphic.fillRoundedRect(cellX + cellSize * 0.04, cellY + cellSize * 0.2, cellSize * 0.92, cellSize * 0.62, radius * 1.8);
+                                this.boardGraphic.fillStyle(0xfff1ef, 0.16);
+                                this.boardGraphic.fillRoundedRect(cellX + cellSize * 0.12, cellY + cellSize * 0.1, cellSize * 0.76, cellSize * 0.54, radius * 1.2);
+                            } else if (obstacleMode === 'muted-cell') {
+                                this.boardGraphic.fillStyle(0x1f6f3b, 0.24);
+                                this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                                this.boardGraphic.lineStyle(Math.max(2, thickness), 0x1f8f48, 0.5);
+                                this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                            }
                         } else if (isOccupied) {
                             // Изысканный выбранный цвет для занятой клетки
                             // Фон: остается обычным полупрозрачным белым (прозрачность 0.18) или закрашивается цветом выделения

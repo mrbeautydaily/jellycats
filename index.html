@@ -585,6 +585,50 @@
                 Obstacles enabled
                 <input id="level-obstacles-enabled" type="checkbox" checked class="accent-sky-500">
             </label>
+            <label class="text-xs font-bold text-slate-600">Obstacle look
+                <select id="level-obstacle-visual" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
+                    <option value="soft-pad">B · soft cell shadow</option>
+                    <option value="plant-only">A · plant only</option>
+                    <option value="muted-cell">C · muted blocked cell</option>
+                </select>
+            </label>
+            <label class="text-xs font-bold text-slate-600">Plant asset set
+                <select id="level-obstacle-asset-set" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
+                    <option value="current">Current side pots</option>
+                    <option value="imagegen">ImageGen top-down</option>
+                    <option value="topdown">Top-down test</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </label>
+            <div class="rounded-xl border border-sky-100 bg-white/80 p-3 space-y-2">
+                <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Plant placement</div>
+                <label class="block text-xs font-bold text-slate-600">Plant X offset <span id="obstacle-x-offset-label" class="float-right text-sky-600">0px</span>
+                    <input id="obstacle-x-offset" type="range" min="-35" max="35" step="1" value="0" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="block text-xs font-bold text-slate-600">Plant Y offset <span id="obstacle-y-offset-label" class="float-right text-sky-600">0px</span>
+                    <input id="obstacle-y-offset" type="range" min="-35" max="35" step="1" value="0" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="block text-xs font-bold text-slate-600">Plant scale <span id="obstacle-scale-label" class="float-right text-sky-600">100%</span>
+                    <input id="obstacle-scale" type="range" min="50" max="140" step="2" value="100" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-2 text-xs font-bold text-slate-600 border border-slate-100">
+                    Plants above cats
+                    <input id="obstacle-top-layer-toggle" type="checkbox" class="accent-sky-500">
+                </label>
+                <div class="pt-1 text-xs font-bold uppercase tracking-wide text-slate-400">Plant shadow</div>
+                <label class="block text-xs font-bold text-slate-600">Angle <span id="obstacle-shadow-angle-label" class="float-right text-sky-600">135°</span>
+                    <input id="obstacle-shadow-angle" type="range" min="0" max="360" step="5" value="135" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="block text-xs font-bold text-slate-600">Distance <span id="obstacle-shadow-distance-label" class="float-right text-sky-600">14px</span>
+                    <input id="obstacle-shadow-distance" type="range" min="0" max="40" step="1" value="14" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="block text-xs font-bold text-slate-600">Density <span id="obstacle-shadow-opacity-label" class="float-right text-sky-600">24%</span>
+                    <input id="obstacle-shadow-opacity" type="range" min="0" max="70" step="1" value="24" class="mt-1 w-full accent-sky-500">
+                </label>
+                <label class="block text-xs font-bold text-slate-600">Size <span id="obstacle-shadow-size-label" class="float-right text-sky-600">78%</span>
+                    <input id="obstacle-shadow-size" type="range" min="40" max="120" step="2" value="78" class="mt-1 w-full accent-sky-500">
+                </label>
+            </div>
             <div>
                 <div class="mb-2 flex items-center justify-between">
                     <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Available cats</span>

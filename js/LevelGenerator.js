@@ -94,7 +94,7 @@ class LevelGenerator {
         if (Array.isArray(provided)) return provided.slice(0, count);
         const allCells = [];
         for (let y = 0; y < grid.rows; y++) {
-            for (let x = 0; x < grid.cols; x++) allCells.push({ x, y, type: 'flower' });
+            for (let x = 0; x < grid.cols; x++) allCells.push({ x, y, type: 'plant' });
         }
         return this.shuffle(allCells).slice(0, count);
     }
