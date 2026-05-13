@@ -18,6 +18,8 @@ class SettingsUI {
         s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
         s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
+        s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
+        s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
         s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '0.6');
         s.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
         s.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
@@ -47,6 +49,7 @@ class SettingsUI {
 
         // --- Bind all UI controls ---
         this._bindSoundSelectors();
+        this._bindVictoryEffect();
         this._bindSliders();
         this._bindToggles();
         this._bindPanelCollapse();
@@ -89,6 +92,25 @@ class SettingsUI {
             s.autosaveActiveProfile();
         });
         this._bindButton('btn-play-win-sound', () => s.soundManager.playWin());
+    }
+
+    _bindVictoryEffect() {
+        const s = this.scene;
+        this._bindSelect('victory-effect-select', s.selectedVictoryEffect, (val) => {
+            s.selectedVictoryEffect = val;
+            localStorage.setItem('jellycats_victory_effect', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-preview-victory-effect', () => {
+            if (s.victoryEffects) s.victoryEffects.preview();
+        });
+        this._bindRangeSlider('victory-fade-slider', 'victory-fade-value-label', s.victoryFadeDuration,
+            (val) => `${val}ms`,
+            (val) => {
+                s.victoryFadeDuration = parseInt(val, 10);
+                localStorage.setItem('jellycats_victory_fade_duration', s.victoryFadeDuration.toString());
+                s.autosaveActiveProfile();
+            });
     }
 
     _bindSliders() {

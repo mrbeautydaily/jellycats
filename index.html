@@ -311,6 +311,28 @@
                 </div>
             </div>
 
+            <!-- Victory effect -->
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">Victory effect</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="victory-effect-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="sparkle-stars">Sparkle stars</option>
+                        <option value="soft-confetti">Soft confetti</option>
+                        <option value="cell-pop">Cell pop wave</option>
+                        <option value="mixed-gentle">Mixed gentle</option>
+                        <option value="off">Off</option>
+                    </select>
+                    <button id="btn-preview-victory-effect" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Preview">
+                        FX
+                    </button>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Star fade</span>
+                    <span id="victory-fade-value-label" class="font-extrabold text-orange-600">1000ms</span>
+                </div>
+                <input type="range" id="victory-fade-slider" min="10" max="2500" step="10" value="1000" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
             <!-- Громкость звуковых эффектов -->
             <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
                 <div class="flex justify-between items-center text-xs">
@@ -690,6 +712,7 @@
     <script src="js/LevelGenerator.js"></script>
     <script src="js/LevelManager.js"></script>
     <script src="js/LevelFactoryPanel.js"></script>
+    <script src="js/VictoryEffects.js"></script>
     <script src="js/GameScene.js"></script>
     <script src="js/main.js"></script>
 </body>

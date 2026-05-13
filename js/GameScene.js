@@ -138,6 +138,7 @@
 
                 this.soundManager = new SoundManager(this);
                 this.dustSystem = new DustSystem(this);
+                this.victoryEffects = new VictoryEffects(this);
                 
                 // Initialize UI and Managers
                 this.settingsUI = new SettingsUI(this);
@@ -243,6 +244,7 @@
             }
 
             loadLevel(level, showSolved = false) {
+                if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.currentLevel = level;
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
                 this.activeGridRows = Math.min(GRID_ROWS, Math.max(1, level.grid.rows));
@@ -256,6 +258,7 @@
             }
 
             clearLevel() {
+                if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.currentLevel = null;
                 this.activeGridCols = GRID_COLS;
                 this.activeGridRows = GRID_ROWS;
@@ -473,6 +476,45 @@
                     dustG.fillCircle(8, 8, i);
                 }
                 dustG.generateTexture('dust_particle', 16, 16);
+
+                // 4. Victory effect textures
+                let sparkleG = this.make.graphics({x: 0, y: 0, add: false});
+                for (let i = 10; i > 0; i--) {
+                    sparkleG.fillStyle(0xffffff, (11 - i) * 0.08);
+                    sparkleG.fillCircle(12, 12, i);
+                }
+                sparkleG.fillStyle(0xffffff, 0.95);
+                sparkleG.fillCircle(12, 12, 3);
+                sparkleG.generateTexture('victory_sparkle', 24, 24);
+
+                let starG = this.make.graphics({x: 0, y: 0, add: false});
+                const starPoints = [];
+                for (let i = 0; i < 10; i++) {
+                    const radius = i % 2 === 0 ? 12 : 5;
+                    const angle = -Math.PI / 2 + i * Math.PI / 5;
+                    starPoints.push(new Phaser.Geom.Point(14 + Math.cos(angle) * radius, 14 + Math.sin(angle) * radius));
+                }
+                starG.fillStyle(0xffffff, 1);
+                starG.fillPoints(starPoints, true);
+                starG.generateTexture('victory_star', 28, 28);
+
+                let outlineStarG = this.make.graphics({x: 0, y: 0, add: false});
+                const outlineStarPoints = [];
+                for (let i = 0; i < 10; i++) {
+                    const radius = i % 2 === 0 ? 44 : 18;
+                    const angle = -Math.PI / 2 + i * Math.PI / 5;
+                    outlineStarPoints.push(new Phaser.Geom.Point(52 + Math.cos(angle) * radius, 52 + Math.sin(angle) * radius));
+                }
+                outlineStarG.lineStyle(5, 0xffffff, 1);
+                outlineStarG.strokePoints(outlineStarPoints, true);
+                outlineStarG.generateTexture('victory_star_outline', 104, 104);
+
+                let confettiG = this.make.graphics({x: 0, y: 0, add: false});
+                confettiG.fillStyle(0xffffff, 1);
+                confettiG.fillRoundedRect(1, 2, 28, 12, 4);
+                confettiG.fillStyle(0xffffff, 0.34);
+                confettiG.fillRoundedRect(3, 3, 24, 4, 2);
+                confettiG.generateTexture('victory_confetti', 30, 16);
             }
 
             createPieces() {
@@ -594,6 +636,7 @@
             }
 
             rebuildPiecesFromDefs(selectedId = null, afterRebuild = null) {
+                if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.tweens.killAll();
                 this.grid = this.createEmptyGrid();
                 this.previewGridCells = [];
@@ -1308,6 +1351,7 @@
                 if (isFull) {
                     // Play win sound
                     this.soundManager.playWin();
+                    if (this.victoryEffects) this.victoryEffects.play(this.selectedVictoryEffect);
 
                     // Мягкая реакция котиков (прыжок)
                     this.pieces.forEach((p, i) => {
@@ -1335,6 +1379,7 @@
             }
 
             restartLevel() {
+                if (this.victoryEffects) this.victoryEffects.cleanup();
                 // Скрываем UI
                 const ui = document.getElementById('ui-layer');
                 const modal = document.getElementById('win-modal');
