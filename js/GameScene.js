@@ -5,6 +5,7 @@
                 this.activeGridCols = GRID_COLS;
                 this.activeGridRows = GRID_ROWS;
                 this.currentLevel = null;
+                this.levelManager = new LevelManager();
                 this.obstacles = [];
                 this.obstacleSprites = [];
                 this.obstacleVisualMode = localStorage.getItem('jellycats_obstacle_visual_mode') || 'soft-pad';
@@ -132,7 +133,8 @@
 
                 // Привязка UI кнопок
                 document.getElementById('btn-restart').onclick = () => this.restartLevel();
-                document.getElementById('btn-next').onclick = () => this.restartLevel(); // В v1 перезапускает уровень
+                document.getElementById('btn-next').onclick = () => this.loadNextSavedLevel();
+                this.setupLevelQuickNav();
 
                 this.soundManager = new SoundManager(this);
                 this.dustSystem = new DustSystem(this);
@@ -165,6 +167,71 @@
                 }
             }
 
+            setupLevelQuickNav() {
+                this.quickNav = {
+                    prev: document.getElementById('btn-level-prev-saved'),
+                    next: document.getElementById('btn-level-next-saved'),
+                    counter: document.getElementById('level-quick-nav-counter')
+                };
+                if (this.quickNav.prev) this.quickNav.prev.onclick = () => this.navigateSavedLevel('previous');
+                if (this.quickNav.next) this.quickNav.next.onclick = () => this.navigateSavedLevel('next');
+                this.updateLevelQuickNav();
+            }
+
+            updateLevelQuickNav() {
+                if (!this.quickNav) return;
+                const levels = this.levelManager.getLevels();
+                const activeId = this.getCurrentSavedLevelId(levels);
+                const index = levels.findIndex(level => level.id === activeId);
+                const hasLevels = levels.length > 0;
+                if (this.quickNav.prev) this.quickNav.prev.disabled = !hasLevels;
+                if (this.quickNav.next) this.quickNav.next.disabled = !hasLevels;
+                if (this.quickNav.counter) this.quickNav.counter.textContent = `${index >= 0 ? index + 1 : 0} / ${levels.length}`;
+            }
+
+            navigateSavedLevel(direction) {
+                const currentId = this.getCurrentSavedLevelId();
+                const level = direction === 'previous'
+                    ? this.levelManager.getPreviousLevel(currentId)
+                    : this.levelManager.getNextLevel(currentId);
+                if (!level) return;
+                this.dismissWinModal();
+                this.loadLevel(level, false);
+                if (this.levelFactoryPanel) {
+                    this.levelFactoryPanel.activeCandidateIndex = -1;
+                    this.levelFactoryPanel.renderCandidates();
+                    this.levelFactoryPanel.updateHeartButton(level);
+                }
+            }
+
+            loadNextSavedLevel() {
+                const level = this.levelManager.getNextLevel(this.getCurrentSavedLevelId());
+                if (!level) {
+                    this.restartLevel();
+                    return;
+                }
+                this.dismissWinModal();
+                this.loadLevel(level, false);
+            }
+
+            getCurrentSavedLevelId(levels = this.levelManager.getLevels()) {
+                if (!this.currentLevel) return null;
+                const matching = this.levelManager.findMatchingLevel(this.currentLevel, levels);
+                return matching ? matching.id : this.currentLevel.id;
+            }
+
+            dismissWinModal() {
+                const ui = document.getElementById('ui-layer');
+                const modal = document.getElementById('win-modal');
+                if (!ui || !modal) return;
+                ui.classList.remove('fade-in');
+                modal.classList.remove('scale-in');
+                setTimeout(() => {
+                    ui.classList.add('opacity-0', 'invisible');
+                    modal.classList.add('scale-90');
+                }, 10);
+            }
+
             createEmptyGrid() {
                 const grid = Array(this.activeGridRows).fill(null).map(() => Array(this.activeGridCols).fill(null));
                 (this.obstacles || []).forEach(obstacle => {
@@ -184,6 +251,8 @@
                 this.rebuildPiecesFromDefs(null, () => {
                     if (showSolved) this.applySolvedPreview(level);
                 });
+                this.updateLevelQuickNav();
+                if (this.levelFactoryPanel) this.levelFactoryPanel.updateHeartButton(level);
             }
 
             clearLevel() {
@@ -192,6 +261,7 @@
                 this.activeGridRows = GRID_ROWS;
                 this.obstacles = [];
                 this.rebuildPiecesFromDefs();
+                this.updateLevelQuickNav();
             }
 
             clearObstacleSprites() {

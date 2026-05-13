@@ -18,11 +18,13 @@ class LevelFactoryPanel {
         this.candidateList = document.getElementById('level-candidate-list');
         this.savedList = document.getElementById('saved-level-list');
         this.status = document.getElementById('level-factory-status');
+        this.saveButton = document.getElementById('btn-level-save-candidate');
 
         this.bindControls();
         this.renderPieces();
         this.renderCandidates();
         this.renderSavedLevels();
+        this.updateHeartButton();
     }
 
     bindControls() {
@@ -34,7 +36,7 @@ class LevelFactoryPanel {
 
         document.getElementById('btn-level-generate').onclick = () => this.generateBatch();
         document.getElementById('btn-level-next').onclick = () => this.showNextCandidate();
-        document.getElementById('btn-level-save-candidate').onclick = () => this.acceptActiveCandidate();
+        this.saveButton.onclick = () => this.acceptActiveCandidate();
         document.getElementById('btn-level-regenerate').onclick = () => this.regenerateActiveCandidate();
         document.getElementById('btn-level-rebuild').onclick = () => this.rebuildFromManualSettings();
         document.getElementById('btn-level-export').onclick = () => this.exportLevels();
@@ -115,6 +117,7 @@ class LevelFactoryPanel {
         this.activeCandidateIndex = this.candidates.length ? 0 : -1;
         this.renderCandidates();
         if (this.activeCandidate) this.previewCandidate(this.activeCandidate);
+        this.updateHeartButton();
         this.setStatus(this.candidates.length ? `Generated ${this.candidates.length} candidate(s).` : 'No valid layouts found. Try different pieces or grid.');
     }
 
@@ -126,6 +129,7 @@ class LevelFactoryPanel {
         this.activeCandidateIndex = (this.activeCandidateIndex + 1) % this.candidates.length;
         this.previewCandidate(this.activeCandidate);
         this.renderCandidates();
+        this.updateHeartButton();
     }
 
     regenerateActiveCandidate() {
@@ -141,6 +145,7 @@ class LevelFactoryPanel {
         }
         this.previewCandidate(level);
         this.renderCandidates();
+        this.updateHeartButton();
         this.setStatus('Candidate regenerated.');
     }
 
@@ -161,17 +166,26 @@ class LevelFactoryPanel {
         this.activeCandidateIndex = 0;
         this.previewCandidate(level);
         this.renderCandidates();
+        this.updateHeartButton();
         this.setStatus('Manual candidate rebuilt.');
     }
 
     acceptActiveCandidate() {
-        if (!this.activeCandidate) return;
-        const saved = this.manager.acceptLevel(this.activeCandidate);
-        this.candidates.splice(this.activeCandidateIndex, 1);
-        this.activeCandidateIndex = this.candidates.length ? Math.min(this.activeCandidateIndex, this.candidates.length - 1) : -1;
+        const level = this.activeCandidate || this.scene.currentLevel;
+        if (!level) return;
+
+        const wasSaved = this.manager.isLevelSaved(level);
+        const saved = this.manager.acceptLevel(level);
+        if (this.activeCandidate && !wasSaved) {
+            this.candidates.splice(this.activeCandidateIndex, 1);
+            this.activeCandidateIndex = -1;
+        }
+        this.scene.currentLevel = saved;
         this.renderCandidates();
         this.renderSavedLevels();
-        this.setStatus(`Saved ${saved.name}.`);
+        this.updateHeartButton();
+        if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+        this.setStatus(wasSaved ? `${saved.name} is already in saved levels.` : `Saved ${saved.name}.`);
     }
 
     previewCandidate(level) {
@@ -179,6 +193,7 @@ class LevelFactoryPanel {
         document.getElementById('level-grid-cols').value = level.grid.cols;
         document.getElementById('level-grid-rows').value = level.grid.rows;
         document.getElementById('level-obstacle-count').value = level.obstacles.length;
+        this.updateHeartButton(level);
         this.setStatus(`${level.name}: ${level.pieceIds.length} cats, ${level.grid.cols}x${level.grid.rows}, ${level.obstacles.length} blocks.`);
     }
 
@@ -200,6 +215,7 @@ class LevelFactoryPanel {
                 this.activeCandidateIndex = index;
                 this.previewCandidate(level);
                 this.renderCandidates();
+                this.updateHeartButton(level);
             };
             this.candidateList.appendChild(btn);
         });
@@ -217,12 +233,31 @@ class LevelFactoryPanel {
             row.className = 'flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-2 py-2';
             row.innerHTML = `
                 <button type="button" class="saved-level-load flex-1 text-left text-xs font-bold text-slate-700">${index + 1}. ${level.name} · ${level.grid.cols}x${level.grid.rows}</button>
+                <button type="button" class="saved-level-up rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === 0 ? 'disabled' : ''}>↑</button>
+                <button type="button" class="saved-level-down rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === levels.length - 1 ? 'disabled' : ''}>↓</button>
                 <button type="button" class="saved-level-delete rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-500">Delete</button>
             `;
-            row.querySelector('.saved-level-load').onclick = () => this.scene.loadLevel(level, false);
+            row.querySelector('.saved-level-load').onclick = () => {
+                this.activeCandidateIndex = -1;
+                this.scene.loadLevel(level, false);
+                this.renderCandidates();
+                this.updateHeartButton(level);
+            };
+            row.querySelector('.saved-level-up').onclick = () => {
+                this.manager.moveLevel(level.id, 'up');
+                this.renderSavedLevels();
+                if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+            };
+            row.querySelector('.saved-level-down').onclick = () => {
+                this.manager.moveLevel(level.id, 'down');
+                this.renderSavedLevels();
+                if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+            };
             row.querySelector('.saved-level-delete').onclick = () => {
                 this.manager.deleteLevel(level.id);
                 this.renderSavedLevels();
+                this.updateHeartButton();
+                if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
             };
             this.savedList.appendChild(row);
         });
@@ -262,6 +297,17 @@ class LevelFactoryPanel {
 
     setStatus(text) {
         if (this.status) this.status.textContent = text;
+    }
+
+    updateHeartButton(level = this.activeCandidate || this.scene.currentLevel) {
+        if (!this.saveButton) return;
+        const isSaved = level && this.manager.isLevelSaved(level);
+        this.saveButton.textContent = isSaved ? '♥ Saved' : '♡ Save';
+        this.saveButton.className = [
+            'rounded-xl px-3 py-2.5 text-sm font-extrabold transition-colors',
+            isSaved ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-rose-100 text-rose-600 hover:bg-rose-200'
+        ].join(' ');
+        this.saveButton.disabled = !level;
     }
 
     get activeCandidate() {
