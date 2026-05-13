@@ -156,9 +156,15 @@ class ProfileManager {
     getCurrentState() {
         const s = this.scene;
         const catSettings = {};
+        const savedEditorSettings = JSON.parse(localStorage.getItem('jellycats_editor_settings') || '{}');
+        const savedDeletedPieceIds = JSON.parse(localStorage.getItem('jellycats_deleted_piece_ids') || '[]');
         PIECE_DEFS.forEach(p => {
-            catSettings[p.id] = { originX: p.originX, originY: p.originY, offsetX: p.offsetX, offsetY: p.offsetY, scaleX: p.scaleX, scaleY: p.scaleY };
+            catSettings[p.id] = { imagePath: p.imagePath, color: p.color, cells: p.cells, originX: p.originX, originY: p.originY, offsetX: p.offsetX, offsetY: p.offsetY, scaleX: p.scaleX, scaleY: p.scaleY };
         });
+        catSettings.__deletedPieceIds = [...new Set([
+            ...(Array.isArray(savedDeletedPieceIds) ? savedDeletedPieceIds : []),
+            ...(Array.isArray(savedEditorSettings.__deletedPieceIds) ? savedEditorSettings.__deletedPieceIds : [])
+        ])];
         return {
             globalZoom: s.currentZoom, bgScaleMultiplier: s.bgScaleMultiplier,
             gridGap: s.gridGap, gridRadius: s.gridRadius, glowThickness: s.glowThickness, glowBlur: s.glowBlur,
@@ -228,12 +234,66 @@ class ProfileManager {
 
         // 3. Update PIECE_DEFS and game pieces
         if (settings.catSettings) {
+            let needsPieceRebuild = false;
+            const storedDeletedPieceIds = JSON.parse(localStorage.getItem('jellycats_deleted_piece_ids') || '[]');
+            const deletedPieceIds = [...new Set([
+                ...(Array.isArray(storedDeletedPieceIds) ? storedDeletedPieceIds : []),
+                ...(Array.isArray(settings.catSettings.__deletedPieceIds) ? settings.catSettings.__deletedPieceIds : [])
+            ])];
+            localStorage.setItem('jellycats_deleted_piece_ids', JSON.stringify(deletedPieceIds));
+            if (deletedPieceIds.length > 0) {
+                for (let i = PIECE_DEFS.length - 1; i >= 0; i--) {
+                    if (deletedPieceIds.includes(PIECE_DEFS[i].id)) {
+                        delete DEFAULT_SETTINGS[PIECE_DEFS[i].id];
+                        PIECE_DEFS.splice(i, 1);
+                        needsPieceRebuild = true;
+                    }
+                }
+            }
+            Object.entries(settings.catSettings).forEach(([id, catSet]) => {
+                if (id.startsWith('__') || deletedPieceIds.includes(id)) return;
+                if (PIECE_DEFS.some(p => p.id === id)) return;
+                if (!catSet || !Array.isArray(catSet.cells) || catSet.cells.length === 0) return;
+
+                DEFAULT_SETTINGS[id] = {
+                    originX: catSet.originX !== undefined ? catSet.originX : 0.5,
+                    originY: catSet.originY !== undefined ? catSet.originY : 0.5,
+                    offsetX: catSet.offsetX !== undefined ? catSet.offsetX : 0,
+                    offsetY: catSet.offsetY !== undefined ? catSet.offsetY : 0,
+                    scaleX: catSet.scaleX !== undefined ? catSet.scaleX : 0.45,
+                    scaleY: catSet.scaleY !== undefined ? catSet.scaleY : 0.45
+                };
+
+                PIECE_DEFS.push({
+                    id,
+                    imagePath: catSet.imagePath || 'assets/cats/orangeSolo.png',
+                    color: catSet.color || 0x8ecae6,
+                    cells: catSet.cells,
+                    originX: DEFAULT_SETTINGS[id].originX,
+                    originY: DEFAULT_SETTINGS[id].originY,
+                    offsetX: DEFAULT_SETTINGS[id].offsetX,
+                    offsetY: DEFAULT_SETTINGS[id].offsetY,
+                    scaleX: DEFAULT_SETTINGS[id].scaleX,
+                    scaleY: DEFAULT_SETTINGS[id].scaleY
+                });
+                needsPieceRebuild = true;
+            });
+
             PIECE_DEFS.forEach(p => {
                 const catSet = settings.catSettings[p.id];
                 if (catSet) {
-                    p.originX = catSet.originX; p.originY = catSet.originY;
-                    p.offsetX = catSet.offsetX; p.offsetY = catSet.offsetY;
-                    p.scaleX = catSet.scaleX; p.scaleY = catSet.scaleY;
+                    if (catSet.imagePath !== undefined) p.imagePath = catSet.imagePath;
+                    if (catSet.color !== undefined) p.color = catSet.color;
+                    if (catSet.cells !== undefined) {
+                        p.cells = catSet.cells;
+                        needsPieceRebuild = true;
+                    }
+                    if (catSet.originX !== undefined) p.originX = catSet.originX;
+                    if (catSet.originY !== undefined) p.originY = catSet.originY;
+                    if (catSet.offsetX !== undefined) p.offsetX = catSet.offsetX;
+                    if (catSet.offsetY !== undefined) p.offsetY = catSet.offsetY;
+                    if (catSet.scaleX !== undefined) p.scaleX = catSet.scaleX;
+                    if (catSet.scaleY !== undefined) p.scaleY = catSet.scaleY;
                     const container = s.pieces.find(pc => pc.def.id === p.id);
                     if (container) {
                         const catImg = container.list.find(child => child.isCatImage);
@@ -245,6 +305,9 @@ class ProfileManager {
                     }
                 }
             });
+            if (needsPieceRebuild && s.rebuildPiecesFromDefs) {
+                s.rebuildPiecesFromDefs();
+            }
         }
 
         // 4. Update HTML inputs
@@ -298,6 +361,7 @@ class ProfileManager {
                 uv('slider-scaleY', def.scaleY); ut('val-scaleY', def.scaleY);
                 uv('slider-originX', def.originX); ut('val-originX', def.originX);
                 uv('slider-originY', def.originY); ut('val-originY', def.originY);
+                uv('edit-image-path', def.imagePath || `assets/cats/${def.id}.png`);
             }
         }
 

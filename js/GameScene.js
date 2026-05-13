@@ -1,8 +1,12 @@
         class GameScene extends Phaser.Scene {
             constructor() {
                 super('GameScene');
-                // Логическая сетка 4x4
-                this.grid = Array(4).fill(null).map(() => Array(4).fill(null));
+                // Логическая сетка
+                this.activeGridCols = GRID_COLS;
+                this.activeGridRows = GRID_ROWS;
+                this.currentLevel = null;
+                this.obstacles = [];
+                this.grid = this.createEmptyGrid();
                 this.pieces = [];
                 this.ghosts = [];
                 this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
@@ -16,11 +20,9 @@
                 this.generateTextures();
 
                 // Load PNG cat images
-                this.load.image('orangeSolo', 'assets/cats/orangeSolo.png');
-                this.load.image('creamCurl', 'assets/cats/creamCurl.png');
-                this.load.image('graySit', 'assets/cats/graySit.png');
-                this.load.image('calicoStretch', 'assets/cats/calicoStretch.png');
-                this.load.image('blackLong', 'assets/cats/blackLong.png');
+                PIECE_DEFS.forEach(def => {
+                    this.load.image(def.id, def.imagePath || `assets/cats/${def.id}.png`);
+                });
 
                 // Load room background image
                 this.load.image('room_background', 'assets/room-rug-background.png');
@@ -123,6 +125,9 @@
                 
                 this.editorPanel = new EditorPanel(this);
                 this.editorPanel.init();
+
+                this.levelFactoryPanel = new LevelFactoryPanel(this);
+                this.levelFactoryPanel.init();
                 
                 // Setup sounds and background music
                 this.soundManager.initDefaults();
@@ -137,6 +142,35 @@
                 if (this.profileManager) {
                     this.profileManager.autosave();
                 }
+            }
+
+            createEmptyGrid() {
+                const grid = Array(this.activeGridRows).fill(null).map(() => Array(this.activeGridCols).fill(null));
+                (this.obstacles || []).forEach(obstacle => {
+                    if (obstacle.x >= 0 && obstacle.x < this.activeGridCols && obstacle.y >= 0 && obstacle.y < this.activeGridRows) {
+                        grid[obstacle.y][obstacle.x] = '__obstacle__';
+                    }
+                });
+                return grid;
+            }
+
+            loadLevel(level, showSolved = false) {
+                this.currentLevel = level;
+                this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
+                this.activeGridRows = Math.min(GRID_ROWS, Math.max(1, level.grid.rows));
+                this.obstacles = Array.isArray(level.obstacles) ? level.obstacles : [];
+                this.pendingSolvedPreview = showSolved;
+                this.rebuildPiecesFromDefs(null, () => {
+                    if (showSolved) this.applySolvedPreview(level);
+                });
+            }
+
+            clearLevel() {
+                this.currentLevel = null;
+                this.activeGridCols = GRID_COLS;
+                this.activeGridRows = GRID_ROWS;
+                this.obstacles = [];
+                this.rebuildPiecesFromDefs();
             }
 
             updateBlocksVisibility() {
@@ -213,7 +247,12 @@
             }
 
             createPieces() {
-                PIECE_DEFS.forEach(def => {
+                const activePieceIds = this.currentLevel && Array.isArray(this.currentLevel.pieceIds) ? this.currentLevel.pieceIds : null;
+                const defsToCreate = activePieceIds
+                    ? activePieceIds.map(id => PIECE_DEFS.find(def => def.id === id)).filter(Boolean)
+                    : PIECE_DEFS;
+
+                defsToCreate.forEach(def => {
                     // Создаем боевой контейнер
                     let container = this.add.container(0, 0);
                     container.def = def;
@@ -321,6 +360,117 @@
                     container.ghost = ghost;
                     this.pieces.push(container);
                     this.ghosts.push(ghost);
+                });
+            }
+
+            rebuildPiecesFromDefs(selectedId = null, afterRebuild = null) {
+                this.tweens.killAll();
+                this.grid = this.createEmptyGrid();
+                this.previewGridCells = [];
+
+                this.pieces.forEach(piece => piece.destroy(true));
+                this.ghosts.forEach(ghost => ghost.destroy(true));
+                this.pieces = [];
+                this.ghosts = [];
+
+                PIECE_DEFS.forEach(def => {
+                    if (!this.textures.exists(def.id)) {
+                        this.load.image(def.id, def.imagePath || `assets/cats/${def.id}.png`);
+                    }
+                });
+
+                const finishRebuild = () => {
+                    this.createPieces();
+                    this.updateLayout();
+                    this.updateBlocksVisibility();
+                    this.drawBoard();
+                    if (selectedId && this.editorPanel && this.editorPanel.refreshAfterRebuild) {
+                        this.editorPanel.refreshAfterRebuild(selectedId);
+                    }
+                    if (afterRebuild) afterRebuild();
+                };
+
+                if (this.load.list.size > 0) {
+                    this.load.once('complete', finishRebuild);
+                    this.load.start();
+                } else {
+                    finishRebuild();
+                }
+            }
+
+            applySolvedPreview(level) {
+                this.grid = this.createEmptyGrid();
+                (level.placements || []).forEach(placement => {
+                    const container = this.pieces.find(piece => piece.def.id === placement.pieceId);
+                    if (!container) return;
+                    container.cells = JSON.parse(JSON.stringify(placement.cells));
+                    this.applyContainerShape(container, placement.cells, placement.rotation || 0);
+                    container.isPlaced = true;
+                    container.gridX = placement.x;
+                    container.gridY = placement.y;
+                    container.x = this.boardX + placement.x * this.cs + this.cs / 2;
+                    container.y = this.boardY + placement.y * this.cs + this.cs / 2;
+                    container.startX = container.x;
+                    container.startY = container.y;
+                    container.cells.forEach(([cx, cy]) => {
+                        this.grid[placement.y + cy][placement.x + cx] = container.def.id;
+                    });
+                });
+                this.drawBoard();
+            }
+
+            applyContainerShape(container, cells, rotation = 0) {
+                let blockIndex = 0;
+                container.list.forEach(child => {
+                    if (child.gridX === undefined || child.gridY === undefined) return;
+                    const cell = cells[blockIndex] || cells[cells.length - 1];
+                    child.gridX = cell[0];
+                    child.gridY = cell[1];
+                    child.x = cell[0] * BASE_CS;
+                    child.y = cell[1] * BASE_CS;
+                    blockIndex++;
+                });
+                if (container.ghost) {
+                    container.ghost.list.forEach((child, index) => {
+                        const cell = cells[index] || cells[cells.length - 1];
+                        child.x = cell[0] * BASE_CS;
+                        child.y = cell[1] * BASE_CS;
+                    });
+                }
+
+                const rotatePoint = (x, y, turns) => {
+                    let nx = x;
+                    let ny = y;
+                    for (let i = 0; i < turns; i++) {
+                        const tx = -ny;
+                        ny = nx;
+                        nx = tx;
+                    }
+                    return { x: nx, y: ny };
+                };
+                const turns = ((rotation % 4) + 4) % 4;
+                let rotatedDefCells = JSON.parse(JSON.stringify(container.def.cells));
+                for (let i = 0; i < turns; i++) {
+                    rotatedDefCells = rotatedDefCells.map(([x, y]) => [-y, x]);
+                }
+                const minCellX = Math.min(...rotatedDefCells.map(cell => cell[0]));
+                const minCellY = Math.min(...rotatedDefCells.map(cell => cell[1]));
+                const normalizedOffsetX = -minCellX * BASE_CS;
+                const normalizedOffsetY = -minCellY * BASE_CS;
+                const catImg = container.list.find(child => child.isCatImage);
+                const catShadow = container.list.find(child => child.isCatShadow);
+                [catImg, catShadow].forEach(sprite => {
+                    if (!sprite) return;
+                    const baseX = sprite.isCatShadow ? container.def.offsetX + 4 : container.def.offsetX;
+                    const baseY = sprite.isCatShadow ? container.def.offsetY + 6 : container.def.offsetY;
+                    const point = rotatePoint(baseX, baseY, turns);
+                    sprite.x = point.x + normalizedOffsetX;
+                    sprite.y = point.y + normalizedOffsetY;
+                    sprite.targetX = sprite.x;
+                    sprite.targetY = sprite.y;
+                    sprite.angle = turns * 90;
+                    sprite.realAngle = turns * 90;
+                    sprite.targetAngle = turns * 90;
                 });
             }
 
@@ -525,7 +675,7 @@
                     container.cells.forEach(([cx, cy]) => {
                         let gx = gridX + cx;
                         let gy = gridY + cy;
-                        if (gx >= 0 && gx < 4 && gy >= 0 && gy < 4) {
+                        if (gx >= 0 && gx < this.activeGridCols && gy >= 0 && gy < this.activeGridRows) {
                             hasOverlapWithGrid = true;
                         }
                     });
@@ -799,7 +949,7 @@
                 container.cells.forEach(([cx, cy]) => {
                     let gx = gridX + cx;
                     let gy = gridY + cy;
-                    if (gx >= 0 && gx < 4 && gy >= 0 && gy < 4) {
+                        if (gx >= 0 && gx < this.activeGridCols && gy >= 0 && gy < this.activeGridRows) {
                         hasOverlap = true;
                         let status = this.grid[gy][gx] === null ? 'valid' : 'invalid';
                         newPreviewCells.push({ r: gy, c: gx, status: status });
@@ -840,7 +990,7 @@
                     let gx = gridX + cx;
                     let gy = gridY + cy;
                     // Проверка границ
-                    if (gx < 0 || gx >= 4 || gy < 0 || gy >= 4) return false;
+                    if (gx < 0 || gx >= this.activeGridCols || gy < 0 || gy >= this.activeGridRows) return false;
                     // Проверка пересечений
                     if (this.grid[gy][gx] !== null) return false;
                 }
@@ -954,7 +1104,7 @@
                 }, 10);
 
                 // Очищаем сетку
-                this.grid = Array(4).fill(null).map(() => Array(4).fill(null));
+                this.grid = this.createEmptyGrid();
 
                 // Возвращаем фигуры
                 this.pieces.forEach(p => {
@@ -970,42 +1120,54 @@
                 let w = this.scale.gameSize.width;
                 let h = this.scale.gameSize.height;
                 let isPortrait = w < h;
+                const boardWidth = () => this.cs * this.activeGridCols;
+                const boardHeight = () => this.cs * this.activeGridRows;
+                const maxBoardWidth = () => this.cs * GRID_COLS;
+                const maxBoardHeight = () => this.cs * GRID_ROWS;
+                const makeRowZones = (count, y, xMin, xMax) => {
+                    if (count <= 1) return [{ x: (xMin + xMax) / 2, y }];
+                    return Array.from({ length: count }, (_, i) => ({
+                        x: Phaser.Math.Linear(xMin, xMax, i / (count - 1)),
+                        y
+                    }));
+                };
 
                 // Расчет размеров и позиций
                 if (isPortrait) {
                     // Мобильная раскладка
-                    this.cs = Math.min((w * 0.9) / 4, (h * 0.4) / 4);
-                    this.boardX = w / 2 - (this.cs * 4) / 2;
-                    this.boardY = h * 0.12;
+                    this.cs = Math.min((w * 0.92) / GRID_COLS, (h * 0.34) / GRID_ROWS);
+                    const maxBoardX = w / 2 - maxBoardWidth() / 2;
+                    const maxBoardY = h * 0.12;
+                    this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
+                    this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
 
                     // Зоны для 5 фигур внизу
-                    let bottomY = this.boardY + this.cs * 4 + 30;
-                    let availH = h - bottomY;
-                    let row1 = bottomY + availH * 0.3;
-                    let row2 = bottomY + availH * 0.7;
+                    let bottomY = maxBoardY + maxBoardHeight() + 34;
+                    let availH = Math.max(180, h - bottomY);
+                    let row1 = bottomY + availH * 0.22;
+                    let row2 = bottomY + availH * 0.5;
+                    let row3 = bottomY + availH * 0.78;
 
                     this.startZones = [
-                        {x: w * 0.2, y: row1},
-                        {x: w * 0.5, y: row1},
-                        {x: w * 0.8, y: row1},
-                        {x: w * 0.35, y: row2},
-                        {x: w * 0.65, y: row2}
+                        ...makeRowZones(3, row1, w * 0.18, w * 0.82),
+                        ...makeRowZones(3, row2, w * 0.18, w * 0.82),
+                        ...makeRowZones(3, row3, w * 0.18, w * 0.82)
                     ];
                 } else {
                     // Десктопная раскладка
-                    this.cs = Math.min((h * 0.8) / 4, (w * 0.4) / 4);
-                    this.boardX = w / 2 - (this.cs * 4) / 2;
-                    this.boardY = h / 2 - (this.cs * 4) / 2;
+                    this.cs = Math.min((w * 0.72) / GRID_COLS, (h * 0.52) / GRID_ROWS);
+                    const maxBoardX = w / 2 - maxBoardWidth() / 2;
+                    const maxBoardY = h * 0.12;
+                    this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
+                    this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
 
                     // Зоны по бокам
-                    let lx = w * 0.2;
-                    let rx = w * 0.8;
+                    let lx = Math.max(w * 0.1, maxBoardX);
+                    let rx = Math.min(w * 0.9, maxBoardX + maxBoardWidth());
+                    let bottomY = maxBoardY + maxBoardHeight() + 58;
                     this.startZones = [
-                        {x: lx, y: h * 0.25},
-                        {x: lx, y: h * 0.5},
-                        {x: lx, y: h * 0.75},
-                        {x: rx, y: h * 0.35},
-                        {x: rx, y: h * 0.65}
+                        ...makeRowZones(5, bottomY, lx, rx),
+                        ...makeRowZones(4, Math.min(h - 72, bottomY + this.cs * 1.65), lx + this.cs * 0.65, rx - this.cs * 0.65)
                     ];
                 }
 
@@ -1013,12 +1175,12 @@
 
                 // Обновляем позицию и масштаб фонового изображения комнаты
                 if (this.bgImage) {
-                    let centerX = this.boardX + (this.cs * 4) / 2;
-                    let centerY = this.boardY + (this.cs * 4) / 2;
+                    let centerX = w / 2;
+                    let centerY = h * 0.12 + maxBoardHeight() / 2;
 
                     // Rug height inside room-rug-background.png is about 480 pixels (51% of 941px image height).
-                    // We target the pink rug height to match our 4x4 grid perfectly.
-                    let targetBgScale = (this.cs * 4) / 480;
+                    // We target the pink rug height to match the board height.
+                    let targetBgScale = maxBoardHeight() / 480;
 
                     // Ensure background fully covers the screen from all sides with zero empty borders
                     let minScaleX = Math.max(2 * centerX / 1672, 2 * (w - centerX) / 1672);
@@ -1050,8 +1212,9 @@
                     let cx = (minX + maxX) / 2;
                     let cy = (minY + maxY) / 2;
 
-                    p.dockX = this.startZones[i].x - cx * BASE_CS * scale;
-                    p.dockY = this.startZones[i].y - cy * BASE_CS * scale;
+                    const zone = this.startZones[i] || this.startZones[this.startZones.length - 1];
+                    p.dockX = zone.x - cx * BASE_CS * scale;
+                    p.dockY = zone.y - cy * BASE_CS * scale;
                     
                     // Если фигура не была поставлена игроком вне сетки
                     if (!p.isPlaced && p.startX === undefined) {
@@ -1084,16 +1247,18 @@
                 let highlightColor = parseInt((this.gridHighlightColor || '#10b981').replace('#', '0x'), 16);
                 let thickness = this.gridLineThickness !== undefined ? this.gridLineThickness : 2;
 
-                // Рисуем 16 отдельных ячеек-плиток с тонким разделением между ними, как на референсе
-                for (let r = 0; r < 4; r++) {
-                    for (let c = 0; c < 4; c++) {
+                // Рисуем отдельные ячейки-плитки с тонким разделением между ними, как на референсе
+                for (let r = 0; r < this.activeGridRows; r++) {
+                    for (let c = 0; c < this.activeGridCols; c++) {
                         // Расчет координат отдельной ячейки с учетом зазора
                         let cellX = this.boardX + c * this.cs + gap / 2;
                         let cellY = this.boardY + r * this.cs + gap / 2;
                         let cellSize = this.cs - gap;
 
                         // Проверяем, занята ли эта клетка
-                        let isOccupied = this.grid && this.grid[r] && this.grid[r][c] !== null;
+                        let cellValue = this.grid && this.grid[r] ? this.grid[r][c] : null;
+                        let isObstacle = cellValue === '__obstacle__';
+                        let isOccupied = cellValue !== null;
 
                         // Проверяем, находится ли клетка в предпросмотре (при наложении перетаскиваемой фигуры)
                         let previewCell = this.previewGridCells && this.previewGridCells.find(cell => cell.r === r && cell.c === c);
@@ -1109,6 +1274,15 @@
                             // Рамка: яркий контур (прозрачность 0.95)
                             this.boardGraphic.lineStyle(thickness, color, 0.95);
                             this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                        } else if (isObstacle) {
+                            this.boardGraphic.fillStyle(0xf7c6d9, 0.9);
+                            this.boardGraphic.fillRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                            this.boardGraphic.lineStyle(thickness, 0xdb7093, 0.95);
+                            this.boardGraphic.strokeRoundedRect(cellX, cellY, cellSize, cellSize, radius);
+                            this.boardGraphic.fillStyle(0xffffff, 0.75);
+                            this.boardGraphic.fillCircle(cellX + cellSize * 0.5, cellY + cellSize * 0.5, cellSize * 0.18);
+                            this.boardGraphic.fillStyle(0xfff3a6, 0.95);
+                            this.boardGraphic.fillCircle(cellX + cellSize * 0.5, cellY + cellSize * 0.5, cellSize * 0.08);
                         } else if (isOccupied) {
                             // Изысканный выбранный цвет для занятой клетки
                             // Фон: остается обычным полупрозрачным белым (прозрачность 0.18) или закрашивается цветом выделения
