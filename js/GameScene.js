@@ -1483,15 +1483,17 @@
                 // Расчет размеров и позиций
                 if (isPortrait) {
                     // Мобильная раскладка
-                    this.cs = Math.min((w * 0.92) / layoutCols, (h * 0.34) / layoutRows) * boardScale;
-                    const maxBoardX = w / 2 - maxBoardWidth() / 2;
-                    const maxBoardY = h * 0.12 + this.getLayoutOffsetY();
-                    this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
-                    this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
+                    const boardAreaW = w * 0.92;
+                    const boardAreaH = h * 0.34;
+                    const boardAreaX = w / 2 - boardAreaW / 2;
+                    const boardAreaY = h * 0.12 + this.getLayoutOffsetY();
+                    this.cs = Math.min(boardAreaW / layoutCols, boardAreaH / layoutRows) * boardScale;
+                    this.boardX = boardAreaX + boardAreaW / 2 - boardWidth() / 2;
+                    this.boardY = boardAreaY + boardAreaH / 2 - boardHeight() / 2;
 
                     // Зоны для 5 фигур внизу
                     const pieceCount = Math.max(1, this.pieces ? this.pieces.length : 1);
-                    let bottomY = maxBoardY + maxBoardHeight() + 34;
+                    let bottomY = boardAreaY + boardAreaH + 34;
                     let availH = Math.max(180, h - bottomY);
                     const rowCount = Math.max(3, Math.ceil(pieceCount / 3));
                     this.startZones = [];
@@ -1501,17 +1503,19 @@
                     }
                 } else {
                     // Десктопная раскладка
-                    this.cs = Math.min((w * 0.72) / layoutCols, (h * 0.52) / layoutRows) * boardScale;
-                    const maxBoardX = w / 2 - maxBoardWidth() / 2;
-                    const maxBoardY = h * 0.12 + this.getLayoutOffsetY();
-                    this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
-                    this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
+                    const boardAreaW = w * 0.72;
+                    const boardAreaH = h * 0.52;
+                    const boardAreaX = w / 2 - boardAreaW / 2;
+                    const boardAreaY = h * 0.12 + this.getLayoutOffsetY();
+                    this.cs = Math.min(boardAreaW / layoutCols, boardAreaH / layoutRows) * boardScale;
+                    this.boardX = boardAreaX + boardAreaW / 2 - boardWidth() / 2;
+                    this.boardY = boardAreaY + boardAreaH / 2 - boardHeight() / 2;
 
                     // Зоны по бокам
                     const pieceCount = Math.max(1, this.pieces ? this.pieces.length : 1);
-                    let lx = Math.max(w * 0.1, maxBoardX);
-                    let rx = Math.min(w * 0.9, maxBoardX + maxBoardWidth());
-                    let bottomY = maxBoardY + maxBoardHeight() + 58;
+                    let lx = Math.max(w * 0.1, boardAreaX);
+                    let rx = Math.min(w * 0.9, boardAreaX + boardAreaW);
+                    let bottomY = boardAreaY + boardAreaH + 58;
                     const rowCount = Math.max(2, Math.ceil(pieceCount / 5));
                     const rowGap = rowCount <= 1 ? 0 : Math.min(this.cs * 1.35, Math.max(42, (h - bottomY - 72) / Math.max(1, rowCount - 1)));
                     this.startZones = [];
@@ -1578,17 +1582,30 @@
                 return this.boardScaleMode || localStorage.getItem('jellycats_board_scale_mode') || 'adaptive';
             }
 
-            getBoardAdaptiveStrength() {
-                if (this.boardAdaptiveStrength !== undefined) return this.boardAdaptiveStrength;
-                return parseFloat(localStorage.getItem('jellycats_board_adaptive_strength') || '1.0');
+            getBoardRowScales() {
+                const defaults = typeof DEFAULT_BOARD_ROW_SCALES !== 'undefined'
+                    ? DEFAULT_BOARD_ROW_SCALES
+                    : { 4: 1.4, 5: 1.25, 6: 1.15, 7: 1.07, 8: 1.0 };
+                let saved = {};
+                if (this.boardRowScales) saved = this.boardRowScales;
+                else {
+                    try {
+                        saved = JSON.parse(localStorage.getItem('jellycats_board_row_scales') || '{}');
+                    } catch (e) {
+                        saved = {};
+                    }
+                }
+                return [4, 5, 6, 7, 8].reduce((result, rows) => {
+                    const value = parseFloat(saved[rows]);
+                    result[rows] = Number.isFinite(value) ? value : defaults[rows];
+                    return result;
+                }, {});
             }
 
             getAdaptiveLevelScale() {
                 if (this.getBoardScaleMode() !== 'adaptive') return 1;
-                const levelSize = Phaser.Math.Clamp(Math.max(this.activeGridCols, this.activeGridRows, 4), 4, 8);
-                const adaptiveScale = Phaser.Math.Linear(1.25, 0.85, (levelSize - 4) / 4);
-                const strength = Phaser.Math.Clamp(this.getBoardAdaptiveStrength(), 0, 1);
-                return Phaser.Math.Linear(1, adaptiveScale, strength);
+                const rows = Phaser.Math.Clamp(Math.round(this.activeGridRows || 4), 4, 8);
+                return this.getBoardRowScales()[rows] || 1;
             }
 
             getLayoutOffsetY() {

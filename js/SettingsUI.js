@@ -16,7 +16,7 @@ class SettingsUI {
         s.bgScaleMultiplier = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
         s.boardScale = parseFloat(localStorage.getItem('jellycats_board_scale') || '1.0');
         s.boardScaleMode = localStorage.getItem('jellycats_board_scale_mode') || 'adaptive';
-        s.boardAdaptiveStrength = parseFloat(localStorage.getItem('jellycats_board_adaptive_strength') || '1.0');
+        s.boardRowScales = this._loadBoardRowScales();
         s.rugMode = localStorage.getItem('jellycats_rug_mode') || 'sprite';
         s.selectedRotationSound = localStorage.getItem('jellycats_selected_rotation_sound') || 'SFX_Movement_Swoosh_Fast_1';
         s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
@@ -181,9 +181,7 @@ class SettingsUI {
             (val) => `${Math.round(val * 100)}%`,
             (val) => { s.boardScale = parseFloat(val); localStorage.setItem('jellycats_board_scale', val); s.updateLayout(); s.autosaveActiveProfile(); });
 
-        this._bindRangeSlider('board-adaptive-strength-slider', 'board-adaptive-strength-value-label', Math.round(s.boardAdaptiveStrength * 100),
-            (val) => `${val}%`,
-            (val) => { s.boardAdaptiveStrength = parseInt(val, 10) / 100; localStorage.setItem('jellycats_board_adaptive_strength', s.boardAdaptiveStrength.toString()); s.updateLayout(); s.autosaveActiveProfile(); });
+        this._bindBoardRowScaleSliders();
 
         this._bindRangeSlider('layout-offset-y-slider', 'layout-offset-y-value-label', s.layoutOffsetY,
             (val) => `${val}px`,
@@ -431,6 +429,41 @@ class SettingsUI {
     }
 
     // --- Helper methods ---
+
+    _loadBoardRowScales() {
+        const defaults = typeof DEFAULT_BOARD_ROW_SCALES !== 'undefined'
+            ? DEFAULT_BOARD_ROW_SCALES
+            : { 4: 1.4, 5: 1.25, 6: 1.15, 7: 1.07, 8: 1.0 };
+        let saved = {};
+        try {
+            saved = JSON.parse(localStorage.getItem('jellycats_board_row_scales') || '{}');
+        } catch (e) {
+            saved = {};
+        }
+        return [4, 5, 6, 7, 8].reduce((result, rows) => {
+            const value = parseFloat(saved[rows]);
+            result[rows] = Number.isFinite(value) ? value : defaults[rows];
+            return result;
+        }, {});
+    }
+
+    _saveBoardRowScales() {
+        localStorage.setItem('jellycats_board_row_scales', JSON.stringify(this.scene.boardRowScales));
+    }
+
+    _bindBoardRowScaleSliders() {
+        const s = this.scene;
+        [4, 5, 6, 7, 8].forEach((rows) => {
+            this._bindRangeSlider(`board-row-scale-${rows}-slider`, `board-row-scale-${rows}-value-label`, s.boardRowScales[rows],
+                (val) => `${Math.round(parseFloat(val) * 100)}%`,
+                (val) => {
+                    s.boardRowScales[rows] = parseFloat(val);
+                    this._saveBoardRowScales();
+                    s.updateLayout();
+                    s.autosaveActiveProfile();
+                });
+        });
+    }
 
     _bindSelect(selectId, initialValue, onChange) {
         const el = document.getElementById(selectId);

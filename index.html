@@ -148,17 +148,48 @@
                     <span class="font-bold text-slate-500">▤ Масштаб уровней</span>
                 </div>
                 <select id="board-scale-mode-select" class="w-full rounded-xl border border-orange-100 bg-white px-3 py-2 text-xs font-bold text-slate-700">
-                    <option value="adaptive">Адаптивный</option>
+                    <option value="adaptive">По высоте уровня</option>
                     <option value="fixed">Фиксированный</option>
                 </select>
             </div>
 
-            <div class="flex flex-col gap-1.5">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="font-bold text-slate-500">⇄ Сила адаптации</span>
-                    <span id="board-adaptive-strength-value-label" class="font-extrabold text-orange-600">100%</span>
+            <div id="board-row-scales-controls" class="flex flex-col gap-2 rounded-xl border border-orange-100 bg-white/60 p-2.5">
+                <div class="text-xs font-bold text-slate-500">⇄ Масштаб по высоте уровня</div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-500">4 строки</span>
+                        <span id="board-row-scale-4-value-label" class="font-extrabold text-orange-600">140%</span>
+                    </div>
+                    <input type="range" id="board-row-scale-4-slider" min="0.65" max="2.5" step="0.025" value="1.4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
-                <input type="range" id="board-adaptive-strength-slider" min="0" max="100" step="5" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-500">5 строк</span>
+                        <span id="board-row-scale-5-value-label" class="font-extrabold text-orange-600">125%</span>
+                    </div>
+                    <input type="range" id="board-row-scale-5-slider" min="0.65" max="2.5" step="0.025" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-500">6 строк</span>
+                        <span id="board-row-scale-6-value-label" class="font-extrabold text-orange-600">115%</span>
+                    </div>
+                    <input type="range" id="board-row-scale-6-slider" min="0.65" max="2.5" step="0.025" value="1.15" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-500">7 строк</span>
+                        <span id="board-row-scale-7-value-label" class="font-extrabold text-orange-600">107%</span>
+                    </div>
+                    <input type="range" id="board-row-scale-7-slider" min="0.65" max="2.5" step="0.025" value="1.07" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-500">8 строк</span>
+                        <span id="board-row-scale-8-value-label" class="font-extrabold text-orange-600">100%</span>
+                    </div>
+                    <input type="range" id="board-row-scale-8-slider" min="0.65" max="2.5" step="0.025" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                </div>
             </div>
 
             <div class="flex flex-col gap-1.5">

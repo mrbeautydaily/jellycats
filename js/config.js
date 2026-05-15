@@ -11,6 +11,14 @@ const DEFAULT_SETTINGS = {
     cat4: { originX: 0.5, originY: 0.5, offsetX: 105, offsetY: 48, scaleX: 0.24, scaleY: 0.24 }
 };
 
+const DEFAULT_BOARD_ROW_SCALES = {
+    4: 1.4,
+    5: 1.25,
+    6: 1.15,
+    7: 1.07,
+    8: 1.0
+};
+
 // Ensure updated defaults are loaded once without deleting saved profiles.
 if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
     [
@@ -19,6 +27,7 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_bg_scale_multiplier',
         'jellycats_board_scale',
         'jellycats_board_scale_mode',
+        'jellycats_board_row_scales',
         'jellycats_board_adaptive_strength',
         'jellycats_selected_rotation_sound',
         'jellycats_selected_return_sound',

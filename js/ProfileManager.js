@@ -7,7 +7,7 @@ class ProfileManager {
         this.scene = scene;
         this.defaultState = {
             globalZoom: 0.6, bgScaleMultiplier: 1.0, boardScale: 1.0,
-            boardScaleMode: 'adaptive', boardAdaptiveStrength: 1.0,
+            boardScaleMode: 'adaptive', boardRowScales: { 4: 1.4, 5: 1.25, 6: 1.15, 7: 1.07, 8: 1.0 },
             gridGap: 7, gridRadius: 4,
             glowThickness: 6, glowBlur: 3, showBlocks: false, fillOccupied: true,
             gridHighlightColor: '#3cc85f', gridLineThickness: 3,
@@ -172,7 +172,7 @@ class ProfileManager {
             globalZoom: s.currentZoom, bgScaleMultiplier: s.bgScaleMultiplier,
             boardScale: s.boardScale !== undefined ? s.boardScale : 1.0,
             boardScaleMode: s.boardScaleMode || 'adaptive',
-            boardAdaptiveStrength: s.boardAdaptiveStrength !== undefined ? s.boardAdaptiveStrength : 1.0,
+            boardRowScales: this.normalizeBoardRowScales(s.boardRowScales),
             gridGap: s.gridGap, gridRadius: s.gridRadius, glowThickness: s.glowThickness, glowBlur: s.glowBlur,
             showBlocks: s.showBlocks, fillOccupied: s.fillOccupied,
             gridHighlightColor: s.gridHighlightColor, gridLineThickness: s.gridLineThickness,
@@ -205,6 +205,9 @@ class ProfileManager {
 
     applyState(settings) {
         if (!settings) return;
+        if (settings.boardRowScales === undefined) {
+            settings = { ...settings, boardRowScales: this.normalizeBoardRowScales() };
+        }
         const s = this.scene;
 
         // 1. Update localStorage
@@ -212,7 +215,7 @@ class ProfileManager {
             globalZoom: 'jellycats_global_zoom', bgScaleMultiplier: 'jellycats_bg_scale_multiplier',
             boardScale: 'jellycats_board_scale',
             boardScaleMode: 'jellycats_board_scale_mode',
-            boardAdaptiveStrength: 'jellycats_board_adaptive_strength',
+            boardRowScales: 'jellycats_board_row_scales',
             gridGap: 'jellycats_grid_gap', gridRadius: 'jellycats_grid_radius',
             glowThickness: 'jellycats_glow_thickness', glowBlur: 'jellycats_glow_blur',
             showBlocks: 'jellycats_show_blocks', fillOccupied: 'jellycats_fill_occupied',
@@ -234,17 +237,22 @@ class ProfileManager {
             victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration'
         };
         for (let key in lsMap) {
-            if (settings[key] !== undefined) localStorage.setItem(lsMap[key], settings[key].toString());
+            if (settings[key] === undefined) continue;
+            const value = key === 'boardRowScales'
+                ? JSON.stringify(settings[key])
+                : settings[key].toString();
+            localStorage.setItem(lsMap[key], value);
         }
         if (settings.catSettings) localStorage.setItem('jellycats_editor_settings', JSON.stringify(settings.catSettings));
 
         // 2. Update scene variables
         if (settings.globalZoom !== undefined) { s.currentZoom = settings.globalZoom; s.cameras.main.setZoom(s.currentZoom); }
-        const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','boardAdaptiveStrength','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
+        const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
+        if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
         if (settings.rotationSound !== undefined) s.selectedRotationSound = settings.rotationSound;
         if (settings.returnSound !== undefined) s.selectedReturnSound = settings.returnSound;
@@ -345,7 +353,14 @@ class ProfileManager {
         if (settings.bgScaleMultiplier !== undefined) { uv('bg-scale-slider', settings.bgScaleMultiplier); ut('bg-scale-value-label', `${Math.round(settings.bgScaleMultiplier * 100)}%`); }
         if (settings.boardScale !== undefined) { uv('board-scale-slider', settings.boardScale); ut('board-scale-value-label', `${Math.round(settings.boardScale * 100)}%`); }
         if (settings.boardScaleMode !== undefined) uv('board-scale-mode-select', settings.boardScaleMode);
-        if (settings.boardAdaptiveStrength !== undefined) { uv('board-adaptive-strength-slider', Math.round(settings.boardAdaptiveStrength * 100)); ut('board-adaptive-strength-value-label', `${Math.round(settings.boardAdaptiveStrength * 100)}%`); }
+        if (settings.boardRowScales !== undefined) {
+            [4, 5, 6, 7, 8].forEach((rows) => {
+                const value = settings.boardRowScales[rows];
+                if (value === undefined) return;
+                uv(`board-row-scale-${rows}-slider`, value);
+                ut(`board-row-scale-${rows}-value-label`, `${Math.round(value * 100)}%`);
+            });
+        }
         if (settings.layoutOffsetY !== undefined) { uv('layout-offset-y-slider', settings.layoutOffsetY); ut('layout-offset-y-value-label', `${settings.layoutOffsetY}px`); }
         if (settings.rugPaddingCells !== undefined) { uv('rug-padding-slider', settings.rugPaddingCells); ut('rug-padding-value-label', `${parseFloat(settings.rugPaddingCells).toFixed(2)}x`); }
         if (settings.rugMode !== undefined) uv('rug-mode-select', settings.rugMode);
@@ -401,5 +416,16 @@ class ProfileManager {
         s.updateBlocksVisibility();
         s.updateLayout();
         s.dustSystem.createParticles();
+    }
+
+    normalizeBoardRowScales(scales = {}) {
+        const defaults = typeof DEFAULT_BOARD_ROW_SCALES !== 'undefined'
+            ? DEFAULT_BOARD_ROW_SCALES
+            : { 4: 1.4, 5: 1.25, 6: 1.15, 7: 1.07, 8: 1.0 };
+        return [4, 5, 6, 7, 8].reduce((result, rows) => {
+            const value = parseFloat(scales[rows]);
+            result[rows] = Number.isFinite(value) ? value : defaults[rows];
+            return result;
+        }, {});
     }
 }
