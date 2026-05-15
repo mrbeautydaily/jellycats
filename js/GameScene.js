@@ -3,10 +3,11 @@
                 super('GameScene');
                 // Логическая сетка
                 this.activeGridCols = GRID_COLS;
-                this.activeGridRows = GRID_ROWS;
+                this.activeGridRows = typeof DEFAULT_GRID_ROWS !== 'undefined' ? DEFAULT_GRID_ROWS : GRID_ROWS;
                 this.currentLevel = null;
                 this.levelManager = new LevelManager();
                 this.obstacles = [];
+                this.holes = [];
                 this.victoryJumpMode = 'sequential';
                 this.obstacleSprites = [];
                 this.obstacleVisualMode = localStorage.getItem('jellycats_obstacle_visual_mode') || 'soft-pad';
@@ -36,6 +37,7 @@
 
                 // Load room background image
                 this.load.image('room_background', 'assets/room-rug-background.png');
+                this.load.image('rug_square', 'assets/rug-square.png');
                 for (let i = 1; i <= 15; i++) {
                     const suffix = String(i).padStart(2, '0');
                     this.load.image(`obstacle_plant_${suffix}`, `assets/obstacles/icon_${suffix}.png`);
@@ -116,6 +118,13 @@
                 // Фон
                 this.cameras.main.setBackgroundColor('#f4ede4');
                 
+                this.rugGraphic = this.add.graphics();
+                this.rugGraphic.setDepth(-4);
+
+                this.rugImage = this.add.image(0, 0, 'rug_square');
+                this.rugImage.setOrigin(0.5, 0.5);
+                this.rugImage.setDepth(-3.9);
+
                 // Графика поля (ковер)
                 this.boardGraphic = this.add.graphics();
                 this.boardGraphic.setDepth(-2);
@@ -236,6 +245,11 @@
 
             createEmptyGrid() {
                 const grid = Array(this.activeGridRows).fill(null).map(() => Array(this.activeGridCols).fill(null));
+                (this.holes || []).forEach(hole => {
+                    if (hole.x >= 0 && hole.x < this.activeGridCols && hole.y >= 0 && hole.y < this.activeGridRows) {
+                        grid[hole.y][hole.x] = '__hole__';
+                    }
+                });
                 (this.obstacles || []).forEach(obstacle => {
                     if (obstacle.x >= 0 && obstacle.x < this.activeGridCols && obstacle.y >= 0 && obstacle.y < this.activeGridRows) {
                         grid[obstacle.y][obstacle.x] = '__obstacle__';
@@ -250,6 +264,7 @@
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
                 this.activeGridRows = Math.min(GRID_ROWS, Math.max(1, level.grid.rows));
                 this.obstacles = Array.isArray(level.obstacles) ? level.obstacles : [];
+                this.holes = Array.isArray(level.holes) ? level.holes : [];
                 this.pendingSolvedPreview = showSolved;
                 this.rebuildPiecesFromDefs(null, () => {
                     if (showSolved) this.applySolvedPreview(level);
@@ -262,8 +277,9 @@
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.currentLevel = null;
                 this.activeGridCols = GRID_COLS;
-                this.activeGridRows = GRID_ROWS;
+                this.activeGridRows = typeof DEFAULT_GRID_ROWS !== 'undefined' ? DEFAULT_GRID_ROWS : GRID_ROWS;
                 this.obstacles = [];
+                this.holes = [];
                 this.rebuildPiecesFromDefs();
                 this.updateLevelQuickNav();
             }
@@ -518,16 +534,39 @@
                 confettiG.generateTexture('victory_confetti', 30, 16);
             }
 
-            createPieces() {
-                const activePieceIds = this.currentLevel && Array.isArray(this.currentLevel.pieceIds) ? this.currentLevel.pieceIds : null;
-                const defsToCreate = activePieceIds
-                    ? activePieceIds.map(id => PIECE_DEFS.find(def => def.id === id)).filter(Boolean)
-                    : PIECE_DEFS;
+            getLevelPieceEntries() {
+                if (!this.currentLevel) {
+                    return PIECE_DEFS.map(def => ({ instanceId: def.id, pieceId: def.id, def }));
+                }
+                if (Array.isArray(this.currentLevel.pieces) && this.currentLevel.pieces.length > 0) {
+                    return this.currentLevel.pieces.map((piece, index) => {
+                        const def = PIECE_DEFS.find(item => item.id === piece.pieceId);
+                        return def ? {
+                            instanceId: piece.instanceId || `${piece.pieceId}-${index + 1}`,
+                            pieceId: piece.pieceId,
+                            def
+                        } : null;
+                    }).filter(Boolean);
+                }
+                const activePieceIds = Array.isArray(this.currentLevel.pieceIds) ? this.currentLevel.pieceIds : null;
+                return activePieceIds
+                    ? activePieceIds.map((id, index) => {
+                        const def = PIECE_DEFS.find(item => item.id === id);
+                        return def ? { instanceId: `${id}-${index + 1}`, pieceId: id, def } : null;
+                    }).filter(Boolean)
+                    : PIECE_DEFS.map(def => ({ instanceId: def.id, pieceId: def.id, def }));
+            }
 
-                defsToCreate.forEach(def => {
+            createPieces() {
+                const entriesToCreate = this.getLevelPieceEntries();
+
+                entriesToCreate.forEach(entry => {
+                    const def = entry.def;
                     // Создаем боевой контейнер
                     let container = this.add.container(0, 0);
                     container.def = def;
+                    container.instanceId = entry.instanceId;
+                    container.pieceId = entry.pieceId;
                     container.cells = JSON.parse(JSON.stringify(def.cells)); // Клонируем ячейки
                     container.isPlaced = false;
                     container.setDepth(40);
@@ -675,7 +714,9 @@
             applySolvedPreview(level) {
                 this.grid = this.createEmptyGrid();
                 (level.placements || []).forEach(placement => {
-                    const container = this.pieces.find(piece => piece.def.id === placement.pieceId);
+                    const container = placement.instanceId
+                        ? this.pieces.find(piece => piece.instanceId === placement.instanceId)
+                        : this.pieces.find(piece => piece.def.id === placement.pieceId && !piece.isPlaced);
                     if (!container) return;
                     container.setDepth(0);
                     container.cells = JSON.parse(JSON.stringify(placement.cells));
@@ -688,7 +729,7 @@
                     container.startX = container.x;
                     container.startY = container.y;
                     container.cells.forEach(([cx, cy]) => {
-                        this.grid[placement.y + cy][placement.x + cx] = container.def.id;
+                        this.grid[placement.y + cy][placement.x + cx] = container.instanceId || container.def.id;
                     });
                 });
                 this.drawBoard();
@@ -1303,7 +1344,7 @@
 
                 // Записываем в логическую сетку
                 container.cells.forEach(([cx, cy]) => {
-                    this.grid[gridY + cy][gridX + cx] = container.def.id;
+                    this.grid[gridY + cy][gridX + cx] = container.instanceId || container.def.id;
                 });
 
                 // Перерисовываем сетку, чтобы закрасить занятые ячейки зеленым
@@ -1424,10 +1465,13 @@
                 let w = this.scale.gameSize.width;
                 let h = this.scale.gameSize.height;
                 let isPortrait = w < h;
+                const layoutCols = GRID_COLS;
+                const layoutRows = GRID_ROWS;
+                const boardScale = this.getBoardScale() * this.getAdaptiveLevelScale();
                 const boardWidth = () => this.cs * this.activeGridCols;
                 const boardHeight = () => this.cs * this.activeGridRows;
-                const maxBoardWidth = () => this.cs * GRID_COLS;
-                const maxBoardHeight = () => this.cs * GRID_ROWS;
+                const maxBoardWidth = () => this.cs * layoutCols;
+                const maxBoardHeight = () => this.cs * layoutRows;
                 const makeRowZones = (count, y, xMin, xMax) => {
                     if (count <= 1) return [{ x: (xMin + xMax) / 2, y }];
                     return Array.from({ length: count }, (_, i) => ({
@@ -1439,68 +1483,51 @@
                 // Расчет размеров и позиций
                 if (isPortrait) {
                     // Мобильная раскладка
-                    this.cs = Math.min((w * 0.92) / GRID_COLS, (h * 0.34) / GRID_ROWS);
+                    this.cs = Math.min((w * 0.92) / layoutCols, (h * 0.34) / layoutRows) * boardScale;
                     const maxBoardX = w / 2 - maxBoardWidth() / 2;
-                    const maxBoardY = h * 0.12;
+                    const maxBoardY = h * 0.12 + this.getLayoutOffsetY();
                     this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
                     this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
 
                     // Зоны для 5 фигур внизу
+                    const pieceCount = Math.max(1, this.pieces ? this.pieces.length : 1);
                     let bottomY = maxBoardY + maxBoardHeight() + 34;
                     let availH = Math.max(180, h - bottomY);
-                    let row1 = bottomY + availH * 0.22;
-                    let row2 = bottomY + availH * 0.5;
-                    let row3 = bottomY + availH * 0.78;
-
-                    this.startZones = [
-                        ...makeRowZones(3, row1, w * 0.18, w * 0.82),
-                        ...makeRowZones(3, row2, w * 0.18, w * 0.82),
-                        ...makeRowZones(3, row3, w * 0.18, w * 0.82)
-                    ];
+                    const rowCount = Math.max(3, Math.ceil(pieceCount / 3));
+                    this.startZones = [];
+                    for (let row = 0; row < rowCount; row++) {
+                        const t = rowCount === 1 ? 0.5 : row / (rowCount - 1);
+                        this.startZones.push(...makeRowZones(3, bottomY + availH * (0.16 + t * 0.72), w * 0.18, w * 0.82));
+                    }
                 } else {
                     // Десктопная раскладка
-                    this.cs = Math.min((w * 0.72) / GRID_COLS, (h * 0.52) / GRID_ROWS);
+                    this.cs = Math.min((w * 0.72) / layoutCols, (h * 0.52) / layoutRows) * boardScale;
                     const maxBoardX = w / 2 - maxBoardWidth() / 2;
-                    const maxBoardY = h * 0.12;
+                    const maxBoardY = h * 0.12 + this.getLayoutOffsetY();
                     this.boardX = maxBoardX + (maxBoardWidth() - boardWidth()) / 2;
                     this.boardY = maxBoardY + (maxBoardHeight() - boardHeight()) / 2;
 
                     // Зоны по бокам
+                    const pieceCount = Math.max(1, this.pieces ? this.pieces.length : 1);
                     let lx = Math.max(w * 0.1, maxBoardX);
                     let rx = Math.min(w * 0.9, maxBoardX + maxBoardWidth());
                     let bottomY = maxBoardY + maxBoardHeight() + 58;
-                    this.startZones = [
-                        ...makeRowZones(5, bottomY, lx, rx),
-                        ...makeRowZones(4, Math.min(h - 72, bottomY + this.cs * 1.65), lx + this.cs * 0.65, rx - this.cs * 0.65)
-                    ];
+                    const rowCount = Math.max(2, Math.ceil(pieceCount / 5));
+                    const rowGap = rowCount <= 1 ? 0 : Math.min(this.cs * 1.35, Math.max(42, (h - bottomY - 72) / Math.max(1, rowCount - 1)));
+                    this.startZones = [];
+                    for (let row = 0; row < rowCount; row++) {
+                        const cols = row % 2 === 0 ? 5 : 4;
+                        const inset = row % 2 === 0 ? 0 : this.cs * 0.65;
+                        this.startZones.push(...makeRowZones(cols, Math.min(h - 72, bottomY + row * rowGap), lx + inset, rx - inset));
+                    }
                 }
 
+                this.updateFloorBackground(w, h);
+                this.drawRug();
                 this.drawBoard();
 
                 // Обновляем позицию и масштаб фонового изображения комнаты
                 this.renderObstacleSprites();
-
-                if (this.bgImage) {
-                    let centerX = w / 2;
-                    let centerY = h * 0.12 + maxBoardHeight() / 2;
-
-                    // Rug height inside room-rug-background.png is about 480 pixels (51% of 941px image height).
-                    // We target the pink rug height to match the board height.
-                    let targetBgScale = maxBoardHeight() / 480;
-
-                    // Ensure background fully covers the screen from all sides with zero empty borders
-                    let minScaleX = Math.max(2 * centerX / 1672, 2 * (w - centerX) / 1672);
-                    let minScaleY = Math.max(2 * centerY / 941, 2 * (h - centerY) / 941);
-                    let minScale = Math.max(minScaleX, minScaleY);
-
-                    // Apply the user's custom background scale multiplier
-                    let bgMultiplier = this.bgScaleMultiplier !== undefined ? this.bgScaleMultiplier : parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
-                    let baseScale = Math.max(targetBgScale, minScale);
-                    let finalBgScale = baseScale * bgMultiplier;
-
-                    this.bgImage.setScale(finalBgScale);
-                    this.bgImage.setPosition(centerX, centerY);
-                }
 
                 // Обновляем масштаб и позиции фигур
                 let scale = this.cs / BASE_CS;
@@ -1542,6 +1569,164 @@
                 });
             }
 
+            getBoardScale() {
+                if (this.boardScale !== undefined) return this.boardScale;
+                return parseFloat(localStorage.getItem('jellycats_board_scale') || '1.0');
+            }
+
+            getBoardScaleMode() {
+                return this.boardScaleMode || localStorage.getItem('jellycats_board_scale_mode') || 'adaptive';
+            }
+
+            getBoardAdaptiveStrength() {
+                if (this.boardAdaptiveStrength !== undefined) return this.boardAdaptiveStrength;
+                return parseFloat(localStorage.getItem('jellycats_board_adaptive_strength') || '1.0');
+            }
+
+            getAdaptiveLevelScale() {
+                if (this.getBoardScaleMode() !== 'adaptive') return 1;
+                const levelSize = Phaser.Math.Clamp(Math.max(this.activeGridCols, this.activeGridRows, 4), 4, 8);
+                const adaptiveScale = Phaser.Math.Linear(1.25, 0.85, (levelSize - 4) / 4);
+                const strength = Phaser.Math.Clamp(this.getBoardAdaptiveStrength(), 0, 1);
+                return Phaser.Math.Linear(1, adaptiveScale, strength);
+            }
+
+            getLayoutOffsetY() {
+                if (this.layoutOffsetY !== undefined) return this.layoutOffsetY;
+                return parseInt(localStorage.getItem('jellycats_layout_offset_y') || '0', 10);
+            }
+
+            getRugPaddingCells() {
+                if (this.rugPaddingCells !== undefined) return this.rugPaddingCells;
+                return parseFloat(localStorage.getItem('jellycats_rug_padding_cells') || '1.25');
+            }
+
+            getRugMode() {
+                return this.rugMode || localStorage.getItem('jellycats_rug_mode') || 'sprite';
+            }
+
+            updateFloorBackground(w, h) {
+                if (!this.bgImage) return;
+                const source = this.bgImage.texture && this.bgImage.texture.getSourceImage
+                    ? this.bgImage.texture.getSourceImage()
+                    : null;
+                const sourceW = source && source.width ? source.width : 1672;
+                const sourceH = source && source.height ? source.height : 941;
+                const coverScale = Math.max(w / sourceW, h / sourceH);
+                const bgMultiplier = this.bgScaleMultiplier !== undefined
+                    ? this.bgScaleMultiplier
+                    : parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+                const finalScale = coverScale * Math.max(1, bgMultiplier);
+
+                this.bgImage.setScale(finalScale);
+                this.bgImage.setPosition(w / 2, h / 2);
+            }
+
+            drawRug() {
+                if (!this.rugGraphic) return;
+                this.rugGraphic.clear();
+
+                const layout = this.getRugLayout();
+                const mode = this.getRugMode();
+
+                if (this.rugImage) {
+                    this.rugImage.setVisible(mode === 'sprite');
+                    if (mode === 'sprite') {
+                        this.rugImage.setPosition(layout.centerX, layout.centerY);
+                        this.rugImage.setDisplaySize(layout.rugW, layout.rugH);
+                    }
+                }
+
+                if (mode === 'sprite') return;
+                this.drawRugShadow(layout);
+                this.drawProceduralRug(layout);
+            }
+
+            getRugLayout() {
+                const activeWidth = this.cs * this.activeGridCols;
+                const activeHeight = this.cs * this.activeGridRows;
+                const pad = this.cs * this.getRugPaddingCells();
+                const rugCells = Math.max(this.activeGridCols, this.activeGridRows, 4);
+                const rugSize = rugCells * this.cs + pad * 2;
+                const centerX = this.boardX + activeWidth / 2;
+                const centerY = this.boardY + activeHeight / 2;
+                const rugX = centerX - rugSize / 2;
+                const rugY = centerY - rugSize / 2;
+                const rugW = rugSize;
+                const rugH = rugSize;
+                const radius = Math.min(this.cs * 0.42, 42);
+
+                return { rugX, rugY, rugW, rugH, centerX, centerY, radius };
+            }
+
+            drawRugShadow({ rugX, rugY, rugW, rugH, radius }) {
+                this.rugGraphic.fillStyle(0x8f345b, 0.24);
+                this.rugGraphic.fillRoundedRect(rugX + this.cs * 0.06, rugY + this.cs * 0.08, rugW, rugH, radius);
+            }
+
+            drawProceduralRug({ rugX, rugY, rugW, rugH, radius }) {
+                this.rugGraphic.fillStyle(0xee87a0, 0.92);
+                this.rugGraphic.fillRoundedRect(rugX, rugY, rugW, rugH, radius);
+
+                const border = Math.max(8, this.cs * 0.14);
+                this.rugGraphic.fillStyle(0xd75d85, 0.88);
+                this.rugGraphic.fillRoundedRect(rugX, rugY, rugW, rugH, radius);
+                this.rugGraphic.fillStyle(0xf293aa, 0.94);
+                this.rugGraphic.fillRoundedRect(
+                    rugX + border,
+                    rugY + border,
+                    rugW - border * 2,
+                    rugH - border * 2,
+                    Math.max(2, radius - border * 0.55)
+                );
+
+                const patternX = rugX + border * 1.15;
+                const patternY = rugY + border * 1.15;
+                const patternW = rugW - border * 2.3;
+                const patternH = rugH - border * 2.3;
+                const stripeW = Math.max(this.cs * 0.76, patternW / 8);
+                for (let x = patternX - stripeW * 0.5; x < patternX + patternW + stripeW; x += stripeW) {
+                    this.drawChevronStripe(x, patternY, stripeW, patternH);
+                }
+
+                this.rugGraphic.lineStyle(Math.max(2, this.cs * 0.035), 0xb94876, 0.74);
+                this.rugGraphic.strokeRoundedRect(rugX, rugY, rugW, rugH, radius);
+
+                const innerPad = Math.max(8, this.cs * 0.18);
+                this.rugGraphic.lineStyle(Math.max(2, this.cs * 0.022), 0xffc1cf, 0.46);
+                this.rugGraphic.strokeRoundedRect(
+                    rugX + innerPad,
+                    rugY + innerPad,
+                    rugW - innerPad * 2,
+                    rugH - innerPad * 2,
+                    Math.max(2, radius - innerPad)
+                );
+            }
+
+            drawChevronStripe(x, y, w, h) {
+                const midX = x + w * 0.55;
+                const notch = w * 0.42;
+                const points = [
+                    new Phaser.Geom.Point(x, y),
+                    new Phaser.Geom.Point(midX, y),
+                    new Phaser.Geom.Point(midX + notch, y + h * 0.16),
+                    new Phaser.Geom.Point(midX, y + h * 0.32),
+                    new Phaser.Geom.Point(midX + notch, y + h * 0.48),
+                    new Phaser.Geom.Point(midX, y + h * 0.64),
+                    new Phaser.Geom.Point(midX + notch, y + h * 0.80),
+                    new Phaser.Geom.Point(midX, y + h),
+                    new Phaser.Geom.Point(x, y + h),
+                    new Phaser.Geom.Point(x + notch, y + h * 0.80),
+                    new Phaser.Geom.Point(x, y + h * 0.64),
+                    new Phaser.Geom.Point(x + notch, y + h * 0.48),
+                    new Phaser.Geom.Point(x, y + h * 0.32),
+                    new Phaser.Geom.Point(x + notch, y + h * 0.16)
+                ];
+
+                this.rugGraphic.fillStyle(0xffc1ca, 0.24);
+                this.rugGraphic.fillPoints(points, true);
+            }
+
             drawBoard() {
                 this.boardGraphic.clear();
                 
@@ -1563,6 +1748,7 @@
 
                         // Проверяем, занята ли эта клетка
                         let cellValue = this.grid && this.grid[r] ? this.grid[r][c] : null;
+                        if (cellValue === '__hole__') continue;
                         let isObstacle = cellValue === '__obstacle__';
                         let isOccupied = cellValue !== null;
 

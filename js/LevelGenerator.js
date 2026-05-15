@@ -53,6 +53,353 @@ class LevelGenerator {
         };
     }
 
+    generateFromMask(options = {}) {
+        this.lastMaskFailure = null;
+        this.lastMaskUsedFallback = false;
+        const grid = {
+            cols: Math.max(1, Math.min(this.maxCols, parseInt(options.grid && options.grid.cols || this.maxCols, 10))),
+            rows: Math.max(1, Math.min(this.maxRows, parseInt(options.grid && options.grid.rows || this.maxRows, 10)))
+        };
+        const obstacles = Array.isArray(options.obstacles) ? options.obstacles : [];
+        const holes = Array.isArray(options.holes) ? options.holes : [];
+        const blocked = new Set([
+            ...obstacles.map(cell => `${cell.x},${cell.y}`),
+            ...holes.map(cell => `${cell.x},${cell.y}`)
+        ]);
+        const freeCells = [];
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                if (!blocked.has(`${x},${y}`)) freeCells.push({ x, y });
+            }
+        }
+        if (freeCells.length === 0) return null;
+
+        const selectedIds = Array.isArray(options.pieceIds) ? options.pieceIds : [];
+        const pool = (selectedIds.length > 0
+            ? this.pieceDefs.filter(piece => selectedIds.includes(piece.id))
+            : this.pieceDefs
+        ).filter(piece => piece.cells.length <= freeCells.length);
+        if (pool.length === 0) return null;
+
+        const budget = {
+            maxMs: options.maxMs || 1800,
+            maxSteps: options.maxSteps || 45000
+        };
+        const uniqueSolution = this.solveMask(grid, pool, obstacles, holes, false, options.seed, budget);
+        const solution = uniqueSolution || this.solveMask(grid, pool, obstacles, holes, true, options.seed, budget);
+        if (!solution) return null;
+
+        return this.createMaskLevel(grid, holes, obstacles, solution, options);
+    }
+
+    async generateFromMaskAsync(options = {}) {
+        this.lastMaskFailure = null;
+        this.lastMaskUsedFallback = false;
+        const grid = {
+            cols: Math.max(1, Math.min(this.maxCols, parseInt(options.grid && options.grid.cols || this.maxCols, 10))),
+            rows: Math.max(1, Math.min(this.maxRows, parseInt(options.grid && options.grid.rows || this.maxRows, 10)))
+        };
+        const obstacles = Array.isArray(options.obstacles) ? options.obstacles : [];
+        const holes = Array.isArray(options.holes) ? options.holes : [];
+        const blocked = new Set([
+            ...obstacles.map(cell => `${cell.x},${cell.y}`),
+            ...holes.map(cell => `${cell.x},${cell.y}`)
+        ]);
+        const freeCells = [];
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                if (!blocked.has(`${x},${y}`)) freeCells.push({ x, y });
+            }
+        }
+        if (freeCells.length === 0) return null;
+
+        const selectedIds = Array.isArray(options.pieceIds) ? options.pieceIds : [];
+        const pool = (selectedIds.length > 0
+            ? this.pieceDefs.filter(piece => selectedIds.includes(piece.id))
+            : this.pieceDefs
+        ).filter(piece => piece.cells.length <= freeCells.length);
+        if (pool.length === 0) return null;
+
+        const budget = {
+            maxMs: options.maxMs || 2200,
+            maxSteps: options.maxSteps || 65000,
+            yieldEvery: options.yieldEvery || 900
+        };
+        const uniqueSolution = await this.solveMaskAsync(grid, pool, obstacles, holes, false, options.seed, budget);
+        const duplicateSolution = uniqueSolution || await this.solveMaskAsync(grid, pool, obstacles, holes, true, options.seed, budget);
+        const fallbackSolution = duplicateSolution || this.fastFillMaskWithSingle(grid, pool, obstacles, holes);
+        this.lastMaskUsedFallback = !duplicateSolution && !!fallbackSolution;
+        const solution = fallbackSolution;
+        if (!solution) return null;
+
+        return this.createMaskLevel(grid, holes, obstacles, solution, options);
+    }
+
+    createMaskLevel(grid, holes, obstacles, solution, options = {}) {
+        const pieces = solution.map((placement, index) => ({
+            instanceId: placement.instanceId || `${placement.pieceId}-${index + 1}`,
+            pieceId: placement.pieceId
+        }));
+        return {
+            id: `draw-candidate-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            name: `Draw ${grid.cols}x${grid.rows}`,
+            grid,
+            holes,
+            pieceIds: pieces.map(piece => piece.pieceId),
+            pieces,
+            placements: solution,
+            obstacles,
+            difficulty: options.difficulty || 'draw',
+            status: 'candidate',
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    solveMask(grid, pieces, obstacles = [], holes = [], allowDuplicates = false, seed = Date.now(), budget = {}) {
+        const startedAt = this.now();
+        const maxMs = budget.maxMs || 1800;
+        const maxSteps = budget.maxSteps || 45000;
+        let steps = 0;
+        const blocked = new Set([
+            ...obstacles.map(o => `${o.x},${o.y}`),
+            ...holes.map(o => `${o.x},${o.y}`)
+        ]);
+        const target = [];
+        const targetSet = new Set();
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                const key = `${x},${y}`;
+                if (!blocked.has(key)) {
+                    target.push({ x, y, key });
+                    targetSet.add(key);
+                }
+            }
+        }
+
+        const board = Array(grid.rows).fill(null).map(() => Array(grid.cols).fill(null));
+        obstacles.forEach(o => board[o.y][o.x] = '__obstacle__');
+        holes.forEach(o => board[o.y][o.x] = '__hole__');
+        const orderedPieces = [...pieces].sort((a, b) => b.cells.length - a.cells.length);
+        const rotationsByPiece = new Map(orderedPieces.map(piece => [piece.id, this.getRotations(piece.cells)]));
+        const placements = [];
+        const used = new Set();
+        const maxPieces = target.length;
+
+        const isTimedOut = () => {
+            steps++;
+            if (steps > maxSteps || this.now() - startedAt > maxMs) {
+                this.lastMaskFailure = 'timeout';
+                return true;
+            }
+            return false;
+        };
+
+        const pieceOptions = (cell, piece, index) => {
+            const variants = this.shuffle(rotationsByPiece.get(piece.id) || [], seed + index + cell.x * 31 + cell.y * 97);
+            const options = [];
+            variants.forEach(variant => {
+                variant.cells.forEach(([cx, cy]) => {
+                    const x = cell.x - cx;
+                    const y = cell.y - cy;
+                    if (this.canPlaceCells(board, grid, variant.cells, x, y, blocked)) {
+                        options.push({ piece, cells: variant.cells, rotation: variant.rotation, x, y });
+                    }
+                });
+            });
+            return options;
+        };
+        const optionsForCell = (cell) => {
+            const options = [];
+            for (let i = 0; i < orderedPieces.length; i++) {
+                const piece = orderedPieces[i];
+                if (!allowDuplicates && used.has(piece.id)) continue;
+                options.push(...pieceOptions(cell, piece, i));
+            }
+            return options.sort((a, b) => b.cells.length - a.cells.length);
+        };
+        const mostConstrainedOpenCell = () => {
+            let best = null;
+            let bestOptions = null;
+            for (const cell of target) {
+                if (board[cell.y][cell.x] !== null) continue;
+                const options = optionsForCell(cell);
+                if (!best || options.length < bestOptions.length) {
+                    best = cell;
+                    bestOptions = options;
+                    if (options.length <= 1) break;
+                }
+            }
+            return best ? { cell: best, options: bestOptions } : null;
+        };
+
+        const placeNext = () => {
+            if (isTimedOut()) return false;
+            const next = mostConstrainedOpenCell();
+            if (!next) return true;
+            if (placements.length >= maxPieces) return false;
+            if (next.options.length === 0) return false;
+
+            for (const option of next.options) {
+                const piece = option.piece;
+                const instanceId = `${piece.id}-${placements.filter(p => p.pieceId === piece.id).length + 1}`;
+                option.cells.forEach(([cx, cy]) => board[option.y + cy][option.x + cx] = instanceId);
+                placements.push({
+                    instanceId,
+                    pieceId: piece.id,
+                    x: option.x,
+                    y: option.y,
+                    cells: option.cells,
+                    rotation: option.rotation
+                });
+                used.add(piece.id);
+                if (placeNext()) return true;
+                placements.pop();
+                if (!placements.some(p => p.pieceId === piece.id)) used.delete(piece.id);
+                option.cells.forEach(([cx, cy]) => board[option.y + cy][option.x + cx] = null);
+            }
+            return false;
+        };
+
+        return placeNext() ? placements : null;
+    }
+
+    async solveMaskAsync(grid, pieces, obstacles = [], holes = [], allowDuplicates = false, seed = Date.now(), budget = {}) {
+        const startedAt = this.now();
+        const maxMs = budget.maxMs || 2200;
+        const maxSteps = budget.maxSteps || 65000;
+        const yieldEvery = budget.yieldEvery || 900;
+        let steps = 0;
+        const blocked = new Set([
+            ...obstacles.map(o => `${o.x},${o.y}`),
+            ...holes.map(o => `${o.x},${o.y}`)
+        ]);
+        const target = [];
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                const key = `${x},${y}`;
+                if (!blocked.has(key)) target.push({ x, y, key });
+            }
+        }
+
+        const board = Array(grid.rows).fill(null).map(() => Array(grid.cols).fill(null));
+        obstacles.forEach(o => board[o.y][o.x] = '__obstacle__');
+        holes.forEach(o => board[o.y][o.x] = '__hole__');
+        const orderedPieces = [...pieces].sort((a, b) => b.cells.length - a.cells.length);
+        const rotationsByPiece = new Map(orderedPieces.map(piece => [piece.id, this.getRotations(piece.cells)]));
+        const placements = [];
+        const used = new Set();
+        const maxPieces = target.length;
+
+        const shouldStop = async () => {
+            steps++;
+            if (steps % yieldEvery === 0) await this.yieldToBrowser();
+            if (steps > maxSteps || this.now() - startedAt > maxMs) {
+                this.lastMaskFailure = 'timeout';
+                return true;
+            }
+            return false;
+        };
+        const pieceOptions = (cell, piece, index) => {
+            const variants = this.shuffle(rotationsByPiece.get(piece.id) || [], seed + index + cell.x * 31 + cell.y * 97);
+            const options = [];
+            variants.forEach(variant => {
+                variant.cells.forEach(([cx, cy]) => {
+                    const x = cell.x - cx;
+                    const y = cell.y - cy;
+                    if (this.canPlaceCells(board, grid, variant.cells, x, y, blocked)) {
+                        options.push({ piece, cells: variant.cells, rotation: variant.rotation, x, y });
+                    }
+                });
+            });
+            return options;
+        };
+        const optionsForCell = (cell) => {
+            const options = [];
+            for (let i = 0; i < orderedPieces.length; i++) {
+                const piece = orderedPieces[i];
+                if (!allowDuplicates && used.has(piece.id)) continue;
+                options.push(...pieceOptions(cell, piece, i));
+            }
+            return options.sort((a, b) => b.cells.length - a.cells.length);
+        };
+        const mostConstrainedOpenCell = () => {
+            let best = null;
+            let bestOptions = null;
+            for (const cell of target) {
+                if (board[cell.y][cell.x] !== null) continue;
+                const options = optionsForCell(cell);
+                if (!best || options.length < bestOptions.length) {
+                    best = cell;
+                    bestOptions = options;
+                    if (options.length <= 1) break;
+                }
+            }
+            return best ? { cell: best, options: bestOptions } : null;
+        };
+
+        const placeNext = async () => {
+            if (await shouldStop()) return false;
+            const next = mostConstrainedOpenCell();
+            if (!next) return true;
+            if (placements.length >= maxPieces || next.options.length === 0) return false;
+
+            for (const option of next.options) {
+                const piece = option.piece;
+                const instanceId = `${piece.id}-${placements.filter(p => p.pieceId === piece.id).length + 1}`;
+                option.cells.forEach(([cx, cy]) => board[option.y + cy][option.x + cx] = instanceId);
+                placements.push({
+                    instanceId,
+                    pieceId: piece.id,
+                    x: option.x,
+                    y: option.y,
+                    cells: option.cells,
+                    rotation: option.rotation
+                });
+                used.add(piece.id);
+                if (await placeNext()) return true;
+                placements.pop();
+                if (!placements.some(p => p.pieceId === piece.id)) used.delete(piece.id);
+                option.cells.forEach(([cx, cy]) => board[option.y + cy][option.x + cx] = null);
+            }
+            return false;
+        };
+
+        return await placeNext() ? placements : null;
+    }
+
+    fastFillMaskWithSingle(grid, pieces, obstacles = [], holes = []) {
+        const single = pieces.find(piece => piece.cells.length === 1);
+        if (!single) return null;
+        const blocked = new Set([
+            ...obstacles.map(o => `${o.x},${o.y}`),
+            ...holes.map(o => `${o.x},${o.y}`)
+        ]);
+        const placements = [];
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                if (blocked.has(`${x},${y}`)) continue;
+                const instanceId = `${single.id}-${placements.length + 1}`;
+                placements.push({
+                    instanceId,
+                    pieceId: single.id,
+                    x,
+                    y,
+                    cells: [[0, 0]],
+                    rotation: 0
+                });
+            }
+        }
+        return placements.length > 0 ? placements : null;
+    }
+
+    now() {
+        return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    }
+
+    yieldToBrowser() {
+        return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
     pickPiecesForDifficulty(difficulty, options = {}) {
         const preset = {
             easy: { min: 2, max: 4, maxCells: 4 },

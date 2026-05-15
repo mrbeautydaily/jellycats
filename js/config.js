@@ -17,6 +17,9 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_editor_settings',
         'jellycats_global_zoom',
         'jellycats_bg_scale_multiplier',
+        'jellycats_board_scale',
+        'jellycats_board_scale_mode',
+        'jellycats_board_adaptive_strength',
         'jellycats_selected_rotation_sound',
         'jellycats_selected_return_sound',
         'jellycats_selected_placement_sound',
@@ -26,6 +29,9 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_damping',
         'jellycats_breathe_speed_scale',
         'jellycats_breathe_amp_scale',
+        'jellycats_layout_offset_y',
+        'jellycats_rug_padding_cells',
+        'jellycats_rug_mode',
         'jellycats_grid_gap',
         'jellycats_grid_radius',
         'jellycats_glow_thickness',
@@ -218,5 +224,6 @@ Object.keys(savedSettings).forEach(id => {
 });
 
 const GRID_COLS = 8;
-const GRID_ROWS = 4;
+const GRID_ROWS = 8;
+const DEFAULT_GRID_ROWS = 4;
 const BASE_CS = 100;

@@ -106,23 +106,34 @@ class LevelManager {
     getLevelSignature(level) {
         if (!level) return '';
         const normalizePlacements = (level.placements || []).map(placement => ({
+            instanceId: placement.instanceId || '',
             pieceId: placement.pieceId,
             x: placement.x,
             y: placement.y,
             rotation: placement.rotation,
             cells: placement.cells
-        })).sort((a, b) => a.pieceId.localeCompare(b.pieceId));
+        })).sort((a, b) => (a.instanceId || a.pieceId).localeCompare(b.instanceId || b.pieceId));
         const normalizeObstacles = (level.obstacles || []).map(obstacle => ({
             x: obstacle.x,
             y: obstacle.y,
             type: obstacle.type || 'plant',
             assetKey: obstacle.assetKey || ''
         })).sort((a, b) => a.y - b.y || a.x - b.x || a.type.localeCompare(b.type));
+        const normalizeHoles = (level.holes || []).map(hole => ({
+            x: hole.x,
+            y: hole.y
+        })).sort((a, b) => a.y - b.y || a.x - b.x);
+        const normalizePieces = (level.pieces || []).map((piece, index) => ({
+            instanceId: piece.instanceId || `${piece.pieceId}-${index + 1}`,
+            pieceId: piece.pieceId
+        })).sort((a, b) => a.instanceId.localeCompare(b.instanceId));
         return JSON.stringify({
             grid: level.grid,
             pieceIds: [...(level.pieceIds || [])].sort(),
+            pieces: normalizePieces,
             placements: normalizePlacements,
             obstacles: normalizeObstacles,
+            holes: normalizeHoles,
             difficulty: level.difficulty || ''
         });
     }

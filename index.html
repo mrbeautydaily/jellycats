@@ -135,6 +135,58 @@
                 <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">▦ Размер поля и котов</span>
+                    <span id="board-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="board-scale-slider" min="0.65" max="2.5" step="0.025" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">▤ Масштаб уровней</span>
+                </div>
+                <select id="board-scale-mode-select" class="w-full rounded-xl border border-orange-100 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                    <option value="adaptive">Адаптивный</option>
+                    <option value="fixed">Фиксированный</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">⇄ Сила адаптации</span>
+                    <span id="board-adaptive-strength-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="board-adaptive-strength-slider" min="0" max="100" step="5" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">↕️ Высота игровой зоны</span>
+                    <span id="layout-offset-y-value-label" class="font-extrabold text-orange-600">0px</span>
+                </div>
+                <input type="range" id="layout-offset-y-slider" min="-180" max="180" step="5" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">▣ Запас ковра</span>
+                    <span id="rug-padding-value-label" class="font-extrabold text-orange-600">1.25x</span>
+                </div>
+                <input type="range" id="rug-padding-slider" min="0.5" max="2.5" step="0.05" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">▧ Вид ковра</span>
+                </div>
+                <select id="rug-mode-select" class="w-full rounded-xl border border-orange-100 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                    <option value="sprite">PNG ковер</option>
+                    <option value="procedural">Рисованный ковер</option>
+                </select>
+            </div>
+
             <!-- Слайдер разделения клеток (зазоры) -->
             <div class="flex flex-col gap-1.5">
                 <div class="flex justify-between items-center text-xs">
@@ -575,12 +627,17 @@
     </div>
 
     <!-- UI Слой (Победный экран) -->
-    <div id="level-factory-panel" class="fixed top-0 right-0 h-full w-[430px] bg-[#f8fbff]/95 backdrop-blur-md shadow-2xl border-l-4 border-sky-200 z-40 transform translate-x-full transition-transform duration-300 flex flex-col p-5 overflow-y-auto">
+    <div id="level-factory-panel" class="fixed top-0 right-0 h-full w-[520px] max-w-[calc(100vw-1rem)] bg-[#f8fbff]/95 backdrop-blur-md shadow-2xl border-l-4 border-sky-200 z-40 transform translate-x-full transition-transform duration-300 flex flex-col p-5 overflow-y-auto">
         <div class="flex items-center justify-between mb-5">
             <h2 class="text-2xl font-bold text-sky-700">Level Factory</h2>
             <button id="btn-level-factory-close" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
         </div>
         <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-2 rounded-xl bg-white/75 p-1 border border-sky-100">
+                <button id="btn-level-tab-generate" type="button" class="rounded-lg bg-sky-500 px-3 py-2 text-sm font-extrabold text-white">Generate</button>
+                <button id="btn-level-tab-draw" type="button" class="rounded-lg px-3 py-2 text-sm font-extrabold text-slate-600 hover:bg-sky-50">Draw</button>
+            </div>
+            <div id="level-generate-section" class="space-y-4">
             <div class="grid grid-cols-2 gap-2">
                 <label class="text-xs font-bold text-slate-600">Difficulty
                     <select id="level-difficulty" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
@@ -604,7 +661,7 @@
                     <input id="level-grid-cols" type="number" min="1" max="8" value="4" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
                 </label>
                 <label class="text-xs font-bold text-slate-600">Rows
-                    <input id="level-grid-rows" type="number" min="1" max="4" value="3" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
+                    <input id="level-grid-rows" type="number" min="1" max="8" value="3" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
                 </label>
                 <label class="text-xs font-bold text-slate-600">Blocks
                     <input id="level-obstacle-count" type="number" min="0" max="16" placeholder="auto" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
@@ -671,6 +728,53 @@
                 <button id="btn-level-save-candidate" class="rounded-xl bg-rose-100 px-3 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-200">♡ Save</button>
                 <button id="btn-level-regenerate" class="rounded-xl bg-orange-100 px-3 py-2.5 text-sm font-extrabold text-orange-700 hover:bg-orange-200">Regenerate</button>
                 <button id="btn-level-rebuild" class="col-span-2 rounded-xl bg-indigo-100 px-3 py-2.5 text-sm font-extrabold text-indigo-700 hover:bg-indigo-200">Rebuild from manual settings</button>
+            </div>
+            </div>
+            <div id="level-draw-section" class="hidden space-y-4">
+                <div class="grid grid-cols-[1fr_150px] gap-3">
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="text-xs font-bold text-slate-600">Cols
+                                <input id="draw-grid-cols" type="number" min="1" max="8" value="6" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
+                            </label>
+                            <label class="text-xs font-bold text-slate-600">Rows
+                                <input id="draw-grid-rows" type="number" min="1" max="8" value="6" class="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm font-bold text-slate-700">
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" data-draw-tool="free" class="draw-tool rounded-xl bg-emerald-500 px-2 py-2 text-xs font-extrabold text-white">Cell</button>
+                            <button type="button" data-draw-tool="obstacle" class="draw-tool rounded-xl bg-sky-100 px-2 py-2 text-xs font-extrabold text-sky-700">Block</button>
+                            <button type="button" data-draw-tool="erase" class="draw-tool rounded-xl bg-slate-100 px-2 py-2 text-xs font-extrabold text-slate-700">Erase</button>
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-sky-100 bg-white p-2">
+                        <div class="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Reference</div>
+                        <label id="draw-reference-drop" class="flex h-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center text-xs font-bold text-slate-400">
+                            <span id="draw-reference-placeholder">Choose image</span>
+                            <img id="draw-reference-preview" class="hidden h-full w-full object-contain" alt="">
+                            <input id="draw-reference-input" type="file" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                </div>
+                <div id="draw-grid" class="mx-auto grid max-w-full touch-none select-none gap-1 rounded-xl border border-sky-100 bg-white/80 p-2"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-draw-clear" type="button" class="rounded-xl bg-slate-100 px-3 py-2.5 text-sm font-extrabold text-slate-700 hover:bg-slate-200">Clear</button>
+                    <button id="btn-draw-generate-cats" type="button" class="rounded-xl bg-emerald-500 px-3 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-emerald-600">Generate cats</button>
+                    <button id="btn-draw-preview" type="button" class="rounded-xl bg-indigo-100 px-3 py-2.5 text-sm font-extrabold text-indigo-700 hover:bg-indigo-200">Preview</button>
+                    <button id="btn-draw-save" type="button" class="rounded-xl bg-rose-100 px-3 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-200">Save level</button>
+                </div>
+                <label class="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-600 border border-sky-100">
+                    Use only checked cats
+                    <input id="draw-use-selected-cats" type="checkbox" class="accent-emerald-500">
+                </label>
+                <div>
+                    <div class="mb-2 flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Cats for draw mode</span>
+                        <span class="text-xs font-bold text-orange-500">optional</span>
+                    </div>
+                    <div id="draw-piece-list" class="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto pr-1"></div>
+                </div>
+                <div id="draw-summary" class="text-xs font-bold text-slate-500">Paint cells, then generate cats.</div>
             </div>
             <p id="level-factory-status" class="min-h-5 text-xs font-bold text-slate-500"></p>
             <div>

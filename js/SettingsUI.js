@@ -14,6 +14,10 @@ class SettingsUI {
         s.currentZoom = parseFloat(localStorage.getItem('jellycats_global_zoom') || '0.6');
         s.cameras.main.setZoom(s.currentZoom);
         s.bgScaleMultiplier = parseFloat(localStorage.getItem('jellycats_bg_scale_multiplier') || '1.0');
+        s.boardScale = parseFloat(localStorage.getItem('jellycats_board_scale') || '1.0');
+        s.boardScaleMode = localStorage.getItem('jellycats_board_scale_mode') || 'adaptive';
+        s.boardAdaptiveStrength = parseFloat(localStorage.getItem('jellycats_board_adaptive_strength') || '1.0');
+        s.rugMode = localStorage.getItem('jellycats_rug_mode') || 'sprite';
         s.selectedRotationSound = localStorage.getItem('jellycats_selected_rotation_sound') || 'SFX_Movement_Swoosh_Fast_1';
         s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
         s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
@@ -26,6 +30,8 @@ class SettingsUI {
         s.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
         s.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.2');
         s.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.2');
+        s.layoutOffsetY = parseInt(localStorage.getItem('jellycats_layout_offset_y') || '0', 10);
+        s.rugPaddingCells = parseFloat(localStorage.getItem('jellycats_rug_padding_cells') || '1.25');
         s.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '7');
         s.gridRadius = parseInt(localStorage.getItem('jellycats_grid_radius') || '4');
         s.glowThickness = parseFloat(localStorage.getItem('jellycats_glow_thickness') || '6');
@@ -93,6 +99,20 @@ class SettingsUI {
             s.autosaveActiveProfile();
         });
         this._bindButton('btn-play-win-sound', () => s.soundManager.playWin());
+
+        this._bindSelect('rug-mode-select', s.rugMode, (val) => {
+            s.rugMode = val;
+            localStorage.setItem('jellycats_rug_mode', val);
+            s.drawRug();
+            s.autosaveActiveProfile();
+        });
+
+        this._bindSelect('board-scale-mode-select', s.boardScaleMode, (val) => {
+            s.boardScaleMode = val;
+            localStorage.setItem('jellycats_board_scale_mode', val);
+            s.updateLayout();
+            s.autosaveActiveProfile();
+        });
     }
 
     _bindVictoryEffect() {
@@ -156,6 +176,22 @@ class SettingsUI {
         this._bindRangeSlider('bg-scale-slider', 'bg-scale-value-label', s.bgScaleMultiplier,
             (val) => `${Math.round(val * 100)}%`,
             (val) => { s.bgScaleMultiplier = parseFloat(val); localStorage.setItem('jellycats_bg_scale_multiplier', val); s.updateLayout(); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('board-scale-slider', 'board-scale-value-label', s.boardScale,
+            (val) => `${Math.round(val * 100)}%`,
+            (val) => { s.boardScale = parseFloat(val); localStorage.setItem('jellycats_board_scale', val); s.updateLayout(); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('board-adaptive-strength-slider', 'board-adaptive-strength-value-label', Math.round(s.boardAdaptiveStrength * 100),
+            (val) => `${val}%`,
+            (val) => { s.boardAdaptiveStrength = parseInt(val, 10) / 100; localStorage.setItem('jellycats_board_adaptive_strength', s.boardAdaptiveStrength.toString()); s.updateLayout(); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('layout-offset-y-slider', 'layout-offset-y-value-label', s.layoutOffsetY,
+            (val) => `${val}px`,
+            (val) => { s.layoutOffsetY = parseInt(val, 10); localStorage.setItem('jellycats_layout_offset_y', val); s.updateLayout(); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('rug-padding-slider', 'rug-padding-value-label', s.rugPaddingCells,
+            (val) => `${parseFloat(val).toFixed(2)}x`,
+            (val) => { s.rugPaddingCells = parseFloat(val); localStorage.setItem('jellycats_rug_padding_cells', val); s.updateLayout(); s.autosaveActiveProfile(); });
 
         // Grid gap
         this._bindRangeSlider('grid-gap-slider', 'grid-gap-value-label', s.gridGap,
@@ -382,6 +418,9 @@ class SettingsUI {
         const btnReset = document.getElementById('btn-zoom-reset');
         if (btnReset) {
             btnReset.onclick = () => {
+                if (!window.confirm('Вы уверены, что хотите сбросить настройки отображения?')) {
+                    return;
+                }
                 const profileSelect = document.getElementById('profile-select');
                 if (profileSelect) {
                     profileSelect.value = 'default';

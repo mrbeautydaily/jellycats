@@ -6,11 +6,14 @@ class ProfileManager {
     constructor(scene) {
         this.scene = scene;
         this.defaultState = {
-            globalZoom: 0.6, bgScaleMultiplier: 1.0, gridGap: 7, gridRadius: 4,
+            globalZoom: 0.6, bgScaleMultiplier: 1.0, boardScale: 1.0,
+            boardScaleMode: 'adaptive', boardAdaptiveStrength: 1.0,
+            gridGap: 7, gridRadius: 4,
             glowThickness: 6, glowBlur: 3, showBlocks: false, fillOccupied: true,
             gridHighlightColor: '#3cc85f', gridLineThickness: 3,
             jellyMultiplier: 0.6, jellyStiffness: 0.35, jellyDamping: 0.55,
             breatheSpeedScale: 1.2, breatheAmpScale: 1.2,
+            layoutOffsetY: 0, rugPaddingCells: 1.25, rugMode: 'sprite',
             dustEnabled: true, dustCount: 85, dustScale: 1.0, dustDistribution: 'sides', dustEdgeRatio: 0.25,
             soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.6,
             putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, bgMusicVolume: 0.6,
@@ -167,11 +170,17 @@ class ProfileManager {
         ])];
         return {
             globalZoom: s.currentZoom, bgScaleMultiplier: s.bgScaleMultiplier,
+            boardScale: s.boardScale !== undefined ? s.boardScale : 1.0,
+            boardScaleMode: s.boardScaleMode || 'adaptive',
+            boardAdaptiveStrength: s.boardAdaptiveStrength !== undefined ? s.boardAdaptiveStrength : 1.0,
             gridGap: s.gridGap, gridRadius: s.gridRadius, glowThickness: s.glowThickness, glowBlur: s.glowBlur,
             showBlocks: s.showBlocks, fillOccupied: s.fillOccupied,
             gridHighlightColor: s.gridHighlightColor, gridLineThickness: s.gridLineThickness,
             jellyMultiplier: s.jellyMultiplier, jellyStiffness: s.jellyStiffness, jellyDamping: s.jellyDamping,
             breatheSpeedScale: s.breatheSpeedScale, breatheAmpScale: s.breatheAmpScale,
+            layoutOffsetY: s.layoutOffsetY !== undefined ? s.layoutOffsetY : 0,
+            rugPaddingCells: s.rugPaddingCells !== undefined ? s.rugPaddingCells : 1.25,
+            rugMode: s.rugMode || 'sprite',
             dustEnabled: s.dustEnabled, dustCount: s.dustCount, dustScale: s.dustScale,
             dustDistribution: s.dustDistribution, dustEdgeRatio: s.dustEdgeRatio,
             soundPitchRange: s.soundPitchRange,
@@ -201,12 +210,17 @@ class ProfileManager {
         // 1. Update localStorage
         const lsMap = {
             globalZoom: 'jellycats_global_zoom', bgScaleMultiplier: 'jellycats_bg_scale_multiplier',
+            boardScale: 'jellycats_board_scale',
+            boardScaleMode: 'jellycats_board_scale_mode',
+            boardAdaptiveStrength: 'jellycats_board_adaptive_strength',
             gridGap: 'jellycats_grid_gap', gridRadius: 'jellycats_grid_radius',
             glowThickness: 'jellycats_glow_thickness', glowBlur: 'jellycats_glow_blur',
             showBlocks: 'jellycats_show_blocks', fillOccupied: 'jellycats_fill_occupied',
             gridHighlightColor: 'jellycats_grid_highlight_color', gridLineThickness: 'jellycats_grid_line_thickness',
             jellyMultiplier: 'jellycats_jelly_multiplier', jellyStiffness: 'jellycats_stiffness', jellyDamping: 'jellycats_damping',
             breatheSpeedScale: 'jellycats_breathe_speed_scale', breatheAmpScale: 'jellycats_breathe_amp_scale',
+            layoutOffsetY: 'jellycats_layout_offset_y', rugPaddingCells: 'jellycats_rug_padding_cells',
+            rugMode: 'jellycats_rug_mode',
             dustEnabled: 'jellycats_dust_enabled', dustCount: 'jellycats_dust_count', dustScale: 'jellycats_dust_scale',
             dustDistribution: 'jellycats_dust_distribution', dustEdgeRatio: 'jellycats_dust_edge_ratio',
             soundPitchRange: 'jellycats_sound_pitch_range',
@@ -226,9 +240,9 @@ class ProfileManager {
 
         // 2. Update scene variables
         if (settings.globalZoom !== undefined) { s.currentZoom = settings.globalZoom; s.cameras.main.setZoom(s.currentZoom); }
-        const directProps = ['bgScaleMultiplier','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
+        const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','boardAdaptiveStrength','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
-            'breatheSpeedScale','breatheAmpScale','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
+            'breatheSpeedScale','breatheAmpScale','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
@@ -329,6 +343,12 @@ class ProfileManager {
         if (settings.breatheSpeedScale !== undefined) { uv('breathe-speed-slider', Math.round(settings.breatheSpeedScale * 100)); ut('breathe-speed-value-label', `${Math.round(settings.breatheSpeedScale * 100)}%`); }
         if (settings.breatheAmpScale !== undefined) { uv('breathe-amp-slider', Math.round(settings.breatheAmpScale * 100)); ut('breathe-amp-value-label', settings.breatheAmpScale === 0 ? 'Выкл' : `${Math.round(settings.breatheAmpScale * 100)}%`); }
         if (settings.bgScaleMultiplier !== undefined) { uv('bg-scale-slider', settings.bgScaleMultiplier); ut('bg-scale-value-label', `${Math.round(settings.bgScaleMultiplier * 100)}%`); }
+        if (settings.boardScale !== undefined) { uv('board-scale-slider', settings.boardScale); ut('board-scale-value-label', `${Math.round(settings.boardScale * 100)}%`); }
+        if (settings.boardScaleMode !== undefined) uv('board-scale-mode-select', settings.boardScaleMode);
+        if (settings.boardAdaptiveStrength !== undefined) { uv('board-adaptive-strength-slider', Math.round(settings.boardAdaptiveStrength * 100)); ut('board-adaptive-strength-value-label', `${Math.round(settings.boardAdaptiveStrength * 100)}%`); }
+        if (settings.layoutOffsetY !== undefined) { uv('layout-offset-y-slider', settings.layoutOffsetY); ut('layout-offset-y-value-label', `${settings.layoutOffsetY}px`); }
+        if (settings.rugPaddingCells !== undefined) { uv('rug-padding-slider', settings.rugPaddingCells); ut('rug-padding-value-label', `${parseFloat(settings.rugPaddingCells).toFixed(2)}x`); }
+        if (settings.rugMode !== undefined) uv('rug-mode-select', settings.rugMode);
         if (settings.gridGap !== undefined) { uv('grid-gap-slider', settings.gridGap); ut('grid-gap-value-label', `${settings.gridGap}px`); }
         if (settings.gridRadius !== undefined) { uv('grid-radius-slider', settings.gridRadius); ut('grid-radius-value-label', `${settings.gridRadius}px`); }
         if (settings.glowThickness !== undefined) { uv('glow-thickness-slider', settings.glowThickness); ut('glow-thickness-value-label', settings.glowThickness === 0 ? 'Выкл' : `${settings.glowThickness}px`); }
