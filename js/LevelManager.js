@@ -41,6 +41,36 @@ class LevelManager {
         this.saveLevels(this.getLevels().filter(level => level.id !== id));
     }
 
+    renameLevel(id, name) {
+        const nextName = (name || '').trim();
+        if (!nextName) return null;
+
+        const levels = this.getLevels();
+        const index = levels.findIndex(level => level.id === id);
+        if (index === -1) return null;
+
+        levels[index] = {
+            ...levels[index],
+            name: nextName
+        };
+        this.saveLevels(levels);
+        return this.getLevels().find(level => level.id === id) || null;
+    }
+
+    setDifficultyRating(id, rating) {
+        const nextRating = Math.max(1, Math.min(3, parseInt(rating, 10) || 1));
+        const levels = this.getLevels();
+        const index = levels.findIndex(level => level.id === id);
+        if (index === -1) return null;
+
+        levels[index] = {
+            ...levels[index],
+            difficultyRating: nextRating
+        };
+        this.saveLevels(levels);
+        return this.getLevels().find(level => level.id === id) || null;
+    }
+
     moveLevel(id, direction) {
         const levels = this.getLevels();
         const index = levels.findIndex(level => level.id === id);
@@ -50,6 +80,20 @@ class LevelManager {
         if (targetIndex < 0 || targetIndex >= levels.length) return levels;
 
         [levels[index], levels[targetIndex]] = [levels[targetIndex], levels[index]];
+        this.saveLevels(levels);
+        return this.getLevels();
+    }
+
+    moveLevelToIndex(id, targetIndex) {
+        const levels = this.getLevels();
+        const index = levels.findIndex(level => level.id === id);
+        if (index === -1) return levels;
+
+        const boundedTarget = Math.max(0, Math.min(targetIndex, levels.length - 1));
+        if (index === boundedTarget) return levels;
+
+        const [level] = levels.splice(index, 1);
+        levels.splice(boundedTarget, 0, level);
         this.saveLevels(levels);
         return this.getLevels();
     }
@@ -91,6 +135,7 @@ class LevelManager {
             .map((level, index) => ({
                 ...level,
                 order: index,
+                difficultyRating: Math.max(0, Math.min(3, parseInt(level.difficultyRating, 10) || 0)),
                 status: 'saved'
             }));
     }

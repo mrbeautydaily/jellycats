@@ -125,6 +125,11 @@
                 this.rugImage.setOrigin(0.5, 0.5);
                 this.rugImage.setDepth(-3.9);
 
+                this.rugNineSlice = this.add.container(0, 0);
+                this.rugNineSlice.setDepth(-3.9);
+                this.rugNineSlice.setVisible(false);
+                this.rugNineSlicePieces = null;
+
                 // Графика поля (ковер)
                 this.boardGraphic = this.add.graphics();
                 this.boardGraphic.setDepth(-2);
@@ -1643,37 +1648,118 @@
                 if (!this.rugGraphic) return;
                 this.rugGraphic.clear();
 
-                const layout = this.getRugLayout();
                 const mode = this.getRugMode();
+                const layout = this.getRugLayout(mode === 'nine-slice' || mode === 'stretch' ? 'rect' : 'square');
 
                 if (this.rugImage) {
-                    this.rugImage.setVisible(mode === 'sprite');
-                    if (mode === 'sprite') {
+                    this.rugImage.setVisible(mode === 'sprite' || mode === 'stretch');
+                    if (mode === 'sprite' || mode === 'stretch') {
                         this.rugImage.setPosition(layout.centerX, layout.centerY);
                         this.rugImage.setDisplaySize(layout.rugW, layout.rugH);
                     }
                 }
 
-                if (mode === 'sprite') return;
+                if (this.rugNineSlice) {
+                    this.rugNineSlice.setVisible(mode === 'nine-slice');
+                    if (mode === 'nine-slice') {
+                        this.drawNineSliceRug(layout);
+                    }
+                }
+
+                if (mode === 'sprite' || mode === 'stretch') return;
+                if (mode === 'nine-slice') return;
                 this.drawRugShadow(layout);
                 this.drawProceduralRug(layout);
             }
 
-            getRugLayout() {
+            getRugLayout(shape = 'square') {
                 const activeWidth = this.cs * this.activeGridCols;
                 const activeHeight = this.cs * this.activeGridRows;
                 const pad = this.cs * this.getRugPaddingCells();
-                const rugCells = Math.max(this.activeGridCols, this.activeGridRows, 4);
-                const rugSize = rugCells * this.cs + pad * 2;
                 const centerX = this.boardX + activeWidth / 2;
                 const centerY = this.boardY + activeHeight / 2;
-                const rugX = centerX - rugSize / 2;
-                const rugY = centerY - rugSize / 2;
-                const rugW = rugSize;
-                const rugH = rugSize;
+                const rugCells = Math.max(this.activeGridCols, this.activeGridRows, 4);
+                const rugW = shape === 'rect' ? activeWidth + pad * 2 : rugCells * this.cs + pad * 2;
+                const rugH = shape === 'rect' ? activeHeight + pad * 2 : rugCells * this.cs + pad * 2;
+                const rugX = centerX - rugW / 2;
+                const rugY = centerY - rugH / 2;
                 const radius = Math.min(this.cs * 0.42, 42);
 
                 return { rugX, rugY, rugW, rugH, centerX, centerY, radius };
+            }
+
+            ensureNineSliceRugPieces(sourceW, sourceH, slice) {
+                const texture = this.textures.get('rug_square');
+                const frames = {
+                    tl: [0, 0, slice, slice],
+                    top: [slice, 0, sourceW - slice * 2, slice],
+                    tr: [sourceW - slice, 0, slice, slice],
+                    left: [0, slice, slice, sourceH - slice * 2],
+                    center: [slice, slice, sourceW - slice * 2, sourceH - slice * 2],
+                    right: [sourceW - slice, slice, slice, sourceH - slice * 2],
+                    bl: [0, sourceH - slice, slice, slice],
+                    bottom: [slice, sourceH - slice, sourceW - slice * 2, slice],
+                    br: [sourceW - slice, sourceH - slice, slice, slice]
+                };
+
+                Object.entries(frames).forEach(([key, frame]) => {
+                    const frameName = `rug-nine-${key}`;
+                    if (!texture.has(frameName)) {
+                        texture.add(frameName, 0, frame[0], frame[1], frame[2], frame[3]);
+                    }
+                });
+
+                if (this.rugNineSlicePieces || !this.rugNineSlice) return;
+
+                this.rugNineSlicePieces = Object.keys(frames).reduce((pieces, key) => {
+                    const isCorner = key === 'tl' || key === 'tr' || key === 'bl' || key === 'br';
+                    const piece = isCorner
+                        ? this.add.image(0, 0, 'rug_square', `rug-nine-${key}`)
+                        : this.add.tileSprite(0, 0, 1, 1, 'rug_square', `rug-nine-${key}`);
+                    piece.setOrigin(0, 0);
+                    this.rugNineSlice.add(piece);
+                    pieces[key] = piece;
+                    return pieces;
+                }, {});
+            }
+
+            drawNineSliceRug({ rugX, rugY, rugW, rugH }) {
+                const source = this.textures.get('rug_square').getSourceImage();
+                const sourceW = source && source.width ? source.width : 512;
+                const sourceH = source && source.height ? source.height : 512;
+                const slice = 96;
+
+                this.ensureNineSliceRugPieces(sourceW, sourceH, slice);
+                if (!this.rugNineSlicePieces) return;
+
+                const left = Math.min(slice, sourceW * 0.3, rugW * 0.32);
+                const right = left;
+                const top = Math.min(slice, sourceH * 0.3, rugH * 0.32);
+                const bottom = top;
+                const centerW = Math.max(1, rugW - left - right);
+                const centerH = Math.max(1, rugH - top - bottom);
+                const p = this.rugNineSlicePieces;
+
+                const setPiece = (piece, x, y, w, h) => {
+                    piece.setPosition(x, y);
+                    if (piece.type === 'TileSprite') {
+                        piece.setSize(Math.max(1, w), Math.max(1, h));
+                    } else {
+                        piece.setDisplaySize(Math.max(1, w), Math.max(1, h));
+                    }
+                };
+
+                setPiece(p.tl, rugX, rugY, left, top);
+                setPiece(p.top, rugX + left, rugY, centerW, top);
+                setPiece(p.tr, rugX + left + centerW, rugY, right, top);
+
+                setPiece(p.left, rugX, rugY + top, left, centerH);
+                setPiece(p.center, rugX + left, rugY + top, centerW, centerH);
+                setPiece(p.right, rugX + left + centerW, rugY + top, right, centerH);
+
+                setPiece(p.bl, rugX, rugY + top + centerH, left, bottom);
+                setPiece(p.bottom, rugX + left, rugY + top + centerH, centerW, bottom);
+                setPiece(p.br, rugX + left + centerW, rugY + top + centerH, right, bottom);
             }
 
             drawRugShadow({ rugX, rugY, rugW, rugH, radius }) {

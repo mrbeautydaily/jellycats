@@ -15,6 +15,8 @@ class LevelFactoryPanel {
         this.drawCells = [];
         this.drawCandidate = null;
         this.isPainting = false;
+        this.editingSavedLevelId = null;
+        this.draggedSavedLevelId = null;
     }
 
     init() {
@@ -508,19 +510,72 @@ class LevelFactoryPanel {
         }
         levels.forEach((level, index) => {
             const row = document.createElement('div');
-            row.className = 'flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-2 py-2';
+            row.className = 'flex cursor-grab items-center gap-2 rounded-lg border border-slate-100 bg-white px-2 py-2 transition-colors active:cursor-grabbing';
+            row.draggable = this.editingSavedLevelId !== level.id;
+            row.dataset.levelId = level.id;
+            row.dataset.levelIndex = index;
             row.innerHTML = `
-                <button type="button" class="saved-level-load flex-1 text-left text-xs font-bold text-slate-700">${index + 1}. ${level.name} · ${level.grid.cols}x${level.grid.rows}</button>
-                <button type="button" class="saved-level-up rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === 0 ? 'disabled' : ''}>↑</button>
-                <button type="button" class="saved-level-down rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === levels.length - 1 ? 'disabled' : ''}>↓</button>
-                <button type="button" class="saved-level-delete rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-500">Delete</button>
+                <button type="button" class="saved-level-load min-w-0 flex-1 truncate text-left text-xs font-bold text-slate-700"></button>
+                <div class="saved-level-rating saved-level-action flex shrink-0 items-center gap-0.5" aria-label="Level difficulty rating"></div>
+                <button type="button" class="saved-level-edit saved-level-action rounded-md bg-sky-50 px-2 py-1 text-xs font-bold text-sky-600 hover:bg-sky-100">Edit</button>
+                <button type="button" class="saved-level-up saved-level-action rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === 0 ? 'disabled' : ''}>↑</button>
+                <button type="button" class="saved-level-down saved-level-action rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === levels.length - 1 ? 'disabled' : ''}>↓</button>
+                <button type="button" class="saved-level-delete saved-level-action rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-500">Delete</button>
             `;
-            row.querySelector('.saved-level-load').onclick = () => {
-                this.activeCandidateIndex = -1;
-                this.scene.loadLevel(level, false);
-                this.renderCandidates();
-                this.updateHeartButton(level);
-            };
+            const loadButton = row.querySelector('.saved-level-load');
+            const editButton = row.querySelector('.saved-level-edit');
+            const ratingGroup = row.querySelector('.saved-level-rating');
+            const displayName = level.name || `Level ${index + 1}`;
+            const difficultyRating = Math.max(0, Math.min(3, parseInt(level.difficultyRating, 10) || 0));
+
+            for (let rating = 1; rating <= 3; rating++) {
+                const star = document.createElement('button');
+                star.type = 'button';
+                star.className = [
+                    'h-6 w-5 rounded text-sm leading-none transition-colors',
+                    rating <= difficultyRating ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-amber-300'
+                ].join(' ');
+                star.textContent = '★';
+                star.title = `${rating}/3 difficulty`;
+                star.setAttribute('aria-label', `Set difficulty ${rating} of 3`);
+                star.onclick = () => this.setSavedLevelDifficulty(level.id, rating);
+                ratingGroup.appendChild(star);
+            }
+
+            if (this.editingSavedLevelId === level.id) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = displayName;
+                input.className = 'saved-level-name-input min-w-0 flex-1 rounded-md border border-sky-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 outline-none focus:border-sky-400';
+                loadButton.replaceWith(input);
+                editButton.textContent = 'Save';
+                editButton.onclick = () => this.commitSavedLevelRename(level.id, input.value);
+                input.onkeydown = event => {
+                    if (event.key === 'Enter') this.commitSavedLevelRename(level.id, input.value);
+                    if (event.key === 'Escape') this.cancelSavedLevelRename();
+                };
+                input.onblur = () => this.commitSavedLevelRename(level.id, input.value);
+                requestAnimationFrame(() => {
+                    input.focus();
+                    input.select();
+                });
+            } else {
+                loadButton.textContent = `${index + 1}. ${displayName} · ${level.grid.cols}x${level.grid.rows}`;
+                loadButton.onclick = () => {
+                    this.activeCandidateIndex = -1;
+                    this.scene.loadLevel(level, false);
+                    this.renderCandidates();
+                    this.updateHeartButton(level);
+                };
+                editButton.onclick = () => this.startEditingSavedLevel(level.id);
+            }
+
+            row.ondragstart = event => this.handleSavedLevelDragStart(event, level.id);
+            row.ondragover = event => this.handleSavedLevelDragOver(event, row);
+            row.ondragleave = () => this.clearSavedLevelDropState(row);
+            row.ondrop = event => this.handleSavedLevelDrop(event, row);
+            row.ondragend = () => this.handleSavedLevelDragEnd();
+
             row.querySelector('.saved-level-up').onclick = () => {
                 this.manager.moveLevel(level.id, 'up');
                 this.renderSavedLevels();
@@ -543,6 +598,107 @@ class LevelFactoryPanel {
             };
             this.savedList.appendChild(row);
         });
+    }
+
+    startEditingSavedLevel(id) {
+        this.editingSavedLevelId = id;
+        this.renderSavedLevels();
+    }
+
+    cancelSavedLevelRename() {
+        this.editingSavedLevelId = null;
+        this.renderSavedLevels();
+    }
+
+    commitSavedLevelRename(id, name) {
+        if (this.editingSavedLevelId !== id) return;
+        const renamed = this.manager.renameLevel(id, name);
+        this.editingSavedLevelId = null;
+        if (renamed && this.scene.currentLevel) {
+            const currentId = this.scene.getCurrentSavedLevelId ? this.scene.getCurrentSavedLevelId() : this.scene.currentLevel.id;
+            if (currentId === id) {
+                this.scene.currentLevel = {
+                    ...this.scene.currentLevel,
+                    name: renamed.name
+                };
+            }
+        }
+        this.renderSavedLevels();
+        this.updateHeartButton();
+        if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+    }
+
+    setSavedLevelDifficulty(id, rating) {
+        const rated = this.manager.setDifficultyRating(id, rating);
+        if (rated && this.scene.currentLevel) {
+            const currentId = this.scene.getCurrentSavedLevelId ? this.scene.getCurrentSavedLevelId() : this.scene.currentLevel.id;
+            if (currentId === id) {
+                this.scene.currentLevel = {
+                    ...this.scene.currentLevel,
+                    difficultyRating: rated.difficultyRating
+                };
+            }
+        }
+        this.renderSavedLevels();
+        this.updateHeartButton();
+        if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+    }
+
+    handleSavedLevelDragStart(event, id) {
+        if (this.editingSavedLevelId || event.target.closest('.saved-level-action, .saved-level-name-input')) {
+            event.preventDefault();
+            return;
+        }
+        this.draggedSavedLevelId = id;
+        event.currentTarget.classList.add('opacity-60', 'border-sky-200', 'bg-sky-50');
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', id);
+        }
+    }
+
+    handleSavedLevelDragOver(event, row) {
+        if (!this.draggedSavedLevelId || row.dataset.levelId === this.draggedSavedLevelId) return;
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        const rect = row.getBoundingClientRect();
+        const isAfter = event.clientY > rect.top + rect.height / 2;
+        row.dataset.dropAfter = isAfter ? 'true' : 'false';
+        this.savedList.querySelectorAll('[data-level-id]').forEach(item => this.clearSavedLevelDropState(item));
+        row.classList.add('border-sky-200', 'bg-sky-50');
+        row.style.boxShadow = isAfter
+            ? 'inset 0 -3px 0 rgba(14, 165, 233, 0.55)'
+            : 'inset 0 3px 0 rgba(14, 165, 233, 0.55)';
+    }
+
+    handleSavedLevelDrop(event, row) {
+        if (!this.draggedSavedLevelId || row.dataset.levelId === this.draggedSavedLevelId) return;
+        event.preventDefault();
+        const levels = this.manager.getLevels();
+        const draggedIndex = levels.findIndex(level => level.id === this.draggedSavedLevelId);
+        const targetIndex = Number(row.dataset.levelIndex);
+        if (draggedIndex === -1 || !Number.isFinite(targetIndex)) return;
+
+        const isAfter = row.dataset.dropAfter === 'true';
+        const finalIndex = targetIndex + (isAfter && draggedIndex > targetIndex ? 1 : 0) - (!isAfter && draggedIndex < targetIndex ? 1 : 0);
+        this.manager.moveLevelToIndex(this.draggedSavedLevelId, finalIndex);
+        this.handleSavedLevelDragEnd();
+        this.renderSavedLevels();
+        if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+    }
+
+    handleSavedLevelDragEnd() {
+        this.draggedSavedLevelId = null;
+        this.savedList.querySelectorAll('[data-level-id]').forEach(row => {
+            row.classList.remove('opacity-60', 'border-sky-200', 'bg-sky-50');
+            this.clearSavedLevelDropState(row);
+        });
+    }
+
+    clearSavedLevelDropState(row) {
+        row.classList.remove('border-sky-200', 'bg-sky-50');
+        row.style.boxShadow = '';
+        delete row.dataset.dropAfter;
     }
 
     exportLevels() {
