@@ -58,7 +58,7 @@ class LevelManager {
     }
 
     setDifficultyRating(id, rating) {
-        const nextRating = Math.max(1, Math.min(3, parseInt(rating, 10) || 1));
+        const nextRating = Math.max(1, Math.min(5, parseInt(rating, 10) || 1));
         const levels = this.getLevels();
         const index = levels.findIndex(level => level.id === id);
         if (index === -1) return null;
@@ -95,6 +95,31 @@ class LevelManager {
         const [level] = levels.splice(index, 1);
         levels.splice(boundedTarget, 0, level);
         this.saveLevels(levels);
+        return this.getLevels();
+    }
+
+    reorderLevels(levelIds) {
+        const levels = this.getLevels();
+        const byId = new Map(levels.map(level => [level.id, level]));
+        const ordered = levelIds
+            .map(id => byId.get(id))
+            .filter(Boolean);
+        const orderedIds = new Set(ordered.map(level => level.id));
+        levels.forEach(level => {
+            if (!orderedIds.has(level.id)) ordered.push(level);
+        });
+        this.saveLevels(ordered);
+        return this.getLevels();
+    }
+
+    sortLevelsByDifficulty() {
+        const levels = this.getLevels();
+        const sorted = [...levels].sort((a, b) => {
+            const ratingA = parseInt(a.difficultyRating, 10) || Number.MAX_SAFE_INTEGER;
+            const ratingB = parseInt(b.difficultyRating, 10) || Number.MAX_SAFE_INTEGER;
+            return ratingA - ratingB || a.order - b.order;
+        });
+        this.saveLevels(sorted);
         return this.getLevels();
     }
 
@@ -135,7 +160,7 @@ class LevelManager {
             .map((level, index) => ({
                 ...level,
                 order: index,
-                difficultyRating: Math.max(0, Math.min(3, parseInt(level.difficultyRating, 10) || 0)),
+                difficultyRating: Math.max(0, Math.min(5, parseInt(level.difficultyRating, 10) || 0)),
                 status: 'saved'
             }));
     }

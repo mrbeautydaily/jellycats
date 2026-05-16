@@ -5,6 +5,7 @@
                 this.activeGridCols = GRID_COLS;
                 this.activeGridRows = typeof DEFAULT_GRID_ROWS !== 'undefined' ? DEFAULT_GRID_ROWS : GRID_ROWS;
                 this.currentLevel = null;
+                this.currentSavedLevelId = null;
                 this.levelManager = new LevelManager();
                 this.obstacles = [];
                 this.holes = [];
@@ -216,6 +217,7 @@
                 if (this.levelFactoryPanel) {
                     this.levelFactoryPanel.activeCandidateIndex = -1;
                     this.levelFactoryPanel.renderCandidates();
+                    this.levelFactoryPanel.renderSavedLevels();
                     this.levelFactoryPanel.updateHeartButton(level);
                 }
             }
@@ -228,12 +230,31 @@
                 }
                 this.dismissWinModal();
                 this.loadLevel(level, false);
+                if (this.levelFactoryPanel) {
+                    this.levelFactoryPanel.activeCandidateIndex = -1;
+                    this.levelFactoryPanel.renderCandidates();
+                }
             }
 
             getCurrentSavedLevelId(levels = this.levelManager.getLevels()) {
                 if (!this.currentLevel) return null;
+                if (this.currentSavedLevelId && levels.some(level => level.id === this.currentSavedLevelId)) {
+                    return this.currentSavedLevelId;
+                }
                 const matching = this.levelManager.findMatchingLevel(this.currentLevel, levels);
                 return matching ? matching.id : this.currentLevel.id;
+            }
+
+            rememberCurrentSavedLevel(level, levels = this.levelManager.getLevels()) {
+                if (!level) {
+                    this.currentSavedLevelId = null;
+                    return null;
+                }
+                const matching = this.levelManager.findMatchingLevel(level, levels);
+                this.currentSavedLevelId = matching
+                    ? matching.id
+                    : (level.id && levels.some(saved => saved.id === level.id) ? level.id : null);
+                return this.currentSavedLevelId;
             }
 
             dismissWinModal() {
@@ -266,6 +287,7 @@
             loadLevel(level, showSolved = false) {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.currentLevel = level;
+                this.rememberCurrentSavedLevel(level);
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
                 this.activeGridRows = Math.min(GRID_ROWS, Math.max(1, level.grid.rows));
                 this.obstacles = Array.isArray(level.obstacles) ? level.obstacles : [];
@@ -275,12 +297,16 @@
                     if (showSolved) this.applySolvedPreview(level);
                 });
                 this.updateLevelQuickNav();
-                if (this.levelFactoryPanel) this.levelFactoryPanel.updateHeartButton(level);
+                if (this.levelFactoryPanel) {
+                    this.levelFactoryPanel.renderSavedLevels();
+                    this.levelFactoryPanel.updateHeartButton(level);
+                }
             }
 
             clearLevel() {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.currentLevel = null;
+                this.currentSavedLevelId = null;
                 this.activeGridCols = GRID_COLS;
                 this.activeGridRows = typeof DEFAULT_GRID_ROWS !== 'undefined' ? DEFAULT_GRID_ROWS : GRID_ROWS;
                 this.obstacles = [];

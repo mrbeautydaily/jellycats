@@ -78,7 +78,7 @@
                     <span class="font-bold text-slate-500">🔍 Масштаб игры (Зум)</span>
                     <span id="zoom-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="global-zoom-slider" min="0.3" max="1.5" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="global-zoom-slider" min="0.3" max="1.5" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер уровня желейности котиков -->
@@ -87,7 +87,7 @@
                     <span class="font-bold text-slate-500">🍮 Желейность котиков</span>
                     <span id="jelly-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="jelly-slider" min="0" max="2" step="0.1" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="jelly-slider" min="0" max="2" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер упругости пружины -->
@@ -96,7 +96,7 @@
                     <span class="font-bold text-slate-400 flex items-center gap-1">⚡ Упругость пружины</span>
                     <span id="jelly-stiffness-value-label" class="font-extrabold text-orange-500">35%</span>
                 </div>
-                <input type="range" id="jelly-stiffness-slider" min="0.1" max="1.0" step="0.05" value="0.35" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="jelly-stiffness-slider" min="0.1" max="1.0" step="0.01" value="0.35" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер вязкости среды -->
@@ -105,7 +105,7 @@
                     <span class="font-bold text-slate-400 flex items-center gap-1">💧 Вязкость среды</span>
                     <span id="jelly-damping-value-label" class="font-extrabold text-orange-500">55%</span>
                 </div>
-                <input type="range" id="jelly-damping-slider" min="0.1" max="0.95" step="0.05" value="0.55" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="jelly-damping-slider" min="0.1" max="0.95" step="0.01" value="0.55" class="w-full accent-orange-400 cursor-pointer h-1 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер скорости дыхания котиков -->
@@ -114,7 +114,7 @@
                     <span class="font-bold text-slate-500">💤 Скорость дыхания котиков</span>
                     <span id="breathe-speed-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="breathe-speed-slider" min="20" max="250" step="10" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="breathe-speed-slider" min="20" max="250" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер интенсивности дыхания котиков -->
@@ -123,7 +123,7 @@
                     <span class="font-bold text-slate-500">💨 Интенсивность дыхания</span>
                     <span id="breathe-amp-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="breathe-amp-slider" min="0" max="300" step="10" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="breathe-amp-slider" min="0" max="300" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер размера фона -->
@@ -132,7 +132,7 @@
                     <span class="font-bold text-slate-500">🖼️ Размер фона (Обои)</span>
                     <span id="bg-scale-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="bg-scale-slider" min="0.5" max="2.0" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -140,7 +140,7 @@
                     <span class="font-bold text-slate-500">▦ Размер поля и котов</span>
                     <span id="board-scale-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="board-scale-slider" min="0.65" max="2.5" step="0.025" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="board-scale-slider" min="0.65" max="2.5" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -160,35 +160,35 @@
                         <span class="font-bold text-slate-500">4 строки</span>
                         <span id="board-row-scale-4-value-label" class="font-extrabold text-orange-600">140%</span>
                     </div>
-                    <input type="range" id="board-row-scale-4-slider" min="0.65" max="2.5" step="0.025" value="1.4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                    <input type="range" id="board-row-scale-4-slider" min="0.65" max="2.5" step="0.01" value="1.4" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-xs">
                         <span class="font-bold text-slate-500">5 строк</span>
                         <span id="board-row-scale-5-value-label" class="font-extrabold text-orange-600">125%</span>
                     </div>
-                    <input type="range" id="board-row-scale-5-slider" min="0.65" max="2.5" step="0.025" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                    <input type="range" id="board-row-scale-5-slider" min="0.65" max="2.5" step="0.01" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-xs">
                         <span class="font-bold text-slate-500">6 строк</span>
                         <span id="board-row-scale-6-value-label" class="font-extrabold text-orange-600">115%</span>
                     </div>
-                    <input type="range" id="board-row-scale-6-slider" min="0.65" max="2.5" step="0.025" value="1.15" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                    <input type="range" id="board-row-scale-6-slider" min="0.65" max="2.5" step="0.01" value="1.15" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-xs">
                         <span class="font-bold text-slate-500">7 строк</span>
                         <span id="board-row-scale-7-value-label" class="font-extrabold text-orange-600">107%</span>
                     </div>
-                    <input type="range" id="board-row-scale-7-slider" min="0.65" max="2.5" step="0.025" value="1.07" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                    <input type="range" id="board-row-scale-7-slider" min="0.65" max="2.5" step="0.01" value="1.07" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-xs">
                         <span class="font-bold text-slate-500">8 строк</span>
                         <span id="board-row-scale-8-value-label" class="font-extrabold text-orange-600">100%</span>
                     </div>
-                    <input type="range" id="board-row-scale-8-slider" min="0.65" max="2.5" step="0.025" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                    <input type="range" id="board-row-scale-8-slider" min="0.65" max="2.5" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 </div>
             </div>
 
@@ -197,7 +197,7 @@
                     <span class="font-bold text-slate-500">↕️ Высота игровой зоны</span>
                     <span id="layout-offset-y-value-label" class="font-extrabold text-orange-600">0px</span>
                 </div>
-                <input type="range" id="layout-offset-y-slider" min="-180" max="180" step="5" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="layout-offset-y-slider" min="-180" max="180" step="1" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -205,7 +205,7 @@
                     <span class="font-bold text-slate-500">▣ Запас ковра</span>
                     <span id="rug-padding-value-label" class="font-extrabold text-orange-600">1.25x</span>
                 </div>
-                <input type="range" id="rug-padding-slider" min="0.5" max="2.5" step="0.05" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="rug-padding-slider" min="0.5" max="2.5" step="0.01" value="1.25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -271,7 +271,7 @@
                     <span class="font-bold text-slate-500">👥 Интенсивность теней</span>
                     <span id="shadow-opacity-value-label" class="font-extrabold text-orange-600">25%</span>
                 </div>
-                <input type="range" id="shadow-opacity-slider" min="0" max="80" step="5" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="shadow-opacity-slider" min="0" max="80" step="1" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Переключатель видимости подложки блоков -->
@@ -313,7 +313,7 @@
                     <span class="font-bold text-slate-500">🔊 Случайный питч звуков</span>
                     <span id="sound-pitch-value-label" class="font-extrabold text-orange-600">±20%</span>
                 </div>
-                <input type="range" id="sound-pitch-slider" min="0" max="50" step="5" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="sound-pitch-slider" min="0" max="50" step="1" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Выбор звука вращения -->
@@ -422,7 +422,7 @@
                     <span class="font-bold text-slate-500">Star fade</span>
                     <span id="victory-fade-value-label" class="font-extrabold text-orange-600">1000ms</span>
                 </div>
-                <input type="range" id="victory-fade-slider" min="10" max="2500" step="10" value="1000" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="victory-fade-slider" min="10" max="2500" step="1" value="1000" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость звуковых эффектов -->
@@ -431,7 +431,7 @@
                     <span class="font-bold text-slate-500">🔊 Общая громкость звуков</span>
                     <span id="sfx-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="sfx-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="sfx-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость мяуканья -->
@@ -440,7 +440,7 @@
                     <span class="font-bold text-slate-500">🐱 Громкость мяуканья</span>
                     <span id="meow-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="meow-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="meow-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость звуков вращения -->
@@ -449,7 +449,7 @@
                     <span class="font-bold text-slate-500">🔄 Громкость вращения котиков</span>
                     <span id="swoosh-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="swoosh-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="swoosh-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость укладывания котиков -->
@@ -458,7 +458,7 @@
                     <span class="font-bold text-slate-500">📥 Громкость укладывания котиков</span>
                     <span id="put-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="put-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="put-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость возврата котиков -->
@@ -467,7 +467,7 @@
                     <span class="font-bold text-slate-500">❌ Громкость возврата котика</span>
                     <span id="return-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="return-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="return-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость победных звуков -->
@@ -476,7 +476,7 @@
                     <span class="font-bold text-slate-500">🏆 Громкость победы в уровне</span>
                     <span id="win-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
-                <input type="range" id="win-volume-slider" min="0" max="100" step="5" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="win-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость фоновой музыки -->
@@ -485,7 +485,7 @@
                     <span class="font-bold text-slate-500">🎵 Громкость фоновой музыки</span>
                     <span id="bg-music-volume-value-label" class="font-extrabold text-orange-600">50%</span>
                 </div>
-                <input type="range" id="bg-music-volume-slider" min="0" max="100" step="5" value="50" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="bg-music-volume-slider" min="0" max="100" step="1" value="50" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Включение/выключение пыли -->
@@ -503,7 +503,7 @@
                     <span class="font-bold text-slate-500">✨ Количество пылинок</span>
                     <span id="dust-count-label" class="font-extrabold text-orange-600">45</span>
                 </div>
-                <input type="range" id="dust-count-slider" min="5" max="120" step="5" value="45" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="dust-count-slider" min="5" max="120" step="1" value="45" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Слайдер размера пылинок -->
@@ -512,7 +512,7 @@
                     <span class="font-bold text-slate-500">📐 Размер пылинок</span>
                     <span id="dust-size-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
-                <input type="range" id="dust-size-slider" min="0.3" max="2.0" step="0.1" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="dust-size-slider" min="0.3" max="2.0" step="0.01" value="1.0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Распределение пыли по экрану -->
@@ -532,7 +532,7 @@
                     <span class="font-bold text-slate-500">📐 Ширина зоны у краев</span>
                     <span id="dust-edge-label" class="font-extrabold text-orange-600">25%</span>
                 </div>
-                <input type="range" id="dust-edge-slider" min="5" max="50" step="5" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <input type="range" id="dust-edge-slider" min="5" max="50" step="1" value="25" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
         </div>
     </div>
@@ -728,7 +728,7 @@
                     <input id="obstacle-y-offset" type="range" min="-35" max="35" step="1" value="0" class="mt-1 w-full accent-sky-500">
                 </label>
                 <label class="block text-xs font-bold text-slate-600">Plant scale <span id="obstacle-scale-label" class="float-right text-sky-600">100%</span>
-                    <input id="obstacle-scale" type="range" min="50" max="140" step="2" value="100" class="mt-1 w-full accent-sky-500">
+                    <input id="obstacle-scale" type="range" min="50" max="140" step="1" value="100" class="mt-1 w-full accent-sky-500">
                 </label>
                 <label class="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-2 text-xs font-bold text-slate-600 border border-slate-100">
                     Plants above cats
@@ -736,7 +736,7 @@
                 </label>
                 <div class="pt-1 text-xs font-bold uppercase tracking-wide text-slate-400">Plant shadow</div>
                 <label class="block text-xs font-bold text-slate-600">Angle <span id="obstacle-shadow-angle-label" class="float-right text-sky-600">135°</span>
-                    <input id="obstacle-shadow-angle" type="range" min="0" max="360" step="5" value="135" class="mt-1 w-full accent-sky-500">
+                    <input id="obstacle-shadow-angle" type="range" min="0" max="360" step="1" value="135" class="mt-1 w-full accent-sky-500">
                 </label>
                 <label class="block text-xs font-bold text-slate-600">Distance <span id="obstacle-shadow-distance-label" class="float-right text-sky-600">14px</span>
                     <input id="obstacle-shadow-distance" type="range" min="0" max="40" step="1" value="14" class="mt-1 w-full accent-sky-500">
@@ -745,7 +745,7 @@
                     <input id="obstacle-shadow-opacity" type="range" min="0" max="70" step="1" value="24" class="mt-1 w-full accent-sky-500">
                 </label>
                 <label class="block text-xs font-bold text-slate-600">Size <span id="obstacle-shadow-size-label" class="float-right text-sky-600">78%</span>
-                    <input id="obstacle-shadow-size" type="range" min="40" max="120" step="2" value="78" class="mt-1 w-full accent-sky-500">
+                    <input id="obstacle-shadow-size" type="range" min="40" max="120" step="1" value="78" class="mt-1 w-full accent-sky-500">
                 </label>
             </div>
             <div>
@@ -809,6 +809,7 @@
                 </div>
                 <div id="draw-summary" class="text-xs font-bold text-slate-500">Paint cells, then generate cats.</div>
             </div>
+            <div id="level-save-toast" class="pointer-events-none sticky bottom-3 z-10 hidden translate-y-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-extrabold text-emerald-700 opacity-0 shadow-lg transition-all duration-200"></div>
             <p id="level-factory-status" class="min-h-5 text-xs font-bold text-slate-500"></p>
             <div>
                 <div class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Review queue</div>
@@ -817,7 +818,10 @@
             <div>
                 <div class="mb-2 flex items-center justify-between">
                     <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Saved levels</span>
-                    <button id="btn-level-export" class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-200">Export JSON</button>
+                    <div class="flex items-center gap-1.5">
+                        <button id="btn-level-sort-difficulty" class="rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 hover:bg-amber-100">Sort ★</button>
+                        <button id="btn-level-export" class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-200">Export JSON</button>
+                    </div>
                 </div>
                 <div id="saved-level-list" class="space-y-1.5"></div>
             </div>
