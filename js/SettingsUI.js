@@ -50,6 +50,10 @@ class SettingsUI {
         s.dustScale = parseFloat(localStorage.getItem('jellycats_dust_scale') || '1.0');
         s.dustDistribution = localStorage.getItem('jellycats_dust_distribution') || 'sides';
         s.dustEdgeRatio = parseFloat(localStorage.getItem('jellycats_dust_edge_ratio') || '0.25');
+        const savedSleepZEnabled = localStorage.getItem('jellycats_sleep_z_enabled');
+        s.sleepZEnabled = savedSleepZEnabled !== null ? savedSleepZEnabled === 'true' : true;
+        s.sleepZScale = parseFloat(localStorage.getItem('jellycats_sleep_z_scale') || '1.0');
+        s.sleepZOpacity = parseFloat(localStorage.getItem('jellycats_sleep_z_opacity') || '0.85');
         const savedShadowEnabled = localStorage.getItem('jellycats_shadow_enabled');
         s.shadowEnabled = savedShadowEnabled !== null ? savedShadowEnabled === 'true' : true;
         s.shadowOpacity = parseFloat(localStorage.getItem('jellycats_shadow_opacity') || '0.25');
@@ -61,6 +65,7 @@ class SettingsUI {
         this._bindToggles();
         this._bindPanelCollapse();
         this._bindDustControls();
+        this._bindSleepZControls();
         this._bindShadowControls();
         this._bindResetButton();
     }
@@ -410,6 +415,53 @@ class SettingsUI {
         }
 
         updateShadowUIState();
+    }
+
+    _bindSleepZControls() {
+        const s = this.scene;
+        const sleepZSizeContainer = document.getElementById('sleep-z-size-container');
+        const sleepZOpacityContainer = document.getElementById('sleep-z-opacity-container');
+
+        const updateSleepZUIState = () => {
+            const enabled = s.sleepZEnabled !== false;
+            [sleepZSizeContainer, sleepZOpacityContainer].forEach(container => {
+                if (!container) return;
+                container.style.opacity = enabled ? '1' : '0.4';
+                container.style.pointerEvents = enabled ? 'auto' : 'none';
+            });
+        };
+
+        s.updateSleepZUIState = updateSleepZUIState;
+
+        const sleepZToggle = document.getElementById('sleep-z-toggle');
+        if (sleepZToggle) {
+            sleepZToggle.checked = s.sleepZEnabled !== false;
+            sleepZToggle.onchange = (e) => {
+                s.sleepZEnabled = e.target.checked;
+                localStorage.setItem('jellycats_sleep_z_enabled', s.sleepZEnabled.toString());
+                if (!s.sleepZEnabled && s.dustSystem && s.dustSystem.clearZParticles) s.dustSystem.clearZParticles();
+                updateSleepZUIState();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        this._bindRangeSlider('sleep-z-size-slider', 'sleep-z-size-label', s.sleepZScale,
+            (val) => `${Math.round(parseFloat(val) * 100)}%`,
+            (val) => {
+                s.sleepZScale = parseFloat(val);
+                localStorage.setItem('jellycats_sleep_z_scale', s.sleepZScale.toString());
+                s.autosaveActiveProfile();
+            });
+
+        this._bindRangeSlider('sleep-z-opacity-slider', 'sleep-z-opacity-label', Math.round(s.sleepZOpacity * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.sleepZOpacity = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_sleep_z_opacity', s.sleepZOpacity.toString());
+                s.autosaveActiveProfile();
+            });
+
+        updateSleepZUIState();
     }
 
     _bindResetButton() {

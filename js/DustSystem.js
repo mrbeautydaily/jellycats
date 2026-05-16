@@ -6,6 +6,20 @@ class DustSystem {
     constructor(scene) {
         this.scene = scene;
         scene.dustParticles = [];
+        scene.sleepZParticles = [];
+    }
+
+    clearZParticles() {
+        const scene = this.scene;
+        if (!scene.sleepZParticles) {
+            scene.sleepZParticles = [];
+            return;
+        }
+
+        scene.sleepZParticles.forEach(particle => {
+            if (particle && particle.destroy) particle.destroy();
+        });
+        scene.sleepZParticles = [];
     }
 
     /**
@@ -152,7 +166,9 @@ class DustSystem {
         let spawnY = container.y + catImg.y * scale - 25 * scale + Phaser.Math.FloatBetween(-10, 10) * scale;
 
         let zText = Phaser.Utils.Array.GetRandom(['z', 'Z', 'zZ']);
-        let zSize = Phaser.Math.Between(11, 18) * scale;
+        let zScale = scene.sleepZScale !== undefined ? scene.sleepZScale : 1.0;
+        let zOpacity = scene.sleepZOpacity !== undefined ? scene.sleepZOpacity : 0.85;
+        let zSize = Phaser.Math.Between(11, 18) * scale * zScale;
 
         let zSprite = scene.add.text(spawnX, spawnY, zText, {
             fontSize: `${zSize}px`,
@@ -164,7 +180,10 @@ class DustSystem {
         });
         zSprite.setOrigin(0.5, 0.5);
         zSprite.setDepth(20); // Floats above all pieces and grid
-        zSprite.setAlpha(0.85);
+        zSprite.setAlpha(zOpacity);
+
+        if (!scene.sleepZParticles) scene.sleepZParticles = [];
+        scene.sleepZParticles.push(zSprite);
 
         // Vertical float up and fade out
         scene.tweens.add({
@@ -175,6 +194,9 @@ class DustSystem {
             duration: Phaser.Math.FloatBetween(1800, 2600),
             ease: 'Cubic.easeOut',
             onComplete: () => {
+                if (scene.sleepZParticles) {
+                    scene.sleepZParticles = scene.sleepZParticles.filter(particle => particle !== zSprite);
+                }
                 zSprite.destroy();
             }
         });

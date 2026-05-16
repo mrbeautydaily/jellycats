@@ -20,6 +20,7 @@ class EditorPanel {
         const imageStatus = document.getElementById('edit-image-status');
         const shapeGrid = document.getElementById('edit-shape-grid');
         const shapeStatus = document.getElementById('edit-shape-status');
+        const sleepZToggle = document.getElementById('edit-sleep-z-toggle');
         const btnReset = document.getElementById('btn-editor-reset');
         const btnExport = document.getElementById('btn-editor-export');
         const exportBox = document.getElementById('export-box');
@@ -115,7 +116,8 @@ class EditorPanel {
                     offsetX: p.offsetX,
                     offsetY: p.offsetY,
                     scaleX: p.scaleX,
-                    scaleY: p.scaleY
+                    scaleY: p.scaleY,
+                    showsSleepZ: p.showsSleepZ !== false
                 };
             });
             settingsToSave.__deletedPieceIds = getDeletedPieceIds();
@@ -187,6 +189,7 @@ class EditorPanel {
                 controls[key].val.textContent = def[key];
             }
             if (imagePathInput) imagePathInput.value = def.imagePath || `assets/cats/${def.id}.png`;
+            if (sleepZToggle) sleepZToggle.checked = def.showsSleepZ !== false;
             renderShapeGrid(def);
             setImageStatus('');
         };
@@ -274,7 +277,8 @@ class EditorPanel {
                     offsetX: 0,
                     offsetY: 0,
                     scaleX: 0.45,
-                    scaleY: 0.45
+                    scaleY: 0.45,
+                    showsSleepZ: true
                 };
                 DEFAULT_SETTINGS[id] = {
                     originX: def.originX,
@@ -348,6 +352,17 @@ class EditorPanel {
             };
         }
 
+        if (sleepZToggle) {
+            sleepZToggle.onchange = () => {
+                const def = getSelectedDef();
+                if (!def) return;
+
+                def.showsSleepZ = sleepZToggle.checked;
+                saveToLocalStorage();
+                scene.autosaveActiveProfile();
+            };
+        }
+
         if (imageFileInput) {
             imageFileInput.onchange = () => {
                 const def = getSelectedDef();
@@ -393,7 +408,8 @@ class EditorPanel {
                 code += `        offsetX: ${p.offsetX},\n`;
                 code += `        offsetY: ${p.offsetY},\n`;
                 code += `        scaleX: ${p.scaleX},\n`;
-                code += `        scaleY: ${p.scaleY}\n`;
+                code += `        scaleY: ${p.scaleY},\n`;
+                code += `        showsSleepZ: ${p.showsSleepZ !== false}\n`;
                 code += index === PIECE_DEFS.length - 1 ? '    }\n' : '    },\n';
             });
             code += '];';

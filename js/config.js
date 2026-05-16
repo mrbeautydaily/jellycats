@@ -63,7 +63,10 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_dust_count',
         'jellycats_dust_scale',
         'jellycats_dust_distribution',
-        'jellycats_dust_edge_ratio'
+        'jellycats_dust_edge_ratio',
+        'jellycats_sleep_z_enabled',
+        'jellycats_sleep_z_scale',
+        'jellycats_sleep_z_opacity'
     ].forEach(key => localStorage.removeItem(key));
     localStorage.setItem('jellycats_settings_version', 'v4');
 }
@@ -95,7 +98,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.orangeSolo.offsetX,
         offsetY: CURRENT_SETTINGS.orangeSolo.offsetY,
         scaleX: CURRENT_SETTINGS.orangeSolo.scaleX,
-        scaleY: CURRENT_SETTINGS.orangeSolo.scaleY
+        scaleY: CURRENT_SETTINGS.orangeSolo.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.orangeSolo.showsSleepZ !== false
     },
     {
         id: 'creamCurl',
@@ -107,7 +111,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.creamCurl.offsetX,
         offsetY: CURRENT_SETTINGS.creamCurl.offsetY,
         scaleX: CURRENT_SETTINGS.creamCurl.scaleX,
-        scaleY: CURRENT_SETTINGS.creamCurl.scaleY
+        scaleY: CURRENT_SETTINGS.creamCurl.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.creamCurl.showsSleepZ !== false
     },
     {
         id: 'graySit',
@@ -119,7 +124,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.graySit.offsetX,
         offsetY: CURRENT_SETTINGS.graySit.offsetY,
         scaleX: CURRENT_SETTINGS.graySit.scaleX,
-        scaleY: CURRENT_SETTINGS.graySit.scaleY
+        scaleY: CURRENT_SETTINGS.graySit.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.graySit.showsSleepZ !== false
     },
     {
         id: 'calicoStretch',
@@ -131,7 +137,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.calicoStretch.offsetX,
         offsetY: CURRENT_SETTINGS.calicoStretch.offsetY,
         scaleX: CURRENT_SETTINGS.calicoStretch.scaleX,
-        scaleY: CURRENT_SETTINGS.calicoStretch.scaleY
+        scaleY: CURRENT_SETTINGS.calicoStretch.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.calicoStretch.showsSleepZ !== false
     },
     {
         id: 'blackLong',
@@ -143,7 +150,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.blackLong.offsetX,
         offsetY: CURRENT_SETTINGS.blackLong.offsetY,
         scaleX: CURRENT_SETTINGS.blackLong.scaleX,
-        scaleY: CURRENT_SETTINGS.blackLong.scaleY
+        scaleY: CURRENT_SETTINGS.blackLong.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.blackLong.showsSleepZ !== false
     },
     {
         id: 'cat1',
@@ -155,7 +163,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.cat1.offsetX,
         offsetY: CURRENT_SETTINGS.cat1.offsetY,
         scaleX: CURRENT_SETTINGS.cat1.scaleX,
-        scaleY: CURRENT_SETTINGS.cat1.scaleY
+        scaleY: CURRENT_SETTINGS.cat1.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.cat1.showsSleepZ !== false
     },
     {
         id: 'cat2',
@@ -167,7 +176,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.cat2.offsetX,
         offsetY: CURRENT_SETTINGS.cat2.offsetY,
         scaleX: CURRENT_SETTINGS.cat2.scaleX,
-        scaleY: CURRENT_SETTINGS.cat2.scaleY
+        scaleY: CURRENT_SETTINGS.cat2.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.cat2.showsSleepZ !== false
     },
     {
         id: 'cat3',
@@ -179,7 +189,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.cat3.offsetX,
         offsetY: CURRENT_SETTINGS.cat3.offsetY,
         scaleX: CURRENT_SETTINGS.cat3.scaleX,
-        scaleY: CURRENT_SETTINGS.cat3.scaleY
+        scaleY: CURRENT_SETTINGS.cat3.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.cat3.showsSleepZ !== false
     },
     {
         id: 'cat4',
@@ -191,7 +202,8 @@ const PIECE_DEFS = [
         offsetX: CURRENT_SETTINGS.cat4.offsetX,
         offsetY: CURRENT_SETTINGS.cat4.offsetY,
         scaleX: CURRENT_SETTINGS.cat4.scaleX,
-        scaleY: CURRENT_SETTINGS.cat4.scaleY
+        scaleY: CURRENT_SETTINGS.cat4.scaleY,
+        showsSleepZ: CURRENT_SETTINGS.cat4.showsSleepZ !== false
     }
 ];
 
@@ -228,7 +240,8 @@ Object.keys(savedSettings).forEach(id => {
         offsetX: DEFAULT_SETTINGS[id].offsetX,
         offsetY: DEFAULT_SETTINGS[id].offsetY,
         scaleX: DEFAULT_SETTINGS[id].scaleX,
-        scaleY: DEFAULT_SETTINGS[id].scaleY
+        scaleY: DEFAULT_SETTINGS[id].scaleY,
+        showsSleepZ: saved.showsSleepZ !== false
     });
 });
 

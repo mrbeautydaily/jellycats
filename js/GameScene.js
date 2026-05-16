@@ -286,6 +286,7 @@
 
             loadLevel(level, showSolved = false) {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
+                if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.currentLevel = level;
                 this.rememberCurrentSavedLevel(level);
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
@@ -305,6 +306,7 @@
 
             clearLevel() {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
+                if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.currentLevel = null;
                 this.currentSavedLevelId = null;
                 this.activeGridCols = GRID_COLS;
@@ -708,6 +710,7 @@
 
             rebuildPiecesFromDefs(selectedId = null, afterRebuild = null) {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
+                if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.tweens.killAll();
                 this.grid = this.createEmptyGrid();
                 this.previewGridCells = [];
@@ -1125,12 +1128,13 @@
                                 container.def.scaleY * (1 + breatheFactorY)
                             );
                             
-                            // Spawn Zzz text particles
-                            if (container.zTimer === undefined) container.zTimer = Phaser.Math.FloatBetween(500, 2000);
-                            container.zTimer -= delta;
-                            if (container.zTimer <= 0) {
-                                container.zTimer = Phaser.Math.FloatBetween(2000, 3500); // reset delay
-                                this.dustSystem.spawnZParticle(container);
+                            if (this.sleepZEnabled !== false && container.def.showsSleepZ !== false) {
+                                if (container.zTimer === undefined) container.zTimer = Phaser.Math.FloatBetween(500, 2000);
+                                container.zTimer -= delta;
+                                if (container.zTimer <= 0) {
+                                    container.zTimer = Phaser.Math.FloatBetween(2000, 3500); // reset delay
+                                    this.dustSystem.spawnZParticle(container);
+                                }
                             }
                         } else {
                             // Reset to normal scale when lifted or dragged

@@ -15,17 +15,18 @@ class ProfileManager {
             breatheSpeedScale: 1.2, breatheAmpScale: 1.2,
             layoutOffsetY: 0, rugPaddingCells: 1.25, rugMode: 'sprite',
             dustEnabled: true, dustCount: 85, dustScale: 1.0, dustDistribution: 'sides', dustEdgeRatio: 0.25,
+            sleepZEnabled: true, sleepZScale: 1.0, sleepZOpacity: 0.85,
             soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.6,
             putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, bgMusicVolume: 0.6,
             shadowEnabled: true, shadowOpacity: 0.25,
             rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
             placementSound: 'click3', winSound: 'win_levelup_05', victoryJumpMode: 'sequential', victoryFadeDuration: 1000,
             catSettings: {
-                orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54 },
-                creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5 },
-                graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58 },
-                calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63 },
-                blackLong: { originX: 0.5, originY: 0.5, offsetX: -1, offsetY: 147, scaleX: 0.5, scaleY: 0.7 }
+                orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
+                creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5, showsSleepZ: true },
+                graySit: { originX: 0.336, originY: 0.221, offsetX: 8, offsetY: 14, scaleX: 0.58, scaleY: 0.58, showsSleepZ: true },
+                calicoStretch: { originX: 0.375, originY: 0.25, offsetX: 4, offsetY: 29, scaleX: 0.58, scaleY: 0.63, showsSleepZ: true },
+                blackLong: { originX: 0.5, originY: 0.5, offsetX: -1, offsetY: 147, scaleX: 0.5, scaleY: 0.7, showsSleepZ: true }
             }
         };
     }
@@ -162,7 +163,7 @@ class ProfileManager {
         const savedEditorSettings = JSON.parse(localStorage.getItem('jellycats_editor_settings') || '{}');
         const savedDeletedPieceIds = JSON.parse(localStorage.getItem('jellycats_deleted_piece_ids') || '[]');
         PIECE_DEFS.forEach(p => {
-            catSettings[p.id] = { imagePath: p.imagePath, color: p.color, cells: p.cells, originX: p.originX, originY: p.originY, offsetX: p.offsetX, offsetY: p.offsetY, scaleX: p.scaleX, scaleY: p.scaleY };
+            catSettings[p.id] = { imagePath: p.imagePath, color: p.color, cells: p.cells, originX: p.originX, originY: p.originY, offsetX: p.offsetX, offsetY: p.offsetY, scaleX: p.scaleX, scaleY: p.scaleY, showsSleepZ: p.showsSleepZ !== false };
         });
         catSettings.__deletedPieceIds = [...new Set([
             ...(Array.isArray(savedDeletedPieceIds) ? savedDeletedPieceIds : []),
@@ -183,6 +184,9 @@ class ProfileManager {
             rugMode: s.rugMode || 'sprite',
             dustEnabled: s.dustEnabled, dustCount: s.dustCount, dustScale: s.dustScale,
             dustDistribution: s.dustDistribution, dustEdgeRatio: s.dustEdgeRatio,
+            sleepZEnabled: s.sleepZEnabled !== false,
+            sleepZScale: s.sleepZScale !== undefined ? s.sleepZScale : 1.0,
+            sleepZOpacity: s.sleepZOpacity !== undefined ? s.sleepZOpacity : 0.85,
             soundPitchRange: s.soundPitchRange,
             sfxVolume: s.sfxVolume !== undefined ? s.sfxVolume : 0.8,
             meowVolume: s.meowVolume !== undefined ? s.meowVolume : 0.8,
@@ -226,6 +230,7 @@ class ProfileManager {
             rugMode: 'jellycats_rug_mode',
             dustEnabled: 'jellycats_dust_enabled', dustCount: 'jellycats_dust_count', dustScale: 'jellycats_dust_scale',
             dustDistribution: 'jellycats_dust_distribution', dustEdgeRatio: 'jellycats_dust_edge_ratio',
+            sleepZEnabled: 'jellycats_sleep_z_enabled', sleepZScale: 'jellycats_sleep_z_scale', sleepZOpacity: 'jellycats_sleep_z_opacity',
             soundPitchRange: 'jellycats_sound_pitch_range',
             sfxVolume: 'jellycats_sfx_volume', meowVolume: 'jellycats_meow_volume', swooshVolume: 'jellycats_swoosh_volume',
             putVolume: 'jellycats_put_volume', returnVolume: 'jellycats_return_volume', winVolume: 'jellycats_win_volume',
@@ -250,6 +255,7 @@ class ProfileManager {
         const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
+            'sleepZEnabled','sleepZScale','sleepZOpacity',
             'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
@@ -303,7 +309,8 @@ class ProfileManager {
                     offsetX: DEFAULT_SETTINGS[id].offsetX,
                     offsetY: DEFAULT_SETTINGS[id].offsetY,
                     scaleX: DEFAULT_SETTINGS[id].scaleX,
-                    scaleY: DEFAULT_SETTINGS[id].scaleY
+                    scaleY: DEFAULT_SETTINGS[id].scaleY,
+                    showsSleepZ: catSet.showsSleepZ !== false
                 });
                 needsPieceRebuild = true;
             });
@@ -323,6 +330,7 @@ class ProfileManager {
                     if (catSet.offsetY !== undefined) p.offsetY = catSet.offsetY;
                     if (catSet.scaleX !== undefined) p.scaleX = catSet.scaleX;
                     if (catSet.scaleY !== undefined) p.scaleY = catSet.scaleY;
+                    if (catSet.showsSleepZ !== undefined) p.showsSleepZ = catSet.showsSleepZ !== false;
                     const container = s.pieces.find(pc => pc.def.id === p.id);
                     if (container) {
                         const catImg = container.list.find(child => child.isCatImage);
@@ -378,6 +386,9 @@ class ProfileManager {
         if (settings.dustDistribution !== undefined) uv('dust-dist-select', settings.dustDistribution);
         if (settings.dustEdgeRatio !== undefined) { uv('dust-edge-slider', Math.round(settings.dustEdgeRatio * 100)); ut('dust-edge-label', `${Math.round(settings.dustEdgeRatio * 100)}%`); }
         if (settings.soundPitchRange !== undefined) { uv('sound-pitch-slider', Math.round(settings.soundPitchRange * 100)); ut('sound-pitch-value-label', `±${Math.round(settings.soundPitchRange * 100)}%`); }
+        if (settings.sleepZEnabled !== undefined) uc('sleep-z-toggle', settings.sleepZEnabled);
+        if (settings.sleepZScale !== undefined) { uv('sleep-z-size-slider', settings.sleepZScale); ut('sleep-z-size-label', `${Math.round(settings.sleepZScale * 100)}%`); }
+        if (settings.sleepZOpacity !== undefined) { uv('sleep-z-opacity-slider', Math.round(settings.sleepZOpacity * 100)); ut('sleep-z-opacity-label', `${Math.round(settings.sleepZOpacity * 100)}%`); }
         if (settings.bgMusicVolume !== undefined) { uv('bg-music-volume-slider', Math.round(settings.bgMusicVolume * 100)); ut('bg-music-volume-value-label', `${Math.round(settings.bgMusicVolume * 100)}%`); }
         if (settings.sfxVolume !== undefined) { uv('sfx-volume-slider', Math.round(settings.sfxVolume * 100)); ut('sfx-volume-value-label', `${Math.round(settings.sfxVolume * 100)}%`); }
         if (settings.meowVolume !== undefined) { uv('meow-volume-slider', Math.round(settings.meowVolume * 100)); ut('meow-volume-value-label', `${Math.round(settings.meowVolume * 100)}%`); }
@@ -407,12 +418,15 @@ class ProfileManager {
                 uv('slider-originX', def.originX); ut('val-originX', def.originX);
                 uv('slider-originY', def.originY); ut('val-originY', def.originY);
                 uv('edit-image-path', def.imagePath || `assets/cats/${def.id}.png`);
+                uc('edit-sleep-z-toggle', def.showsSleepZ !== false);
             }
         }
 
         // 5. Trigger scene updates
         if (s.updateDustUIState) s.updateDustUIState();
+        if (s.updateSleepZUIState) s.updateSleepZUIState();
         if (s.updateShadowUIState) s.updateShadowUIState();
+        if (s.sleepZEnabled === false && s.dustSystem && s.dustSystem.clearZParticles) s.dustSystem.clearZParticles();
         s.updateBlocksVisibility();
         s.updateLayout();
         s.dustSystem.createParticles();
