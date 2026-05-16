@@ -21,6 +21,8 @@
                 this.grid = this.createEmptyGrid();
                 this.pieces = [];
                 this.ghosts = [];
+                this.solutionGhosts = [];
+                this.solutionHintTimer = null;
                 this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
                 this.jellyMultiplier = 1.0; // По умолчанию нормальный уровень желейности
                 this.jellyStiffness = 0.35; // Жесткость пружины по умолчанию
@@ -151,6 +153,7 @@
                 document.getElementById('btn-restart').onclick = () => this.restartLevel();
                 document.getElementById('btn-next').onclick = () => this.loadNextSavedLevel();
                 this.setupLevelQuickNav();
+                this.setupHintButton();
 
                 this.soundManager = new SoundManager(this);
                 this.dustSystem = new DustSystem(this);
@@ -188,6 +191,7 @@
                 this.quickNav = {
                     prev: document.getElementById('btn-level-prev-saved'),
                     next: document.getElementById('btn-level-next-saved'),
+                    hint: document.getElementById('btn-solution-hint'),
                     counter: document.getElementById('level-quick-nav-counter')
                 };
                 if (this.quickNav.prev) this.quickNav.prev.onclick = () => this.navigateSavedLevel('previous');
@@ -203,7 +207,14 @@
                 const hasLevels = levels.length > 0;
                 if (this.quickNav.prev) this.quickNav.prev.disabled = !hasLevels;
                 if (this.quickNav.next) this.quickNav.next.disabled = !hasLevels;
+                if (this.quickNav.hint) this.quickNav.hint.disabled = !this.currentLevel || !Array.isArray(this.currentLevel.placements) || this.currentLevel.placements.length === 0;
                 if (this.quickNav.counter) this.quickNav.counter.textContent = `${index >= 0 ? index + 1 : 0} / ${levels.length}`;
+            }
+
+            setupHintButton() {
+                const button = document.getElementById('btn-solution-hint');
+                if (!button) return;
+                button.onclick = () => this.showSolutionGhosts();
             }
 
             navigateSavedLevel(direction) {
@@ -287,6 +298,7 @@
             loadLevel(level, showSolved = false) {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
+                this.clearSolutionGhosts();
                 this.currentLevel = level;
                 this.rememberCurrentSavedLevel(level);
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
@@ -307,6 +319,7 @@
             clearLevel() {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
+                this.clearSolutionGhosts();
                 this.currentLevel = null;
                 this.currentSavedLevelId = null;
                 this.activeGridCols = GRID_COLS;
@@ -711,6 +724,7 @@
             rebuildPiecesFromDefs(selectedId = null, afterRebuild = null) {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
+                this.clearSolutionGhosts();
                 this.tweens.killAll();
                 this.grid = this.createEmptyGrid();
                 this.previewGridCells = [];
@@ -1423,6 +1437,104 @@
                 });
             }
 
+            clearSolutionGhosts() {
+                if (this.solutionHintTimer) {
+                    this.solutionHintTimer.remove(false);
+                    this.solutionHintTimer = null;
+                }
+
+                (this.solutionGhosts || []).forEach(ghost => {
+                    if (!ghost || !ghost.active) return;
+                    this.tweens.killTweensOf(ghost);
+                    ghost.destroy(true);
+                });
+                this.solutionGhosts = [];
+            }
+
+            showSolutionGhosts() {
+                const placements = this.currentLevel && Array.isArray(this.currentLevel.placements)
+                    ? this.currentLevel.placements
+                    : [];
+                if (placements.length === 0) return;
+
+                this.clearSolutionGhosts();
+
+                placements.forEach((placement, index) => {
+                    const def = PIECE_DEFS.find(piece => piece.id === placement.pieceId);
+                    if (!def) return;
+
+                    const ghost = this.createSolutionGhost(def, placement);
+                    if (!ghost) return;
+
+                    ghost.setAlpha(0);
+                    ghost.setDepth(22 + index * 0.01);
+                    ghost.setScale((this.cs / BASE_CS) * 0.96);
+                    ghost.x = this.boardX + placement.x * this.cs + this.cs / 2;
+                    ghost.y = this.boardY + placement.y * this.cs + this.cs / 2;
+                    this.solutionGhosts.push(ghost);
+
+                    this.tweens.add({
+                        targets: ghost,
+                        alpha: 0.42,
+                        scaleX: this.cs / BASE_CS,
+                        scaleY: this.cs / BASE_CS,
+                        duration: 180,
+                        ease: 'Sine.easeOut'
+                    });
+                });
+
+                this.solutionHintTimer = this.time.delayedCall(1700, () => {
+                    const ghosts = [...(this.solutionGhosts || [])];
+                    this.solutionGhosts = [];
+                    this.solutionHintTimer = null;
+                    ghosts.forEach(ghost => {
+                        if (!ghost || !ghost.active) return;
+                        this.tweens.add({
+                            targets: ghost,
+                            alpha: 0,
+                            scaleX: ghost.scaleX * 0.97,
+                            scaleY: ghost.scaleY * 0.97,
+                            duration: 320,
+                            ease: 'Sine.easeIn',
+                            onComplete: () => ghost.destroy(true)
+                        });
+                    });
+                });
+            }
+
+            createSolutionGhost(def, placement) {
+                const ghost = this.add.container(0, 0);
+                ghost.def = def;
+
+                (placement.cells || def.cells).forEach(cell => {
+                    const block = this.add.image(cell[0] * BASE_CS, cell[1] * BASE_CS, 'block_base');
+                    block.setTint(0xffffff);
+                    block.setAlpha(0.28);
+                    block.gridX = cell[0];
+                    block.gridY = cell[1];
+                    ghost.add(block);
+                });
+
+                const catShadow = this.add.image(def.offsetX + 4, def.offsetY + 6, def.id);
+                catShadow.setOrigin(def.originX, def.originY);
+                catShadow.setScale(def.scaleX, def.scaleY);
+                catShadow.setTint(0x1f140d);
+                catShadow.setAlpha(0.18);
+                catShadow.isCatShadow = true;
+                ghost.add(catShadow);
+
+                const catImg = this.add.image(def.offsetX, def.offsetY, def.id);
+                catImg.setOrigin(def.originX, def.originY);
+                catImg.setScale(def.scaleX, def.scaleY);
+                catImg.setAlpha(0.82);
+                catImg.setTint(0xfff3d7);
+                catImg.isCatImage = true;
+                ghost.add(catImg);
+
+                this.applyContainerShape(ghost, placement.cells || def.cells, placement.rotation || 0);
+                return ghost;
+            }
+
             playVictoryJump() {
                 const mode = this.victoryJumpMode || 'sequential';
                 if (mode === 'off') return;
@@ -1472,6 +1584,7 @@
 
             restartLevel() {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
+                this.clearSolutionGhosts();
                 // Скрываем UI
                 const ui = document.getElementById('ui-layer');
                 const modal = document.getElementById('win-modal');
