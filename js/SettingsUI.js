@@ -41,6 +41,8 @@ class SettingsUI {
         s.showBlocks = savedShowBlocks !== null ? savedShowBlocks === 'true' : false;
         const savedFillOccupied = localStorage.getItem('jellycats_fill_occupied');
         s.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : true;
+        const savedEdgeReturnEnabled = localStorage.getItem('jellycats_edge_return_enabled');
+        s.edgeReturnEnabled = savedEdgeReturnEnabled !== null ? savedEdgeReturnEnabled === 'true' : true;
         s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#3cc85f';
         s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '3');
         s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
@@ -289,6 +291,16 @@ class SettingsUI {
                 s.fillOccupied = e.target.checked;
                 localStorage.setItem('jellycats_fill_occupied', s.fillOccupied.toString());
                 s.drawBoard();
+                s.autosaveActiveProfile();
+            };
+        }
+
+        const edgeReturnToggle = document.getElementById('edge-return-toggle');
+        if (edgeReturnToggle) {
+            edgeReturnToggle.checked = s.edgeReturnEnabled !== false;
+            edgeReturnToggle.onchange = (e) => {
+                s.edgeReturnEnabled = e.target.checked;
+                localStorage.setItem('jellycats_edge_return_enabled', s.edgeReturnEnabled.toString());
                 s.autosaveActiveProfile();
             };
         }

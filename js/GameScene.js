@@ -1058,9 +1058,13 @@
                         this.returnToStart(container, true, true);
                     } else {
                         // Оставляем котика там, где его бросили, если он не над сеткой
-                        container.startX = container.x;
-                        container.startY = container.y;
-                    container.setDepth(40);
+                        const returnedToViewport = this.edgeReturnEnabled !== false &&
+                            this.returnVisualBoundsIntoViewportIfNeeded(container);
+                        if (!returnedToViewport) {
+                            container.startX = container.x;
+                            container.startY = container.y;
+                            container.setDepth(40);
+                        }
                     }
                 });
             }
@@ -1436,6 +1440,67 @@
                         if (restoreDepthOnComplete) container.setDepth(this.getPieceRestingDepth(container));
                     }
                 });
+            }
+
+            getViewportWorldBounds() {
+                const camera = this.cameras.main;
+                if (camera.worldView) {
+                    return {
+                        left: camera.worldView.x,
+                        top: camera.worldView.y,
+                        right: camera.worldView.x + camera.worldView.width,
+                        bottom: camera.worldView.y + camera.worldView.height
+                    };
+                }
+
+                const zoom = camera.zoom || 1;
+                return {
+                    left: camera.scrollX,
+                    top: camera.scrollY,
+                    right: camera.scrollX + this.scale.gameSize.width / zoom,
+                    bottom: camera.scrollY + this.scale.gameSize.height / zoom
+                };
+            }
+
+            returnVisualBoundsIntoViewportIfNeeded(container) {
+                const bounds = this.getViewportWorldBounds();
+                const pieceBounds = container.getBounds();
+                let offsetX = 0;
+                let offsetY = 0;
+
+                if (pieceBounds.width <= bounds.right - bounds.left) {
+                    if (pieceBounds.left < bounds.left) offsetX = bounds.left - pieceBounds.left;
+                    else if (pieceBounds.right > bounds.right) offsetX = bounds.right - pieceBounds.right;
+                } else {
+                    offsetX = Phaser.Math.Clamp(container.x, bounds.left, bounds.right) - container.x;
+                }
+
+                if (pieceBounds.height <= bounds.bottom - bounds.top) {
+                    if (pieceBounds.top < bounds.top) offsetY = bounds.top - pieceBounds.top;
+                    else if (pieceBounds.bottom > bounds.bottom) offsetY = bounds.bottom - pieceBounds.bottom;
+                } else {
+                    offsetY = Phaser.Math.Clamp(container.y, bounds.top, bounds.bottom) - container.y;
+                }
+
+                if (offsetX === 0 && offsetY === 0) return false;
+
+                const targetX = container.x + offsetX;
+                const targetY = container.y + offsetY;
+
+                this.tweens.add({
+                    targets: container,
+                    x: targetX,
+                    y: targetY,
+                    duration: 280,
+                    ease: 'Back.easeOut',
+                    onComplete: () => {
+                        container.startX = targetX;
+                        container.startY = targetY;
+                        container.setDepth(40);
+                    }
+                });
+
+                return true;
             }
 
             clearSolutionGhosts() {

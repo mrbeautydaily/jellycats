@@ -48,6 +48,7 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_glow_blur',
         'jellycats_show_blocks',
         'jellycats_fill_occupied',
+        'jellycats_edge_return_enabled',
         'jellycats_grid_highlight_color',
         'jellycats_grid_line_thickness',
         'jellycats_sound_pitch_range',
