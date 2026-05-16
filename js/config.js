@@ -38,6 +38,7 @@ if (localStorage.getItem('jellycats_settings_version') !== 'v4') {
         'jellycats_damping',
         'jellycats_breathe_speed_scale',
         'jellycats_breathe_amp_scale',
+        'jellycats_hint_duration',
         'jellycats_layout_offset_y',
         'jellycats_rug_padding_cells',
         'jellycats_rug_mode',

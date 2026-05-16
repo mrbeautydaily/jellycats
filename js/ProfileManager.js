@@ -12,7 +12,7 @@ class ProfileManager {
             glowThickness: 6, glowBlur: 3, showBlocks: false, fillOccupied: true,
             gridHighlightColor: '#3cc85f', gridLineThickness: 3,
             jellyMultiplier: 0.6, jellyStiffness: 0.35, jellyDamping: 0.55,
-            breatheSpeedScale: 1.2, breatheAmpScale: 1.2,
+            breatheSpeedScale: 1.2, breatheAmpScale: 1.2, hintDuration: 1700,
             layoutOffsetY: 0, rugPaddingCells: 1.25, rugMode: 'sprite',
             dustEnabled: true, dustCount: 85, dustScale: 1.0, dustDistribution: 'sides', dustEdgeRatio: 0.25,
             sleepZEnabled: true, sleepZScale: 1.0, sleepZOpacity: 0.85,
@@ -179,6 +179,7 @@ class ProfileManager {
             gridHighlightColor: s.gridHighlightColor, gridLineThickness: s.gridLineThickness,
             jellyMultiplier: s.jellyMultiplier, jellyStiffness: s.jellyStiffness, jellyDamping: s.jellyDamping,
             breatheSpeedScale: s.breatheSpeedScale, breatheAmpScale: s.breatheAmpScale,
+            hintDuration: s.hintDuration !== undefined ? s.hintDuration : 1700,
             layoutOffsetY: s.layoutOffsetY !== undefined ? s.layoutOffsetY : 0,
             rugPaddingCells: s.rugPaddingCells !== undefined ? s.rugPaddingCells : 1.25,
             rugMode: s.rugMode || 'sprite',
@@ -226,6 +227,7 @@ class ProfileManager {
             gridHighlightColor: 'jellycats_grid_highlight_color', gridLineThickness: 'jellycats_grid_line_thickness',
             jellyMultiplier: 'jellycats_jelly_multiplier', jellyStiffness: 'jellycats_stiffness', jellyDamping: 'jellycats_damping',
             breatheSpeedScale: 'jellycats_breathe_speed_scale', breatheAmpScale: 'jellycats_breathe_amp_scale',
+            hintDuration: 'jellycats_hint_duration',
             layoutOffsetY: 'jellycats_layout_offset_y', rugPaddingCells: 'jellycats_rug_padding_cells',
             rugMode: 'jellycats_rug_mode',
             dustEnabled: 'jellycats_dust_enabled', dustCount: 'jellycats_dust_count', dustScale: 'jellycats_dust_scale',
@@ -254,7 +256,7 @@ class ProfileManager {
         if (settings.globalZoom !== undefined) { s.currentZoom = settings.globalZoom; s.cameras.main.setZoom(s.currentZoom); }
         const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied',
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
-            'breatheSpeedScale','breatheAmpScale','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
+            'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
             'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
@@ -358,6 +360,7 @@ class ProfileManager {
         if (settings.jellyDamping !== undefined) { uv('jelly-damping-slider', settings.jellyDamping); ut('jelly-damping-value-label', `${Math.round(settings.jellyDamping * 100)}%`); }
         if (settings.breatheSpeedScale !== undefined) { uv('breathe-speed-slider', Math.round(settings.breatheSpeedScale * 100)); ut('breathe-speed-value-label', `${Math.round(settings.breatheSpeedScale * 100)}%`); }
         if (settings.breatheAmpScale !== undefined) { uv('breathe-amp-slider', Math.round(settings.breatheAmpScale * 100)); ut('breathe-amp-value-label', settings.breatheAmpScale === 0 ? 'Выкл' : `${Math.round(settings.breatheAmpScale * 100)}%`); }
+        if (settings.hintDuration !== undefined) { uv('hint-duration-slider', settings.hintDuration); ut('hint-duration-value-label', `${(parseInt(settings.hintDuration, 10) / 1000).toFixed(1)}s`); }
         if (settings.bgScaleMultiplier !== undefined) { uv('bg-scale-slider', settings.bgScaleMultiplier); ut('bg-scale-value-label', `${Math.round(settings.bgScaleMultiplier * 100)}%`); }
         if (settings.boardScale !== undefined) { uv('board-scale-slider', settings.boardScale); ut('board-scale-value-label', `${Math.round(settings.boardScale * 100)}%`); }
         if (settings.boardScaleMode !== undefined) uv('board-scale-mode-select', settings.boardScaleMode);

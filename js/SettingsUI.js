@@ -30,6 +30,7 @@ class SettingsUI {
         s.jellyDamping = parseFloat(localStorage.getItem('jellycats_damping') || '0.55');
         s.breatheSpeedScale = parseFloat(localStorage.getItem('jellycats_breathe_speed_scale') || '1.2');
         s.breatheAmpScale = parseFloat(localStorage.getItem('jellycats_breathe_amp_scale') || '1.2');
+        s.hintDuration = parseInt(localStorage.getItem('jellycats_hint_duration') || '1700', 10);
         s.layoutOffsetY = parseInt(localStorage.getItem('jellycats_layout_offset_y') || '0', 10);
         s.rugPaddingCells = parseFloat(localStorage.getItem('jellycats_rug_padding_cells') || '1.25');
         s.gridGap = parseInt(localStorage.getItem('jellycats_grid_gap') || '7');
@@ -176,6 +177,14 @@ class SettingsUI {
         this._bindRangeSlider('breathe-amp-slider', 'breathe-amp-value-label', Math.round(s.breatheAmpScale * 100),
             (val) => parseInt(val) === 0 ? 'Выкл' : `${val}%`,
             (val) => { s.breatheAmpScale = parseInt(val) / 100; localStorage.setItem('jellycats_breathe_amp_scale', s.breatheAmpScale.toString()); s.autosaveActiveProfile(); });
+
+        this._bindRangeSlider('hint-duration-slider', 'hint-duration-value-label', s.hintDuration,
+            (val) => `${(parseInt(val, 10) / 1000).toFixed(1)}s`,
+            (val) => {
+                s.hintDuration = parseInt(val, 10);
+                localStorage.setItem('jellycats_hint_duration', s.hintDuration.toString());
+                s.autosaveActiveProfile();
+            });
 
         // Background scale
         this._bindRangeSlider('bg-scale-slider', 'bg-scale-value-label', s.bgScaleMultiplier,

@@ -23,6 +23,7 @@
                 this.ghosts = [];
                 this.solutionGhosts = [];
                 this.solutionHintTimer = null;
+                this.hintDuration = parseInt(localStorage.getItem('jellycats_hint_duration') || '1700', 10);
                 this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
                 this.jellyMultiplier = 1.0; // По умолчанию нормальный уровень желейности
                 this.jellyStiffness = 0.35; // Жесткость пружины по умолчанию
@@ -1483,7 +1484,8 @@
                     });
                 });
 
-                this.solutionHintTimer = this.time.delayedCall(1700, () => {
+                const holdDuration = Phaser.Math.Clamp(parseInt(this.hintDuration || 1700, 10), 500, 5000);
+                this.solutionHintTimer = this.time.delayedCall(holdDuration, () => {
                     const ghosts = [...(this.solutionGhosts || [])];
                     this.solutionGhosts = [];
                     this.solutionHintTimer = null;
