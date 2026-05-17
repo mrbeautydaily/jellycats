@@ -41,6 +41,26 @@ class LevelManager {
         this.saveLevels(this.getLevels().filter(level => level.id !== id));
     }
 
+    updateLevel(id, levelPatch) {
+        const levels = this.getLevels();
+        const index = levels.findIndex(level => level.id === id);
+        if (index === -1) return null;
+
+        const existing = levels[index];
+        levels[index] = {
+            ...existing,
+            ...levelPatch,
+            id: existing.id,
+            name: existing.name,
+            order: existing.order,
+            difficultyRating: existing.difficultyRating,
+            savedAt: existing.savedAt,
+            status: 'saved'
+        };
+        this.saveLevels(levels);
+        return this.getLevels().find(level => level.id === id) || null;
+    }
+
     renameLevel(id, name) {
         const nextName = (name || '').trim();
         if (!nextName) return null;

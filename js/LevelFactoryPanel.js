@@ -16,6 +16,8 @@ class LevelFactoryPanel {
         this.drawCandidate = null;
         this.isPainting = false;
         this.editingSavedLevelId = null;
+        this.editingLayoutLevelId = null;
+        this.editingLayoutOriginalLevel = null;
         this.draggedSavedLevelId = null;
         this.savedLevelDropCommitted = false;
     }
@@ -46,6 +48,7 @@ class LevelFactoryPanel {
         this.renderDrawGrid();
         this.renderCandidates();
         this.renderSavedLevels();
+        this.updateDrawModeLabels();
         this.updateHeartButton();
     }
 
@@ -173,6 +176,7 @@ class LevelFactoryPanel {
             ? 'rounded-lg bg-emerald-500 px-3 py-2 text-sm font-extrabold text-white'
             : 'rounded-lg px-3 py-2 text-sm font-extrabold text-slate-600 hover:bg-sky-50';
         this.renderDrawGrid();
+        this.updateDrawModeLabels();
     }
 
     setDrawTool(tool) {
@@ -328,6 +332,11 @@ class LevelFactoryPanel {
     }
 
     async generateDrawCats() {
+        if (this.editingLayoutLevelId) {
+            const level = await this.buildEditedLayoutLevel();
+            if (level) this.previewCandidate(level);
+            return level;
+        }
         if (this.isGeneratingDrawLevel) return null;
         this.generator = new LevelGenerator(PIECE_DEFS);
         const options = this.buildDrawOptions();
@@ -371,11 +380,20 @@ class LevelFactoryPanel {
     }
 
     async previewDrawLevel() {
+        if (this.editingLayoutLevelId) {
+            const level = await this.buildEditedLayoutLevel();
+            if (level) this.previewCandidate(level);
+            return;
+        }
         if (!this.drawCandidate) await this.generateDrawCats();
         if (this.drawCandidate) this.previewCandidate(this.drawCandidate);
     }
 
     async saveDrawLevel() {
+        if (this.editingLayoutLevelId) {
+            await this.saveEditedLayoutLevel();
+            return;
+        }
         if (!this.drawCandidate) await this.generateDrawCats();
         if (!this.drawCandidate) return;
         const saved = this.manager.acceptLevel(this.drawCandidate);
@@ -396,10 +414,14 @@ class LevelFactoryPanel {
             return;
         }
         const options = this.buildDrawOptions();
-        this.drawSummary.textContent = `${options.freeCount} cat cells, ${options.obstacles.length} blocks, ${options.holes.length} empty spots.`;
+        const prefix = this.editingLayoutOriginalLevel
+            ? `Editing: ${this.editingLayoutOriginalLevel.name || 'saved level'}. `
+            : '';
+        this.drawSummary.textContent = `${prefix}${options.freeCount} cat cells, ${options.obstacles.length} blocks, ${options.holes.length} empty spots.`;
     }
 
     generateBatch() {
+        this.stopEditingSavedLevelLayout();
         this.generator = new LevelGenerator(PIECE_DEFS);
         const options = this.getOptions();
         this.candidates = this.generator.generateBatch(options);
@@ -539,13 +561,15 @@ class LevelFactoryPanel {
             row.innerHTML = `
                 <button type="button" class="saved-level-load min-w-0 flex-1 truncate text-left text-xs font-bold text-slate-700"></button>
                 <div class="saved-level-rating saved-level-action flex shrink-0 items-center gap-0.5" aria-label="Level difficulty rating"></div>
-                <button type="button" class="saved-level-edit saved-level-action rounded-md bg-sky-50 px-2 py-1 text-xs font-bold text-sky-600 hover:bg-sky-100">Edit</button>
+                <button type="button" class="saved-level-layout saved-level-action rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-600 hover:bg-emerald-100">Layout</button>
+                <button type="button" class="saved-level-edit saved-level-action rounded-md bg-sky-50 px-2 py-1 text-xs font-bold text-sky-600 hover:bg-sky-100">Rename</button>
                 <button type="button" class="saved-level-up saved-level-action rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === 0 ? 'disabled' : ''}>↑</button>
                 <button type="button" class="saved-level-down saved-level-action rounded-md bg-slate-50 px-2 py-1 text-xs font-black text-slate-500 hover:bg-slate-100 disabled:opacity-35" ${index === levels.length - 1 ? 'disabled' : ''}>↓</button>
                 <button type="button" class="saved-level-delete saved-level-action rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-500">Delete</button>
             `;
             const loadButton = row.querySelector('.saved-level-load');
             const editButton = row.querySelector('.saved-level-edit');
+            const layoutButton = row.querySelector('.saved-level-layout');
             const ratingGroup = row.querySelector('.saved-level-rating');
             const displayName = level.name || `Level ${index + 1}`;
             const difficultyRating = Math.max(0, Math.min(5, parseInt(level.difficultyRating, 10) || 0));
@@ -572,6 +596,7 @@ class LevelFactoryPanel {
                 loadButton.replaceWith(input);
                 editButton.textContent = 'Save';
                 editButton.onclick = () => this.commitSavedLevelRename(level.id, input.value);
+                if (layoutButton) layoutButton.disabled = true;
                 input.onkeydown = event => {
                     if (event.key === 'Enter') this.commitSavedLevelRename(level.id, input.value);
                     if (event.key === 'Escape') this.cancelSavedLevelRename();
@@ -584,6 +609,7 @@ class LevelFactoryPanel {
             } else {
                 loadButton.textContent = `${index + 1}. ${displayName} · ${level.grid.cols}x${level.grid.rows}`;
                 loadButton.onclick = () => {
+                    this.stopEditingSavedLevelLayout();
                     this.activeCandidateIndex = -1;
                     this.scene.loadLevel(level, false);
                     this.renderCandidates();
@@ -591,6 +617,7 @@ class LevelFactoryPanel {
                     this.renderSavedLevels();
                 };
                 editButton.onclick = () => this.startEditingSavedLevel(level.id);
+                if (layoutButton) layoutButton.onclick = () => this.startEditingSavedLevelLayout(level.id);
             }
 
             row.ondragstart = event => this.handleSavedLevelDragStart(event, level.id);
@@ -620,6 +647,167 @@ class LevelFactoryPanel {
             };
             this.savedList.appendChild(row);
         });
+    }
+
+    startEditingSavedLevelLayout(id) {
+        const level = this.manager.getLevels().find(saved => saved.id === id);
+        if (!level || !level.grid) return;
+
+        this.editingLayoutLevelId = id;
+        this.editingLayoutOriginalLevel = level;
+        this.editingSavedLevelId = null;
+        this.activeCandidateIndex = -1;
+        this.drawCandidate = null;
+        this.drawCols = Math.max(1, Math.min(8, parseInt(level.grid.cols, 10) || 1));
+        this.drawRows = Math.max(1, Math.min(8, parseInt(level.grid.rows, 10) || 1));
+
+        const obstacleKeys = new Set((level.obstacles || []).map(cell => `${cell.x},${cell.y}`));
+        const holeKeys = new Set((level.holes || []).map(cell => `${cell.x},${cell.y}`));
+        this.drawCells = Array(this.drawRows).fill(null).map((_, y) =>
+            Array(this.drawCols).fill(null).map((__, x) => {
+                const key = `${x},${y}`;
+                if (obstacleKeys.has(key)) return 'obstacle';
+                if (holeKeys.has(key)) return 'hole';
+                return 'free';
+            })
+        );
+
+        const colsInput = document.getElementById('draw-grid-cols');
+        const rowsInput = document.getElementById('draw-grid-rows');
+        if (colsInput) colsInput.value = this.drawCols;
+        if (rowsInput) rowsInput.value = this.drawRows;
+        this.setMode('draw');
+        this.scene.loadLevel(level, false);
+        this.renderCandidates();
+        this.renderSavedLevels();
+        this.updateDrawSummary();
+        this.setStatus(`Editing layout for ${level.name || 'saved level'}.`);
+    }
+
+    stopEditingSavedLevelLayout() {
+        if (!this.editingLayoutLevelId && !this.editingLayoutOriginalLevel) return;
+        this.editingLayoutLevelId = null;
+        this.editingLayoutOriginalLevel = null;
+        this.drawCandidate = null;
+        this.updateDrawModeLabels();
+    }
+
+    updateDrawModeLabels() {
+        const saveButton = document.getElementById('btn-draw-save');
+        const previewButton = document.getElementById('btn-draw-preview');
+        const generateButton = document.getElementById('btn-draw-generate-cats');
+        if (saveButton) saveButton.textContent = this.editingLayoutLevelId ? 'Update level' : 'Save level';
+        if (previewButton) previewButton.textContent = this.editingLayoutLevelId ? 'Preview edit' : 'Preview';
+        if (generateButton) generateButton.textContent = this.editingLayoutLevelId ? 'Rebuild preview' : 'Generate cats';
+    }
+
+    getPlayableKeys(grid, holes = [], obstacles = []) {
+        const blocked = new Set([
+            ...holes.map(cell => `${cell.x},${cell.y}`),
+            ...obstacles.map(cell => `${cell.x},${cell.y}`)
+        ]);
+        const keys = [];
+        for (let y = 0; y < grid.rows; y++) {
+            for (let x = 0; x < grid.cols; x++) {
+                const key = `${x},${y}`;
+                if (!blocked.has(key)) keys.push(key);
+            }
+        }
+        return keys.sort();
+    }
+
+    placementsCoverPlayableCells(level, playableKeys) {
+        const playable = new Set(playableKeys);
+        const occupied = new Set();
+        if (!Array.isArray(level.placements)) return false;
+
+        for (const placement of level.placements) {
+            if (!Array.isArray(placement.cells)) return false;
+            for (const [cx, cy] of placement.cells) {
+                const key = `${placement.x + cx},${placement.y + cy}`;
+                if (!playable.has(key) || occupied.has(key)) return false;
+                occupied.add(key);
+            }
+        }
+        return occupied.size === playable.size;
+    }
+
+    async buildEditedLayoutLevel() {
+        const saved = this.manager.getLevels().find(level => level.id === this.editingLayoutLevelId);
+        if (!saved) return null;
+
+        const options = this.buildDrawOptions();
+        if (options.freeCount === 0) {
+            this.updateDrawSummary('Paint at least one cat cell before updating the level.');
+            return null;
+        }
+
+        const nextGrid = options.grid;
+        const previousPlayable = this.getPlayableKeys(saved.grid, saved.holes || [], saved.obstacles || []);
+        const nextPlayable = this.getPlayableKeys(nextGrid, options.holes, options.obstacles);
+        const samePlayableCells = previousPlayable.join('|') === nextPlayable.join('|');
+        if (samePlayableCells && this.placementsCoverPlayableCells(saved, nextPlayable)) {
+            return {
+                ...saved,
+                grid: nextGrid,
+                holes: options.holes,
+                obstacles: options.obstacles,
+                status: 'candidate'
+            };
+        }
+
+        this.generator = new LevelGenerator(PIECE_DEFS);
+        this.setDrawBusy(true);
+        this.updateDrawSummary(`Rebuilding cats for ${options.freeCount} cells...`);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        try {
+            const level = await this.generator.generateFromMaskAsync({
+                ...options,
+                maxMs: options.freeCount >= 48 ? 1500 : 2200,
+                maxSteps: options.freeCount >= 48 ? 35000 : 65000,
+                yieldEvery: 700
+            });
+            if (!level) {
+                const timedOut = this.generator.lastMaskFailure === 'timeout';
+                this.updateDrawSummary(timedOut
+                    ? 'Could not rebuild within time; the saved level was not changed.'
+                    : 'No solvable cat layout found; the saved level was not changed.');
+                return null;
+            }
+            return {
+                ...saved,
+                grid: level.grid,
+                holes: level.holes,
+                pieceIds: level.pieceIds,
+                pieces: level.pieces,
+                placements: level.placements,
+                obstacles: level.obstacles,
+                difficulty: saved.difficulty || level.difficulty,
+                status: 'candidate'
+            };
+        } finally {
+            this.setDrawBusy(false);
+        }
+    }
+
+    async saveEditedLayoutLevel() {
+        const level = await this.buildEditedLayoutLevel();
+        if (!level) return;
+
+        const saved = this.manager.updateLevel(this.editingLayoutLevelId, level);
+        if (!saved) {
+            this.updateDrawSummary('Could not update that saved level.');
+            return;
+        }
+
+        this.editingLayoutOriginalLevel = saved;
+        this.drawCandidate = null;
+        this.scene.loadLevel(saved, false);
+        this.renderSavedLevels();
+        this.updateHeartButton(saved);
+        if (this.scene.updateLevelQuickNav) this.scene.updateLevelQuickNav();
+        this.updateDrawSummary(`Updated ${saved.name}.`);
+        this.showSaveToast(saved.name);
     }
 
     startEditingSavedLevel(id) {
