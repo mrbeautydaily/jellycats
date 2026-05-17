@@ -951,10 +951,10 @@
                 if (!this.tutorialConfig) return '';
                 if (this.tutorialConfig.type === 'rotateThenDrag') {
                     return this.tutorialStep === 'rotate' && !this.tutorialRotateDone
-                        ? 'Быстро нажми, чтобы повернуть'
+                        ? 'Быстро нажми ЛКМ, чтобы повернуть'
                         : 'Теперь перетащи';
                 }
-                return this.tutorialDragStarted ? 'Перетащи на коврик' : 'Зажми ЛКМ и перетащи';
+                return 'Зажми ЛКМ и перетащи';
             }
 
             createTutorialBubble(text) {
@@ -1299,12 +1299,11 @@
 
             completeTutorialRotate(container) {
                 if (!this.tutorialConfig || this.tutorialConfig.type !== 'rotateThenDrag') return;
-                if (this.tutorialRotateDone || this.tutorialStep !== 'rotate') return;
                 if (this.tutorialTarget && this.tutorialTarget.container !== container) return;
 
-                this.tutorialRotateDone = true;
-                this.tutorialStep = 'drag';
-                this.updateTutorialBubble(container, 'Теперь перетащи');
+                this.tutorialRotateDone = !this.tutorialRotateDone;
+                this.tutorialStep = this.tutorialRotateDone ? 'drag' : 'rotate';
+                this.updateTutorialBubble(container);
                 this.clearTutorialHint(false);
                 this.tutorialTimer = this.time.delayedCall(260, () => this.refreshTutorialHint());
             }
@@ -1484,6 +1483,13 @@
 
                     // Логика Тап = Поворот
                     if (!wasDragging && clickTime < 300) {
+                        if (this.tutorialConfig && this.tutorialConfig.type === 'drag') {
+                            this.updateTutorialBubble(container);
+                            container.setDepth(this.getPieceRestingDepth(container));
+                            this.tutorialTimer = this.time.delayedCall(420, () => this.refreshTutorialHint());
+                            return;
+                        }
+
                         // Сначала только логически и внутренне поворачиваем фигуру (без анимации x/y всего контейнера)
                         this.rotatePiece(container, pointer, false);
                         
