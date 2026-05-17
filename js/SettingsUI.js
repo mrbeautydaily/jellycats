@@ -43,6 +43,9 @@ class SettingsUI {
         s.fillOccupied = savedFillOccupied !== null ? savedFillOccupied === 'true' : true;
         const savedEdgeReturnEnabled = localStorage.getItem('jellycats_edge_return_enabled');
         s.edgeReturnEnabled = savedEdgeReturnEnabled !== null ? savedEdgeReturnEnabled === 'true' : true;
+        const savedCustomGameCursor = localStorage.getItem('jellycats_custom_game_cursor');
+        s.customGameCursorEnabled = savedCustomGameCursor !== null ? savedCustomGameCursor === 'true' : true;
+        if (s.applyGameCursorMode) s.applyGameCursorMode();
         s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#3cc85f';
         s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '3');
         s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
@@ -301,6 +304,17 @@ class SettingsUI {
             edgeReturnToggle.onchange = (e) => {
                 s.edgeReturnEnabled = e.target.checked;
                 localStorage.setItem('jellycats_edge_return_enabled', s.edgeReturnEnabled.toString());
+                s.autosaveActiveProfile();
+            };
+        }
+
+        const customCursorToggle = document.getElementById('custom-game-cursor-toggle');
+        if (customCursorToggle) {
+            customCursorToggle.checked = s.customGameCursorEnabled !== false;
+            customCursorToggle.onchange = (e) => {
+                s.customGameCursorEnabled = e.target.checked;
+                localStorage.setItem('jellycats_custom_game_cursor', s.customGameCursorEnabled.toString());
+                if (s.applyGameCursorMode) s.applyGameCursorMode();
                 s.autosaveActiveProfile();
             };
         }

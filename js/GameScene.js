@@ -23,6 +23,16 @@
                 this.ghosts = [];
                 this.solutionGhosts = [];
                 this.solutionHintTimer = null;
+                this.tutorialHand = null;
+                this.tutorialPulse = null;
+                this.tutorialBubble = null;
+                this.tutorialTimer = null;
+                this.tutorialTarget = null;
+                this.tutorialConfig = null;
+                this.tutorialStep = null;
+                this.tutorialDragStarted = false;
+                this.tutorialRotateDone = false;
+                this.tutorialPlacementDone = false;
                 this.hintDuration = parseInt(localStorage.getItem('jellycats_hint_duration') || '1700', 10);
                 this.previewGridCells = []; // Список подсвечиваемых при перетаскивании ячеек предпросмотра
                 this.jellyMultiplier = 1.0; // По умолчанию нормальный уровень желейности
@@ -42,6 +52,8 @@
                 // Load room background image
                 this.load.image('room_background', 'assets/room-rug-background.png');
                 this.load.image('rug_square', 'assets/rug-square.png');
+                this.load.image('cursor_hand', 'assets/ui/cursor.png');
+                this.load.image('cursor_hand_pressed', 'assets/ui/cursor_pointer.png');
                 for (let i = 1; i <= 15; i++) {
                     const suffix = String(i).padStart(2, '0');
                     this.load.image(`obstacle_plant_${suffix}`, `assets/obstacles/icon_${suffix}.png`);
@@ -143,6 +155,7 @@
 
                 // Настраиваем события перетаскивания
                 this.setupInput();
+                this.setGameCursorPressed(false);
 
                 // Первичная раскладка
                 this.updateLayout();
@@ -300,6 +313,7 @@
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.clearSolutionGhosts();
+                this.clearTutorialHint(true);
                 this.currentLevel = level;
                 this.rememberCurrentSavedLevel(level);
                 this.activeGridCols = Math.min(GRID_COLS, Math.max(1, level.grid.cols));
@@ -309,6 +323,7 @@
                 this.pendingSolvedPreview = showSolved;
                 this.rebuildPiecesFromDefs(null, () => {
                     if (showSolved) this.applySolvedPreview(level);
+                    this.startTutorialForCurrentLevel(showSolved);
                 });
                 this.updateLevelQuickNav();
                 if (this.levelFactoryPanel) {
@@ -321,6 +336,7 @@
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.clearSolutionGhosts();
+                this.clearTutorialHint(true);
                 this.currentLevel = null;
                 this.currentSavedLevelId = null;
                 this.activeGridCols = GRID_COLS;
@@ -640,7 +656,7 @@
                         img.gridX = c[0]; // сохраняем относительные координаты в объекте
                         img.gridY = c[1];
                         // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре
-                        img.setInteractive({ cursor: 'pointer', draggable: true });
+                        img.setInteractive({ draggable: true });
 
                         // Надежное свечение при наведении мыши (hover) прямо на блок
                         img.on('pointerover', () => {
@@ -691,7 +707,7 @@
                     catImg.targetY = def.offsetY;
                     catImg.targetAngle = 0;
                     // Делаем сам спрайт интерактивным, чтобы ловить клики по всей фигуре (с учетом прозрачности)
-                    catImg.setInteractive({ pixelPerfect: true, cursor: 'pointer', draggable: true });
+                    catImg.setInteractive({ pixelPerfect: true, draggable: true });
 
                     // Надежное свечение при наведении мыши (hover) прямо на котика
                     catImg.on('pointerover', () => {
@@ -726,6 +742,7 @@
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 if (this.dustSystem && this.dustSystem.clearZParticles) this.dustSystem.clearZParticles();
                 this.clearSolutionGhosts();
+                this.clearTutorialHint(true);
                 this.tweens.killAll();
                 this.grid = this.createEmptyGrid();
                 this.previewGridCells = [];
@@ -844,9 +861,467 @@
                 return container && container.isPlaced ? 0 : 40;
             }
 
+            getCurrentSavedLevelIndex() {
+                if (!this.currentLevel || !this.levelManager) return -1;
+                const levels = this.levelManager.getLevels();
+                const activeId = this.getCurrentSavedLevelId ? this.getCurrentSavedLevelId(levels) : this.currentLevel.id;
+                return levels.findIndex(level => level.id === activeId);
+            }
+
+            getTutorialConfigForCurrentLevel() {
+                const index = this.getCurrentSavedLevelIndex();
+                if (index === 0) return { type: 'drag' };
+                if (index === 1) return { type: 'rotateThenDrag' };
+                return null;
+            }
+
+            startTutorialForCurrentLevel(showSolved = false) {
+                this.clearTutorialHint(true);
+                if (showSolved || !this.currentLevel) return;
+
+                const config = this.getTutorialConfigForCurrentLevel();
+                if (!config) return;
+
+                this.tutorialConfig = config;
+                this.tutorialStep = config.type === 'rotateThenDrag' ? 'rotate' : 'drag';
+                this.tutorialDragStarted = false;
+                this.tutorialRotateDone = false;
+                this.tutorialPlacementDone = false;
+                this.refreshTutorialHint();
+            }
+
+            refreshTutorialHint() {
+                if (!this.tutorialConfig || this.tutorialPlacementDone) return;
+                const target = this.findTutorialTarget();
+                if (!target) {
+                    this.clearTutorialHint(false);
+                    this.clearTutorialBubble();
+                    return;
+                }
+
+                this.tutorialTarget = target;
+                this.updateTutorialBubble(target.container);
+                if (this.tutorialStep === 'rotate' && !this.tutorialRotateDone) {
+                    this.playTutorialTapLoop(target.container);
+                    return;
+                }
+
+                this.tutorialStep = 'drag';
+                this.playTutorialDragLoop(target.container, target.placement);
+            }
+
+            clearTutorialHint(resetState = false) {
+                if (this.tutorialTimer) {
+                    this.tutorialTimer.remove(false);
+                    this.tutorialTimer = null;
+                }
+
+                [this.tutorialHand, this.tutorialPulse].forEach(item => {
+                    if (!item || !item.active) return;
+                    this.tweens.killTweensOf(item);
+                    if (item.list) item.list.forEach(child => this.tweens.killTweensOf(child));
+                    item.destroy(true);
+                });
+
+                this.tutorialHand = null;
+                this.tutorialPulse = null;
+
+                if (resetState) {
+                    this.clearTutorialBubble();
+                    this.tutorialTarget = null;
+                    this.tutorialConfig = null;
+                    this.tutorialStep = null;
+                    this.tutorialDragStarted = false;
+                    this.tutorialRotateDone = false;
+                    this.tutorialPlacementDone = false;
+                }
+            }
+
+            clearTutorialBubble() {
+                if (!this.tutorialBubble) return;
+                this.tweens.killTweensOf(this.tutorialBubble);
+                if (this.tutorialBubble.list) {
+                    this.tutorialBubble.list.forEach(child => this.tweens.killTweensOf(child));
+                }
+                this.tutorialBubble.destroy(true);
+                this.tutorialBubble = null;
+            }
+
+            getTutorialBubbleText() {
+                if (!this.tutorialConfig) return '';
+                if (this.tutorialConfig.type === 'rotateThenDrag') {
+                    return this.tutorialStep === 'rotate' && !this.tutorialRotateDone
+                        ? 'Быстро нажми, чтобы повернуть'
+                        : 'Теперь перетащи';
+                }
+                return this.tutorialDragStarted ? 'Перетащи на коврик' : 'Зажми ЛКМ и перетащи';
+            }
+
+            createTutorialBubble(text) {
+                const bubble = this.add.container(0, 0);
+                bubble.setDepth(96);
+                bubble.setAlpha(0);
+
+                const shadow = this.add.graphics();
+                const tail = this.add.graphics();
+                const panel = this.add.graphics();
+                const label = this.add.text(0, 0, text, {
+                    fontFamily: 'Segoe UI, Tahoma, sans-serif',
+                    fontSize: `${Math.max(18, Math.min(28, this.cs * 0.22))}px`,
+                    fontStyle: '700',
+                    color: '#5f3827',
+                    align: 'center',
+                    lineSpacing: 4,
+                    wordWrap: { width: Math.max(150, Math.min(260, this.scale.gameSize.width * 0.62)) }
+                });
+                label.setOrigin(0.5, 0.5);
+
+                bubble.add([shadow, tail, panel, label]);
+                bubble.shadow = shadow;
+                bubble.tail = tail;
+                bubble.panel = panel;
+                bubble.label = label;
+                bubble.currentText = text;
+                this.tutorialBubble = bubble;
+                this.redrawTutorialBubble();
+                this.tweens.add({
+                    targets: bubble,
+                    alpha: 1,
+                    duration: 180,
+                    ease: 'Sine.easeOut'
+                });
+                return bubble;
+            }
+
+            redrawTutorialBubble() {
+                const bubble = this.tutorialBubble;
+                if (!bubble || !bubble.label) return;
+
+                const padX = Math.max(18, Math.min(28, this.cs * 0.22));
+                const padY = Math.max(12, Math.min(18, this.cs * 0.14));
+                const width = bubble.label.width + padX * 2;
+                const height = bubble.label.height + padY * 2;
+                const radius = Math.min(22, height / 2);
+
+                bubble.shadow.clear();
+                bubble.shadow.fillStyle(0x4b2b1f, 0.16);
+                bubble.shadow.fillRoundedRect(-width / 2 + 4, -height / 2 + 7, width, height, radius);
+
+                bubble.tail.clear();
+                bubble.tail.fillStyle(0xffffff, 1);
+                bubble.tail.fillTriangle(-12, height / 2 - 1, 10, height / 2 - 1, -2, height / 2 + 18);
+                bubble.tail.lineStyle(2, 0xf6d8ba, 1);
+                bubble.tail.strokeTriangle(-12, height / 2 - 1, 10, height / 2 - 1, -2, height / 2 + 18);
+
+                bubble.panel.clear();
+                bubble.panel.fillStyle(0xffffff, 0.96);
+                bubble.panel.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
+                bubble.panel.lineStyle(3, 0xf6d8ba, 1);
+                bubble.panel.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
+
+                bubble.widthHint = width;
+                bubble.heightHint = height;
+            }
+
+            updateTutorialBubble(container = null, forcedText = null) {
+                if (!this.tutorialConfig || this.tutorialPlacementDone) {
+                    this.clearTutorialBubble();
+                    return;
+                }
+
+                const targetContainer = container || (this.tutorialTarget && this.tutorialTarget.container);
+                if (!targetContainer || targetContainer.isPlaced) {
+                    this.clearTutorialBubble();
+                    return;
+                }
+
+                const text = forcedText || this.getTutorialBubbleText();
+                const bubble = this.tutorialBubble || this.createTutorialBubble(text);
+                if (bubble.currentText !== text) {
+                    bubble.currentText = text;
+                    bubble.label.setText(text);
+                    bubble.label.setFontSize(Math.max(18, Math.min(28, this.cs * 0.22)));
+                    bubble.label.setWordWrapWidth(Math.max(150, Math.min(260, this.scale.gameSize.width * 0.62)));
+                    this.redrawTutorialBubble();
+                }
+                this.updateTutorialBubblePosition(targetContainer);
+            }
+
+            updateTutorialBubblePosition(container = null) {
+                const bubble = this.tutorialBubble;
+                const targetContainer = container || (this.tutorialTarget && this.tutorialTarget.container);
+                if (!bubble || !targetContainer || targetContainer.isPlaced) return;
+
+                const point = this.getContainerTutorialPoint(targetContainer);
+                const width = bubble.widthHint || 210;
+                const height = bubble.heightHint || 64;
+                const margin = 14;
+                const gameW = this.scale.gameSize.width;
+                const gameH = this.scale.gameSize.height;
+                const desiredY = point.y - Math.max(this.cs * 0.78, 76);
+                const minX = width / 2 + margin;
+                const maxX = gameW - width / 2 - margin;
+                const minY = height / 2 + margin;
+                const maxY = gameH - height / 2 - margin;
+                const x = minX <= maxX ? Phaser.Math.Clamp(point.x, minX, maxX) : gameW / 2;
+                const y = minY <= maxY ? Phaser.Math.Clamp(desiredY, minY, maxY) : gameH / 2;
+                bubble.setPosition(x, y);
+
+                if (bubble.tail) {
+                    const tailOffset = Phaser.Math.Clamp(point.x - x, -width * 0.32, width * 0.32);
+                    bubble.tail.x = tailOffset;
+                }
+            }
+
+            findTutorialTarget() {
+                const placements = this.currentLevel && Array.isArray(this.currentLevel.placements)
+                    ? this.currentLevel.placements
+                    : [];
+                if (placements.length === 0 || !this.pieces || this.pieces.length === 0) return null;
+
+                for (const placement of placements) {
+                    const container = placement.instanceId
+                        ? this.pieces.find(piece => piece.instanceId === placement.instanceId)
+                        : this.pieces.find(piece => piece.def.id === placement.pieceId && !piece.isPlaced);
+                    if (container && !container.isPlaced) return { container, placement };
+                }
+
+                return null;
+            }
+
+            getContainerTutorialPoint(container) {
+                if (!container) return { x: 0, y: 0 };
+                const catImg = container.list.find(child => child.isCatImage);
+                if (!catImg) return { x: container.x, y: container.y };
+                return {
+                    x: container.x + catImg.x * container.scaleX,
+                    y: container.y + catImg.y * container.scaleY
+                };
+            }
+
+            getPlacementTutorialPoint(placement) {
+                const cells = placement.cells && placement.cells.length > 0 ? placement.cells : [[0, 0]];
+                const minX = Math.min(...cells.map(cell => cell[0]));
+                const maxX = Math.max(...cells.map(cell => cell[0]));
+                const minY = Math.min(...cells.map(cell => cell[1]));
+                const maxY = Math.max(...cells.map(cell => cell[1]));
+                return {
+                    x: this.boardX + (placement.x + (minX + maxX) / 2) * this.cs + this.cs / 2,
+                    y: this.boardY + (placement.y + (minY + maxY) / 2) * this.cs + this.cs / 2
+                };
+            }
+
+            setGameCursorPressed(isPressed) {
+                this.gameCursorPressed = !!isPressed;
+                this.applyGameCursorMode();
+            }
+
+            applyGameCursorMode() {
+                const container = document.getElementById('game-container');
+                const customEnabled = this.customGameCursorEnabled !== false;
+                const cursor = !customEnabled
+                    ? 'auto'
+                    : this.gameCursorPressed
+                        ? 'url("assets/ui/cursor_pointer.png") 18 6, auto'
+                        : 'url("assets/ui/cursor.png") 18 6, auto';
+                if (container) {
+                    container.classList.toggle('cursor-custom', customEnabled);
+                    container.classList.toggle('cursor-pressed', customEnabled && !!this.gameCursorPressed);
+                    const canvas = container.querySelector('canvas');
+                    if (canvas) canvas.style.cursor = cursor;
+                }
+                if (this.input && this.input.setDefaultCursor) {
+                    this.input.setDefaultCursor(cursor);
+                }
+            }
+
+            createTutorialHand() {
+                const hand = this.add.container(0, 0);
+                hand.setDepth(95);
+                hand.setAlpha(0);
+                hand.setScale(this.getTutorialHandScale());
+
+                const shadow = this.add.image(7, 9, 'cursor_hand');
+                shadow.setOrigin(18 / 64, 6 / 64);
+                shadow.setTint(0x4b1f14);
+                shadow.setAlpha(0.18);
+                shadow.setScale(1.02);
+                hand.add(shadow);
+
+                const sprite = this.add.image(0, 0, 'cursor_hand');
+                sprite.setOrigin(18 / 64, 6 / 64);
+                hand.add(sprite);
+                hand.cursorSprite = sprite;
+                hand.cursorShadow = shadow;
+
+                return hand;
+            }
+
+            setTutorialHandPressed(hand, isPressed) {
+                if (!hand || !hand.cursorSprite) return;
+                const textureKey = isPressed ? 'cursor_hand_pressed' : 'cursor_hand';
+                hand.cursorSprite.setTexture(textureKey);
+                if (hand.cursorShadow) hand.cursorShadow.setTexture(textureKey);
+            }
+
+            getTutorialHandScale() {
+                return Math.max(1.56, Math.min(2.36, (this.cs / BASE_CS) * 2));
+            }
+
+            createTutorialPulse(x, y) {
+                const pulse = this.add.graphics();
+                pulse.setDepth(94);
+                pulse.x = x;
+                pulse.y = y;
+                pulse.lineStyle(4, 0xffffff, 0.85);
+                pulse.strokeCircle(0, 0, Math.max(20, this.cs * 0.2));
+                pulse.setAlpha(0);
+                return pulse;
+            }
+
+            playTutorialTapLoop(container) {
+                this.clearTutorialHint(false);
+                if (!container || container.isPlaced) return;
+
+                const start = this.getContainerTutorialPoint(container);
+                const hand = this.createTutorialHand();
+                const pulse = this.createTutorialPulse(start.x, start.y);
+                this.tutorialHand = hand;
+                this.tutorialPulse = pulse;
+                hand.setPosition(start.x, start.y);
+                hand.setAngle(0);
+
+                const loop = () => {
+                    if (!this.tutorialConfig || this.tutorialStep !== 'rotate' || this.tutorialRotateDone || !hand.active) return;
+                    const point = this.getContainerTutorialPoint(container);
+                    const baseScale = this.getTutorialHandScale();
+                    hand.setPosition(point.x, point.y);
+                    hand.setAlpha(1);
+                    hand.setScale(baseScale);
+                    this.setTutorialHandPressed(hand, true);
+                    pulse.setPosition(point.x, point.y);
+                    pulse.setScale(0.72);
+                    pulse.setAlpha(0);
+
+                    this.tweens.add({
+                        targets: hand,
+                        scaleX: baseScale * 0.88,
+                        scaleY: baseScale * 0.88,
+                        duration: 180,
+                        ease: 'Sine.easeOut',
+                        yoyo: true
+                    });
+                    this.tweens.add({
+                        targets: pulse,
+                        alpha: 0.9,
+                        scaleX: 1.28,
+                        scaleY: 1.28,
+                        duration: 360,
+                        ease: 'Sine.easeOut',
+                        yoyo: true,
+                        onComplete: () => {
+                            if (!this.tutorialConfig || this.tutorialRotateDone) return;
+                            this.setTutorialHandPressed(hand, false);
+                            this.tutorialTimer = this.time.delayedCall(700, loop);
+                        }
+                    });
+                };
+
+                loop();
+            }
+
+            playTutorialDragLoop(container, placement) {
+                this.clearTutorialHint(false);
+                if (!container || container.isPlaced || !placement) return;
+
+                const hand = this.createTutorialHand();
+                this.tutorialHand = hand;
+
+                const loop = () => {
+                    if (!this.tutorialConfig || this.tutorialStep !== 'drag' || this.tutorialPlacementDone || !hand.active) return;
+                    if (container.isPlaced || container.isDragging || container.isLifted) return;
+
+                    const start = this.getContainerTutorialPoint(container);
+                    const end = this.getPlacementTutorialPoint(placement);
+                    hand.setPosition(start.x, start.y);
+                    hand.setAngle(0);
+                    hand.setAlpha(0);
+                    hand.setScale(this.getTutorialHandScale());
+                    this.setTutorialHandPressed(hand, false);
+
+                    this.tweens.add({
+                        targets: hand,
+                        alpha: 1,
+                        duration: 180,
+                        ease: 'Sine.easeOut',
+                        onComplete: () => {
+                            if (!hand.active) return;
+                            this.setTutorialHandPressed(hand, true);
+                            this.tweens.add({
+                                targets: hand,
+                                scaleX: hand.scaleX * 0.86,
+                                scaleY: hand.scaleY * 0.86,
+                                duration: 170,
+                                ease: 'Sine.easeInOut',
+                                onComplete: () => {
+                                    if (!hand.active) return;
+                                    this.tweens.add({
+                                        targets: hand,
+                                        x: end.x,
+                                        y: end.y,
+                                        duration: 760,
+                                        ease: 'Sine.easeInOut',
+                                        onComplete: () => {
+                                            if (!hand.active) return;
+                                            this.setTutorialHandPressed(hand, false);
+                                            this.tweens.add({
+                                                targets: hand,
+                                                scaleX: this.getTutorialHandScale(),
+                                                scaleY: this.getTutorialHandScale(),
+                                                alpha: 0,
+                                                duration: 240,
+                                                ease: 'Sine.easeOut',
+                                                onComplete: () => {
+                                                    if (!this.tutorialConfig || this.tutorialPlacementDone) return;
+                                                    this.tutorialTimer = this.time.delayedCall(520, loop);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                };
+
+                loop();
+            }
+
+            completeTutorialRotate(container) {
+                if (!this.tutorialConfig || this.tutorialConfig.type !== 'rotateThenDrag') return;
+                if (this.tutorialRotateDone || this.tutorialStep !== 'rotate') return;
+                if (this.tutorialTarget && this.tutorialTarget.container !== container) return;
+
+                this.tutorialRotateDone = true;
+                this.tutorialStep = 'drag';
+                this.updateTutorialBubble(container, 'Теперь перетащи');
+                this.clearTutorialHint(false);
+                this.tutorialTimer = this.time.delayedCall(260, () => this.refreshTutorialHint());
+            }
+
+            completeTutorialPlacement(container) {
+                if (!this.tutorialConfig || !this.tutorialTarget) return;
+                if (this.tutorialTarget.container !== container) return;
+
+                this.tutorialPlacementDone = true;
+                this.clearTutorialHint(true);
+            }
+
             setupInput() {
                 this.input.on('dragstart', (pointer, gameObject) => {
                     let container = gameObject.parentContainer;
+                    if (this.tutorialConfig) this.clearTutorialHint(false);
+                    this.setGameCursorPressed(true);
                     
                     // Clear any previous meow timer if still running
                     if (container.meowTimer) {
@@ -935,6 +1410,10 @@
                     if (dragDistScreen > 5) {
                         if (!container.isDragging) {
                             container.isDragging = true;
+                            if (this.tutorialConfig && this.tutorialTarget && this.tutorialTarget.container === container) {
+                                this.tutorialDragStarted = true;
+                                this.updateTutorialBubble(container);
+                            }
                             // Отменяем анимации "хватания", так как потащили
                             this.tweens.killTweensOf(container);
                         }
@@ -963,6 +1442,7 @@
 
                 this.input.on('dragend', (pointer, gameObject) => {
                     let container = gameObject.parentContainer;
+                    this.setGameCursorPressed(false);
                     container.ghost.setVisible(false);
 
                     // Очищаем подсветку ячеек предпросмотра на сетке
@@ -1009,6 +1489,7 @@
                         
                         // Play rotation sound on tap/rotate
                         this.soundManager.playRotation();
+                        this.completeTutorialRotate(container);
                         
                         // Если фигура стояла на поле, примагничиваем ее к сетке с учетом нового положения
                         if (container.wasPlacedAt) {
@@ -1056,6 +1537,9 @@
                         this.placePiece(container, gridX, gridY);
                     } else if (hasOverlapWithGrid) {
                         this.returnToStart(container, true, true);
+                        if (this.tutorialConfig && !this.tutorialPlacementDone) {
+                            this.tutorialTimer = this.time.delayedCall(420, () => this.refreshTutorialHint());
+                        }
                     } else {
                         // Оставляем котика там, где его бросили, если он не над сеткой
                         const returnedToViewport = this.edgeReturnEnabled !== false &&
@@ -1065,8 +1549,12 @@
                             container.startY = container.y;
                             container.setDepth(40);
                         }
+                        if (this.tutorialConfig && !this.tutorialPlacementDone) {
+                            this.tutorialTimer = this.time.delayedCall(420, () => this.refreshTutorialHint());
+                        }
                     }
                 });
+
             }
 
             update(time, delta) {
@@ -1207,6 +1695,7 @@
                         }
                     }
                 });
+                this.updateTutorialBubblePosition();
             }
 
             rotatePiece(container, pointer, shouldTweenXY = true) {
@@ -1405,6 +1894,7 @@
                 this.drawBoard();
 
                 // Проверяем победу
+                this.completeTutorialPlacement(container);
                 this.checkWin();
             }
 
@@ -1630,6 +2120,7 @@
             checkWin() {
                 let isFull = this.grid.every(row => row.every(cell => cell !== null));
                 if (isFull) {
+                    this.clearTutorialHint(true);
                     // Play win sound
                     this.soundManager.playWin();
                     if (this.victoryEffects) this.victoryEffects.play(this.selectedVictoryEffect);
@@ -1652,6 +2143,7 @@
             restartLevel() {
                 if (this.victoryEffects) this.victoryEffects.cleanup();
                 this.clearSolutionGhosts();
+                this.clearTutorialHint(true);
                 // Скрываем UI
                 const ui = document.getElementById('ui-layer');
                 const modal = document.getElementById('win-modal');
@@ -1674,6 +2166,7 @@
                     p.startY = p.dockY;
                     this.returnToStart(p);
                 });
+                this.time.delayedCall(360, () => this.startTutorialForCurrentLevel(false));
             }
 
             updateLayout() {
@@ -1786,6 +2279,11 @@
                         p.y = p.startY;
                     }
                 });
+
+                if (this.tutorialConfig && !this.tutorialPlacementDone) {
+                    this.clearTutorialHint(false);
+                    this.tutorialTimer = this.time.delayedCall(120, () => this.refreshTutorialHint());
+                }
             }
 
             getBoardScale() {

@@ -10,7 +10,7 @@ class ProfileManager {
             boardScaleMode: 'adaptive', boardRowScales: { 4: 1.4, 5: 1.25, 6: 1.15, 7: 1.07, 8: 1.0 },
             gridGap: 7, gridRadius: 4,
             glowThickness: 6, glowBlur: 3, showBlocks: false, fillOccupied: true,
-            edgeReturnEnabled: true,
+            edgeReturnEnabled: true, customGameCursorEnabled: true,
             gridHighlightColor: '#3cc85f', gridLineThickness: 3,
             jellyMultiplier: 0.6, jellyStiffness: 0.35, jellyDamping: 0.55,
             breatheSpeedScale: 1.2, breatheAmpScale: 1.2, hintDuration: 1700,
@@ -178,6 +178,7 @@ class ProfileManager {
             gridGap: s.gridGap, gridRadius: s.gridRadius, glowThickness: s.glowThickness, glowBlur: s.glowBlur,
             showBlocks: s.showBlocks, fillOccupied: s.fillOccupied,
             edgeReturnEnabled: s.edgeReturnEnabled !== false,
+            customGameCursorEnabled: s.customGameCursorEnabled !== false,
             gridHighlightColor: s.gridHighlightColor, gridLineThickness: s.gridLineThickness,
             jellyMultiplier: s.jellyMultiplier, jellyStiffness: s.jellyStiffness, jellyDamping: s.jellyDamping,
             breatheSpeedScale: s.breatheSpeedScale, breatheAmpScale: s.breatheAmpScale,
@@ -226,7 +227,7 @@ class ProfileManager {
             gridGap: 'jellycats_grid_gap', gridRadius: 'jellycats_grid_radius',
             glowThickness: 'jellycats_glow_thickness', glowBlur: 'jellycats_glow_blur',
             showBlocks: 'jellycats_show_blocks', fillOccupied: 'jellycats_fill_occupied',
-            edgeReturnEnabled: 'jellycats_edge_return_enabled',
+            edgeReturnEnabled: 'jellycats_edge_return_enabled', customGameCursorEnabled: 'jellycats_custom_game_cursor',
             gridHighlightColor: 'jellycats_grid_highlight_color', gridLineThickness: 'jellycats_grid_line_thickness',
             jellyMultiplier: 'jellycats_jelly_multiplier', jellyStiffness: 'jellycats_stiffness', jellyDamping: 'jellycats_damping',
             breatheSpeedScale: 'jellycats_breathe_speed_scale', breatheAmpScale: 'jellycats_breathe_amp_scale',
@@ -257,7 +258,7 @@ class ProfileManager {
 
         // 2. Update scene variables
         if (settings.globalZoom !== undefined) { s.currentZoom = settings.globalZoom; s.cameras.main.setZoom(s.currentZoom); }
-        const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied','edgeReturnEnabled',
+        const directProps = ['bgScaleMultiplier','boardScale','boardScaleMode','gridGap','gridRadius','glowThickness','glowBlur','showBlocks','fillOccupied','edgeReturnEnabled','customGameCursorEnabled',
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
@@ -385,6 +386,7 @@ class ProfileManager {
         if (settings.showBlocks !== undefined) uc('show-blocks-toggle', settings.showBlocks);
         if (settings.fillOccupied !== undefined) uc('fill-occupied-toggle', settings.fillOccupied);
         if (settings.edgeReturnEnabled !== undefined) uc('edge-return-toggle', settings.edgeReturnEnabled);
+        if (settings.customGameCursorEnabled !== undefined) uc('custom-game-cursor-toggle', settings.customGameCursorEnabled);
         if (settings.gridHighlightColor !== undefined) uv('grid-color-picker', settings.gridHighlightColor);
         if (settings.gridLineThickness !== undefined) { uv('grid-line-slider', settings.gridLineThickness); ut('grid-line-value-label', `${settings.gridLineThickness}px`); }
         if (settings.dustEnabled !== undefined) uc('dust-toggle', settings.dustEnabled);
@@ -433,6 +435,7 @@ class ProfileManager {
         if (s.updateDustUIState) s.updateDustUIState();
         if (s.updateSleepZUIState) s.updateSleepZUIState();
         if (s.updateShadowUIState) s.updateShadowUIState();
+        if (s.applyGameCursorMode) s.applyGameCursorMode();
         if (s.sleepZEnabled === false && s.dustSystem && s.dustSystem.clearZParticles) s.dustSystem.clearZParticles();
         s.updateBlocksVisibility();
         s.updateLayout();
