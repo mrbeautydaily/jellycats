@@ -443,6 +443,29 @@
                 </div>
             </div>
 
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">? Звук подсказки</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="hint-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="SFX_UI_Notification_Popup_1">Попап 1</option>
+                        <option value="SFX_UI_Notification_Popup_2">Попап 2</option>
+                        <option value="SFX_Match_Bright_1">Яркий матч</option>
+                        <option value="SFX_Player_Collect_Pop_3">Сбор поп</option>
+                        <option value="SFX_Pop_Bubble_Single_1">Пузырёк 1</option>
+                        <option value="SFX_Pop_Bubble_Single_2">Пузырёк 2</option>
+                        <option value="SFX_Pop_Mouth_Med_1">Мягкий поп</option>
+                        <option value="SFX_Pop_Mouth_Low_1">Низкий поп 1</option>
+                        <option value="SFX_Pop_Mouth_Low_2">Низкий поп 2</option>
+                        <option value="SFX_Pop_Mouth_Low_3">Низкий поп 3</option>
+                        <option value="SFX_UI_Button_Click_Generic_1">Клик 1</option>
+                        <option value="SFX_UI_Button_Click_Generic_2">Клик 2</option>
+                    </select>
+                    <button id="btn-play-hint-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
             <!-- Victory effect -->
             <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
                 <label class="block text-xs font-bold text-slate-500">Victory effect</label>
@@ -908,16 +931,16 @@
 
     <!-- JS Modules -->
     <script src="js/config.js?v=sleep-z-2"></script>
-    <script src="js/SoundManager.js?v=sleep-z-2"></script>
+    <script src="js/SoundManager.js?v=hint-sound-1"></script>
     <script src="js/DustSystem.js?v=sleep-z-2"></script>
-    <script src="js/SettingsUI.js?v=sleep-z-2"></script>
-    <script src="js/ProfileManager.js?v=sleep-z-2"></script>
+    <script src="js/SettingsUI.js?v=hint-sound-1"></script>
+    <script src="js/ProfileManager.js?v=hint-sound-1"></script>
     <script src="js/EditorPanel.js?v=sleep-z-2"></script>
     <script src="js/LevelGenerator.js?v=sleep-z-2"></script>
     <script src="js/LevelManager.js?v=sleep-z-2"></script>
     <script src="js/LevelFactoryPanel.js?v=sleep-z-2"></script>
     <script src="js/VictoryEffects.js?v=sleep-z-2"></script>
-    <script src="js/GameScene.js?v=sleep-z-2"></script>
+    <script src="js/GameScene.js?v=hint-sound-1"></script>
     <script src="js/main.js?v=sleep-z-2"></script>
 </body>
 </html>

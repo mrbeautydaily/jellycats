@@ -21,7 +21,8 @@ class ProfileManager {
             putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, bgMusicVolume: 0.6,
             shadowEnabled: true, shadowOpacity: 0.25,
             rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
-            placementSound: 'click3', winSound: 'win_levelup_05', victoryJumpMode: 'sequential', victoryFadeDuration: 1000,
+            placementSound: 'click3', winSound: 'win_levelup_05', hintSound: 'SFX_UI_Notification_Popup_1',
+            victoryJumpMode: 'sequential', victoryFadeDuration: 1000,
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
                 creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5, showsSleepZ: true },
@@ -204,6 +205,7 @@ class ProfileManager {
             returnSound: s.selectedReturnSound || 'SFX_Movement_Swoosh_Fast_1',
             placementSound: s.selectedPlacementSound || 'card-place-1',
             winSound: s.selectedWinSound || 'win_achievement_pop',
+            hintSound: s.selectedHintSound || 'SFX_UI_Notification_Popup_1',
             victoryJumpMode: s.victoryJumpMode || 'sequential',
             victoryEffect: s.selectedVictoryEffect || 'sparkle-stars',
             victoryFadeDuration: s.victoryFadeDuration !== undefined ? s.victoryFadeDuration : 1000,
@@ -244,6 +246,7 @@ class ProfileManager {
             shadowEnabled: 'jellycats_shadow_enabled', shadowOpacity: 'jellycats_shadow_opacity',
             rotationSound: 'jellycats_selected_rotation_sound', returnSound: 'jellycats_selected_return_sound',
             placementSound: 'jellycats_selected_placement_sound', winSound: 'jellycats_selected_win_sound',
+            hintSound: 'jellycats_selected_hint_sound',
             victoryJumpMode: 'jellycats_victory_jump_mode',
             victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration'
         };
@@ -270,6 +273,7 @@ class ProfileManager {
         if (settings.returnSound !== undefined) s.selectedReturnSound = settings.returnSound;
         if (settings.placementSound !== undefined) s.selectedPlacementSound = settings.placementSound;
         if (settings.winSound !== undefined) s.selectedWinSound = settings.winSound;
+        if (settings.hintSound !== undefined) s.selectedHintSound = settings.hintSound;
         if (settings.victoryJumpMode !== undefined) s.victoryJumpMode = settings.victoryJumpMode;
         if (settings.victoryEffect !== undefined) s.selectedVictoryEffect = settings.victoryEffect;
 
@@ -411,6 +415,7 @@ class ProfileManager {
         if (settings.placementSound !== undefined) uv('placement-sound-select', settings.placementSound);
         if (settings.returnSound !== undefined) uv('return-sound-select', settings.returnSound);
         if (settings.winSound !== undefined) uv('win-sound-select', settings.winSound);
+        if (settings.hintSound !== undefined) uv('hint-sound-select', settings.hintSound);
         if (settings.victoryJumpMode !== undefined) uv('victory-jump-mode-select', settings.victoryJumpMode);
         if (settings.victoryEffect !== undefined) uv('victory-effect-select', settings.victoryEffect);
         if (settings.victoryFadeDuration !== undefined) { uv('victory-fade-slider', settings.victoryFadeDuration); ut('victory-fade-value-label', `${settings.victoryFadeDuration}ms`); }

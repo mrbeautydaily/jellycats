@@ -22,6 +22,7 @@ class SettingsUI {
         s.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
         s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
+        s.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
         s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
         s.victoryJumpMode = localStorage.getItem('jellycats_victory_jump_mode') || 'sequential';
         s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
@@ -110,6 +111,14 @@ class SettingsUI {
             s.autosaveActiveProfile();
         });
         this._bindButton('btn-play-win-sound', () => s.soundManager.playWin());
+
+        // Hint sound
+        this._bindSelect('hint-sound-select', s.selectedHintSound, (val) => {
+            s.selectedHintSound = val;
+            localStorage.setItem('jellycats_selected_hint_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-hint-sound', () => s.soundManager.playHint());
 
         this._bindSelect('rug-mode-select', s.rugMode, (val) => {
             s.rugMode = val;

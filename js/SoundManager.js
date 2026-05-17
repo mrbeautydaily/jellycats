@@ -7,6 +7,23 @@ class SoundManager {
         this.scene = scene;
     }
 
+    static getHintSounds() {
+        return [
+            'SFX_Pop_Mouth_Low_1',
+            'SFX_Pop_Bubble_Single_2',
+            'SFX_Pop_Bubble_Single_1',
+            'SFX_Player_Collect_Pop_3',
+            'SFX_Match_Bright_1',
+            'SFX_Pop_Mouth_Med_1',
+            'SFX_Pop_Mouth_Low_3',
+            'SFX_Pop_Mouth_Low_2',
+            'SFX_UI_Button_Click_Generic_1',
+            'SFX_UI_Button_Click_Generic_2',
+            'SFX_UI_Notification_Popup_1',
+            'SFX_UI_Notification_Popup_2'
+        ];
+    }
+
     /**
      * Load all audio assets. Called from GameScene.preload().
      */
@@ -68,6 +85,10 @@ class SoundManager {
         winSounds.forEach(sound => {
             scene.load.audio(sound.key, `assets/sounds/win/${sound.file}`);
         });
+
+        SoundManager.getHintSounds().forEach(soundName => {
+            scene.load.audio(soundName, `assets/sounds/hint/${soundName}.wav`);
+        });
     }
 
     /**
@@ -84,6 +105,7 @@ class SoundManager {
         scene.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         scene.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
         scene.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
+        scene.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
         scene.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
     }
 
@@ -184,6 +206,20 @@ class SoundManager {
             }
         } catch (e) {
             console.warn('Failed to play win sound:', e);
+        }
+    }
+
+    playHint() {
+        const scene = this.scene;
+        try {
+            const soundKey = scene.selectedHintSound || 'SFX_UI_Notification_Popup_1';
+
+            if (scene.cache.audio.exists(soundKey)) {
+                const finalVolume = scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8;
+                scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
+            }
+        } catch (e) {
+            console.warn('Failed to play hint sound:', e);
         }
     }
 }

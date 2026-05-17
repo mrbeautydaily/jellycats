@@ -123,6 +123,10 @@
                     this.load.audio(sound.key, `assets/sounds/win/${sound.file}`);
                 });
 
+                SoundManager.getHintSounds().forEach(soundName => {
+                    this.load.audio(soundName, `assets/sounds/hint/${soundName}.wav`);
+                });
+
             }
 
             create() {
@@ -2020,6 +2024,7 @@
                 if (placements.length === 0) return;
 
                 this.clearSolutionGhosts();
+                if (this.soundManager) this.soundManager.playHint();
 
                 placements.forEach((placement, index) => {
                     const def = PIECE_DEFS.find(piece => piece.id === placement.pieceId);
