@@ -221,11 +221,12 @@
 
             setupLevelQuickNav() {
                 this.quickNav = {
-                    root: document.getElementById('level-quick-nav'),
+                    root: document.getElementById('level-dev-nav'),
                     prev: document.getElementById('btn-level-prev-saved'),
                     next: document.getElementById('btn-level-next-saved'),
                     hint: document.getElementById('btn-solution-hint'),
-                    counter: document.getElementById('level-quick-nav-counter')
+                    counter: document.getElementById('level-quick-nav-counter'),
+                    title: document.getElementById('level-title-label')
                 };
                 if (this.quickNav.prev) this.quickNav.prev.onclick = () => this.navigateSavedLevel('previous');
                 if (this.quickNav.next) this.quickNav.next.onclick = () => this.navigateSavedLevel('next');
@@ -242,13 +243,16 @@
                 if (this.quickNav.next) this.quickNav.next.disabled = !hasLevels;
                 if (this.quickNav.hint) this.quickNav.hint.disabled = !this.currentLevel || !Array.isArray(this.currentLevel.placements) || this.currentLevel.placements.length === 0;
                 if (this.quickNav.counter) this.quickNav.counter.textContent = `${index >= 0 ? index + 1 : 0} / ${levels.length}`;
+                if (this.quickNav.title) this.quickNav.title.textContent = `Уровень ${index >= 0 ? index + 1 : 0}`;
             }
 
             setLevelQuickNavHidden(hidden) {
-                const root = this.quickNav && this.quickNav.root
-                    ? this.quickNav.root
-                    : document.getElementById('level-quick-nav');
-                if (root) root.classList.toggle('hidden', hidden);
+                const roots = this.quickNav
+                    ? [this.quickNav.root, this.quickNav.hint]
+                    : [document.getElementById('level-dev-nav'), document.getElementById('btn-solution-hint')];
+                roots.forEach(root => {
+                    if (root) root.classList.toggle('hidden', hidden);
+                });
             }
 
             getVictoryPanelAnimationClasses() {
