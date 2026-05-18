@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=victory-overlay-1">
 </head>
 <body>
 
@@ -488,6 +488,28 @@
                         <option value="off">No jump</option>
                     </select>
                 </div>
+                <label class="block text-xs font-bold text-slate-500 pt-1">Panel animation</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="victory-panel-animation-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="standard">Panel: standard</option>
+                        <option value="fade">Panel: fade in</option>
+                        <option value="pop">Panel: soft pop</option>
+                        <option value="bounce">Panel: bounce</option>
+                        <option value="slide-up">Panel: slide up</option>
+                        <option value="soft-drop">Panel: soft drop</option>
+                        <option value="gentle-swing">Panel: gentle swing</option>
+                    </select>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Panel dim</span>
+                    <span id="victory-overlay-opacity-value-label" class="font-extrabold text-orange-600">18%</span>
+                </div>
+                <input type="range" id="victory-overlay-opacity-slider" min="0" max="60" step="1" value="18" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Panel blur</span>
+                    <span id="victory-overlay-blur-value-label" class="font-extrabold text-orange-600">2px</span>
+                </div>
+                <input type="range" id="victory-overlay-blur-slider" min="0" max="12" step="0.5" value="2" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 <div class="flex justify-between items-center text-xs pt-1">
                     <span class="font-bold text-slate-500">Star fade</span>
                     <span id="victory-fade-value-label" class="font-extrabold text-orange-600">1000ms</span>
@@ -913,15 +935,12 @@
         <button id="btn-level-next-saved" type="button" class="h-10 w-10 rounded-xl bg-slate-100 text-lg font-black text-slate-700 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40">→</button>
     </div>
 
-    <div id="ui-layer" class="flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 transition-all duration-500 opacity-0 invisible">
-        <div id="win-modal" class="bg-[#fff9f0] rounded-3xl p-8 text-center shadow-2xl max-w-sm w-full mx-4 pointer-events-auto transform scale-90 transition-transform duration-500 border-4 border-orange-200">
-            <div class="text-6xl mb-4">🐾</div>
-            <h1 class="text-4xl font-bold text-orange-500 mb-2">Мяу-победа!</h1>
-            <p class="text-gray-600 mb-8 text-lg font-medium">Все котики уютно уложились на коврике.</p>
-            
-            <button id="btn-restart" class="w-full bg-orange-100 text-orange-600 font-bold py-4 px-6 rounded-2xl mb-3 hover:bg-orange-200 active:bg-orange-300 transition-colors">
-                Еще раз
-            </button>
+    <div id="ui-layer" class="z-50 flex justify-center px-4 transition-all duration-300 opacity-0 invisible">
+        <div id="win-modal" class="bg-[#fff9f0]/95 rounded-3xl p-5 text-center shadow-2xl max-w-sm w-full pointer-events-auto transform translate-y-4 scale-95 border-4 border-orange-200 backdrop-blur-sm">
+            <div class="text-4xl mb-2">🐾</div>
+            <h1 class="text-3xl font-bold text-orange-500 mb-1">Мяу-победа!</h1>
+            <p class="text-gray-600 mb-5 text-base font-medium">Все котики уютно уложились на коврике.</p>
+
             <button id="btn-next" class="w-full bg-orange-500 text-white font-bold py-4 px-6 rounded-2xl hover:bg-orange-600 active:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
                 Следующий пазл
             </button>
@@ -933,14 +952,14 @@
     <script src="js/config.js?v=sleep-z-2"></script>
     <script src="js/SoundManager.js?v=hint-sound-1"></script>
     <script src="js/DustSystem.js?v=sleep-z-2"></script>
-    <script src="js/SettingsUI.js?v=hint-sound-1"></script>
-    <script src="js/ProfileManager.js?v=hint-sound-1"></script>
+    <script src="js/SettingsUI.js?v=victory-overlay-1"></script>
+    <script src="js/ProfileManager.js?v=victory-overlay-1"></script>
     <script src="js/EditorPanel.js?v=sleep-z-2"></script>
     <script src="js/LevelGenerator.js?v=sleep-z-2"></script>
     <script src="js/LevelManager.js?v=sleep-z-2"></script>
     <script src="js/LevelFactoryPanel.js?v=sleep-z-2"></script>
     <script src="js/VictoryEffects.js?v=sleep-z-2"></script>
-    <script src="js/GameScene.js?v=hint-sound-1"></script>
+    <script src="js/GameScene.js?v=victory-overlay-1"></script>
     <script src="js/main.js?v=sleep-z-2"></script>
 </body>
 </html>

@@ -10,6 +10,9 @@
                 this.obstacles = [];
                 this.holes = [];
                 this.victoryJumpMode = 'sequential';
+                this.victoryPanelAnimation = localStorage.getItem('jellycats_victory_panel_animation') || 'standard';
+                this.victoryOverlayOpacity = parseFloat(localStorage.getItem('jellycats_victory_overlay_opacity') || '0.18');
+                this.victoryOverlayBlur = parseFloat(localStorage.getItem('jellycats_victory_overlay_blur') || '2');
                 this.obstacleSprites = [];
                 this.obstacleVisualMode = localStorage.getItem('jellycats_obstacle_visual_mode') || 'soft-pad';
                 this.obstacleAssetSet = localStorage.getItem('jellycats_obstacle_asset_set') || 'current';
@@ -168,7 +171,8 @@
                 this.scale.on('resize', this.updateLayout, this);
 
                 // Привязка UI кнопок
-                document.getElementById('btn-restart').onclick = () => this.restartLevel();
+                const restartButton = document.getElementById('btn-restart');
+                if (restartButton) restartButton.onclick = () => this.restartLevel();
                 document.getElementById('btn-next').onclick = () => this.loadNextSavedLevel();
                 this.setupLevelQuickNav();
                 this.setupHintButton();
@@ -207,6 +211,7 @@
 
             setupLevelQuickNav() {
                 this.quickNav = {
+                    root: document.getElementById('level-quick-nav'),
                     prev: document.getElementById('btn-level-prev-saved'),
                     next: document.getElementById('btn-level-next-saved'),
                     hint: document.getElementById('btn-solution-hint'),
@@ -227,6 +232,51 @@
                 if (this.quickNav.next) this.quickNav.next.disabled = !hasLevels;
                 if (this.quickNav.hint) this.quickNav.hint.disabled = !this.currentLevel || !Array.isArray(this.currentLevel.placements) || this.currentLevel.placements.length === 0;
                 if (this.quickNav.counter) this.quickNav.counter.textContent = `${index >= 0 ? index + 1 : 0} / ${levels.length}`;
+            }
+
+            setLevelQuickNavHidden(hidden) {
+                const root = this.quickNav && this.quickNav.root
+                    ? this.quickNav.root
+                    : document.getElementById('level-quick-nav');
+                if (root) root.classList.toggle('hidden', hidden);
+            }
+
+            getVictoryPanelAnimationClasses() {
+                return [
+                    'victory-panel-appear-standard',
+                    'victory-panel-appear-fade',
+                    'victory-panel-appear-pop',
+                    'victory-panel-appear-bounce',
+                    'victory-panel-appear-slide-up',
+                    'victory-panel-appear-soft-drop',
+                    'victory-panel-appear-gentle-swing'
+                ];
+            }
+
+            applyVictoryPanelAnimation(modal) {
+                if (!modal) return;
+                const allowed = new Set(['standard', 'fade', 'pop', 'bounce', 'slide-up', 'soft-drop', 'gentle-swing']);
+                const animation = allowed.has(this.victoryPanelAnimation) ? this.victoryPanelAnimation : 'standard';
+                modal.classList.remove(...this.getVictoryPanelAnimationClasses());
+                void modal.offsetWidth;
+                modal.classList.add(`victory-panel-appear-${animation}`);
+            }
+
+            applyVictoryOverlaySettings() {
+                const ui = document.getElementById('ui-layer');
+                if (!ui) return;
+                const opacity = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryOverlayOpacity) ? this.victoryOverlayOpacity : 0.18,
+                    0,
+                    0.6
+                );
+                const blur = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryOverlayBlur) ? this.victoryOverlayBlur : 2,
+                    0,
+                    12
+                );
+                ui.style.setProperty('--victory-dim-opacity', opacity.toString());
+                ui.style.setProperty('--victory-blur', `${blur}px`);
             }
 
             setupHintButton() {
@@ -291,10 +341,11 @@
                 const modal = document.getElementById('win-modal');
                 if (!ui || !modal) return;
                 ui.classList.remove('fade-in');
-                modal.classList.remove('scale-in');
+                modal.classList.remove(...this.getVictoryPanelAnimationClasses());
                 setTimeout(() => {
                     ui.classList.add('opacity-0', 'invisible');
-                    modal.classList.add('scale-90');
+                    modal.classList.add('translate-y-4', 'scale-95');
+                    this.setLevelQuickNavHidden(false);
                 }, 10);
             }
 
@@ -2140,14 +2191,14 @@
                     this.playVictoryJump();
 
                     // Показываем UI
-                    setTimeout(() => {
-                        const ui = document.getElementById('ui-layer');
-                        const modal = document.getElementById('win-modal');
-                        ui.classList.remove('opacity-0', 'invisible');
-                        ui.classList.add('fade-in');
-                        modal.classList.remove('scale-90');
-                        modal.classList.add('scale-in');
-                    }, 800);
+                    const ui = document.getElementById('ui-layer');
+                    const modal = document.getElementById('win-modal');
+                    this.setLevelQuickNavHidden(true);
+                    this.applyVictoryOverlaySettings();
+                    modal.classList.remove('translate-y-4', 'scale-95');
+                    this.applyVictoryPanelAnimation(modal);
+                    ui.classList.remove('opacity-0', 'invisible');
+                    ui.classList.add('fade-in');
                 }
             }
 
@@ -2159,11 +2210,12 @@
                 const ui = document.getElementById('ui-layer');
                 const modal = document.getElementById('win-modal');
                 ui.classList.remove('fade-in');
-                modal.classList.remove('scale-in');
+                modal.classList.remove(...this.getVictoryPanelAnimationClasses());
                 
                 setTimeout(() => {
                     ui.classList.add('opacity-0', 'invisible');
-                    modal.classList.add('scale-90');
+                    modal.classList.add('translate-y-4', 'scale-95');
+                    this.setLevelQuickNavHidden(false);
                 }, 10);
 
                 // Очищаем сетку

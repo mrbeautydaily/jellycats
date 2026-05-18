@@ -22,7 +22,8 @@ class ProfileManager {
             shadowEnabled: true, shadowOpacity: 0.25,
             rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
             placementSound: 'click3', winSound: 'win_levelup_05', hintSound: 'SFX_UI_Notification_Popup_1',
-            victoryJumpMode: 'sequential', victoryFadeDuration: 1000,
+            victoryJumpMode: 'sequential', victoryPanelAnimation: 'standard',
+            victoryOverlayOpacity: 0.18, victoryOverlayBlur: 2, victoryFadeDuration: 1000,
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
                 creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5, showsSleepZ: true },
@@ -207,6 +208,9 @@ class ProfileManager {
             winSound: s.selectedWinSound || 'win_achievement_pop',
             hintSound: s.selectedHintSound || 'SFX_UI_Notification_Popup_1',
             victoryJumpMode: s.victoryJumpMode || 'sequential',
+            victoryPanelAnimation: s.victoryPanelAnimation || 'standard',
+            victoryOverlayOpacity: s.victoryOverlayOpacity !== undefined ? s.victoryOverlayOpacity : 0.18,
+            victoryOverlayBlur: s.victoryOverlayBlur !== undefined ? s.victoryOverlayBlur : 2,
             victoryEffect: s.selectedVictoryEffect || 'sparkle-stars',
             victoryFadeDuration: s.victoryFadeDuration !== undefined ? s.victoryFadeDuration : 1000,
             catSettings: catSettings
@@ -248,6 +252,9 @@ class ProfileManager {
             placementSound: 'jellycats_selected_placement_sound', winSound: 'jellycats_selected_win_sound',
             hintSound: 'jellycats_selected_hint_sound',
             victoryJumpMode: 'jellycats_victory_jump_mode',
+            victoryPanelAnimation: 'jellycats_victory_panel_animation',
+            victoryOverlayOpacity: 'jellycats_victory_overlay_opacity',
+            victoryOverlayBlur: 'jellycats_victory_overlay_blur',
             victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration'
         };
         for (let key in lsMap) {
@@ -265,7 +272,7 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryFadeDuration','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryPanelAnimation','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
@@ -275,6 +282,10 @@ class ProfileManager {
         if (settings.winSound !== undefined) s.selectedWinSound = settings.winSound;
         if (settings.hintSound !== undefined) s.selectedHintSound = settings.hintSound;
         if (settings.victoryJumpMode !== undefined) s.victoryJumpMode = settings.victoryJumpMode;
+        if (settings.victoryPanelAnimation !== undefined) s.victoryPanelAnimation = settings.victoryPanelAnimation;
+        if (settings.victoryOverlayOpacity !== undefined || settings.victoryOverlayBlur !== undefined) {
+            if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
+        }
         if (settings.victoryEffect !== undefined) s.selectedVictoryEffect = settings.victoryEffect;
 
         // 3. Update PIECE_DEFS and game pieces
@@ -417,6 +428,16 @@ class ProfileManager {
         if (settings.winSound !== undefined) uv('win-sound-select', settings.winSound);
         if (settings.hintSound !== undefined) uv('hint-sound-select', settings.hintSound);
         if (settings.victoryJumpMode !== undefined) uv('victory-jump-mode-select', settings.victoryJumpMode);
+        if (settings.victoryPanelAnimation !== undefined) uv('victory-panel-animation-select', settings.victoryPanelAnimation);
+        if (settings.victoryOverlayOpacity !== undefined) {
+            const opacityPercent = Math.round(settings.victoryOverlayOpacity * 100);
+            uv('victory-overlay-opacity-slider', opacityPercent);
+            ut('victory-overlay-opacity-value-label', `${opacityPercent}%`);
+        }
+        if (settings.victoryOverlayBlur !== undefined) {
+            uv('victory-overlay-blur-slider', settings.victoryOverlayBlur);
+            ut('victory-overlay-blur-value-label', `${settings.victoryOverlayBlur}px`);
+        }
         if (settings.victoryEffect !== undefined) uv('victory-effect-select', settings.victoryEffect);
         if (settings.victoryFadeDuration !== undefined) { uv('victory-fade-slider', settings.victoryFadeDuration); ut('victory-fade-value-label', `${settings.victoryFadeDuration}ms`); }
 

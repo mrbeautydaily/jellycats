@@ -25,6 +25,9 @@ class SettingsUI {
         s.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
         s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
         s.victoryJumpMode = localStorage.getItem('jellycats_victory_jump_mode') || 'sequential';
+        s.victoryPanelAnimation = localStorage.getItem('jellycats_victory_panel_animation') || 'standard';
+        s.victoryOverlayOpacity = parseFloat(localStorage.getItem('jellycats_victory_overlay_opacity') || '0.18');
+        s.victoryOverlayBlur = parseFloat(localStorage.getItem('jellycats_victory_overlay_blur') || '2');
         s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
         s.jellyMultiplier = parseFloat(localStorage.getItem('jellycats_jelly_multiplier') || '0.6');
         s.jellyStiffness = parseFloat(localStorage.getItem('jellycats_stiffness') || '0.35');
@@ -150,6 +153,28 @@ class SettingsUI {
             localStorage.setItem('jellycats_victory_jump_mode', val);
             s.autosaveActiveProfile();
         });
+        this._bindSelect('victory-panel-animation-select', s.victoryPanelAnimation, (val) => {
+            s.victoryPanelAnimation = val;
+            localStorage.setItem('jellycats_victory_panel_animation', val);
+            s.autosaveActiveProfile();
+        });
+        if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
+        this._bindRangeSlider('victory-overlay-opacity-slider', 'victory-overlay-opacity-value-label', Math.round(s.victoryOverlayOpacity * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.victoryOverlayOpacity = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_victory_overlay_opacity', s.victoryOverlayOpacity.toString());
+                if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
+                s.autosaveActiveProfile();
+            });
+        this._bindRangeSlider('victory-overlay-blur-slider', 'victory-overlay-blur-value-label', s.victoryOverlayBlur,
+            (val) => `${parseFloat(val)}px`,
+            (val) => {
+                s.victoryOverlayBlur = parseFloat(val);
+                localStorage.setItem('jellycats_victory_overlay_blur', s.victoryOverlayBlur.toString());
+                if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
+                s.autosaveActiveProfile();
+            });
         this._bindRangeSlider('victory-fade-slider', 'victory-fade-value-label', s.victoryFadeDuration,
             (val) => `${val}ms`,
             (val) => {
