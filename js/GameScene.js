@@ -11,6 +11,11 @@
                 this.holes = [];
                 this.victoryJumpMode = 'sequential';
                 this.victoryPanelAnimation = localStorage.getItem('jellycats_victory_panel_animation') || 'standard';
+                this.victoryButtonVariant = localStorage.getItem('jellycats_victory_button_variant') || '1';
+                this.victoryButtonPulseEnabled = localStorage.getItem('jellycats_victory_button_pulse_enabled') !== 'false';
+                this.victoryButtonPulseOnHover = localStorage.getItem('jellycats_victory_button_pulse_on_hover') !== 'false';
+                this.victoryButtonOffsetY = parseInt(localStorage.getItem('jellycats_victory_button_y') || '0', 10);
+                this.victoryTitleOffsetY = parseInt(localStorage.getItem('jellycats_victory_title_y') || '0', 10);
                 this.victoryOverlayOpacity = parseFloat(localStorage.getItem('jellycats_victory_overlay_opacity') || '0.18');
                 this.victoryOverlayBlur = parseFloat(localStorage.getItem('jellycats_victory_overlay_blur') || '2');
                 this.obstacleSprites = [];
@@ -279,6 +284,39 @@
                 ui.style.setProperty('--victory-blur', `${blur}px`);
             }
 
+            applyVictoryButtonVariant() {
+                const art = document.getElementById('victory-button-art');
+                const select = document.getElementById('victory-button-variant-select');
+                const rawValue = parseInt(this.victoryButtonVariant || '1', 10);
+                const variant = Number.isFinite(rawValue) ? Phaser.Math.Clamp(rawValue, 1, 9) : 1;
+                this.victoryButtonVariant = variant.toString();
+                if (art) {
+                    art.src = `assets/ui/victory-buttons/victory-button-${variant.toString().padStart(2, '0')}.png?v=3`;
+                }
+                if (select) select.value = this.victoryButtonVariant;
+            }
+
+            applyVictoryCtaSettings() {
+                const modal = document.getElementById('win-modal');
+                if (!modal) return;
+                const buttonY = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryButtonOffsetY) ? this.victoryButtonOffsetY : 0,
+                    -180,
+                    180
+                );
+                const titleY = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryTitleOffsetY) ? this.victoryTitleOffsetY : 0,
+                    -260,
+                    180
+                );
+                this.victoryButtonOffsetY = buttonY;
+                this.victoryTitleOffsetY = titleY;
+                modal.style.setProperty('--victory-button-y', `${buttonY}px`);
+                modal.style.setProperty('--victory-title-y', `${titleY}px`);
+                modal.classList.toggle('victory-pulse-off', this.victoryButtonPulseEnabled === false);
+                modal.classList.toggle('victory-pulse-hover-pause', this.victoryButtonPulseOnHover === false);
+            }
+
             setupHintButton() {
                 const button = document.getElementById('btn-solution-hint');
                 if (!button) return;
@@ -302,12 +340,12 @@
             }
 
             loadNextSavedLevel() {
+                this.hideWinModalImmediately();
                 const level = this.levelManager.getNextLevel(this.getCurrentSavedLevelId());
                 if (!level) {
                     this.restartLevel();
                     return;
                 }
-                this.dismissWinModal();
                 this.loadLevel(level, false);
                 if (this.levelFactoryPanel) {
                     this.levelFactoryPanel.activeCandidateIndex = -1;
@@ -347,6 +385,18 @@
                     modal.classList.add('translate-y-4', 'scale-95');
                     this.setLevelQuickNavHidden(false);
                 }, 10);
+            }
+
+            hideWinModalImmediately() {
+                const ui = document.getElementById('ui-layer');
+                const modal = document.getElementById('win-modal');
+                if (!ui || !modal) return;
+                ui.classList.add('victory-hide-now', 'opacity-0', 'invisible');
+                ui.classList.remove('fade-in');
+                modal.classList.remove(...this.getVictoryPanelAnimationClasses());
+                modal.classList.add('translate-y-4', 'scale-95');
+                this.setLevelQuickNavHidden(false);
+                setTimeout(() => ui.classList.remove('victory-hide-now'), 20);
             }
 
             createEmptyGrid() {
@@ -2195,6 +2245,8 @@
                     const modal = document.getElementById('win-modal');
                     this.setLevelQuickNavHidden(true);
                     this.applyVictoryOverlaySettings();
+                    this.applyVictoryButtonVariant();
+                    this.applyVictoryCtaSettings();
                     modal.classList.remove('translate-y-4', 'scale-95');
                     this.applyVictoryPanelAnimation(modal);
                     ui.classList.remove('opacity-0', 'invisible');

@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=victory-overlay-1">
+    <link rel="stylesheet" href="css/styles.css?v=victory-shadow-2">
 </head>
 <body>
 
@@ -500,6 +500,38 @@
                         <option value="gentle-swing">Panel: gentle swing</option>
                     </select>
                 </div>
+                <label class="block text-xs font-bold text-slate-500 pt-1">Victory button</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="victory-button-variant-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="1">Button 1: leaves</option>
+                        <option value="2">Button 2: sparkles</option>
+                        <option value="3">Button 3: pink ribbon</option>
+                        <option value="4">Button 4: branches</option>
+                        <option value="5">Button 5: stitched</option>
+                        <option value="6">Button 6: wings</option>
+                        <option value="7">Button 7: star badge</option>
+                        <option value="8">Button 8: rays</option>
+                        <option value="9">Button 9: wood base</option>
+                    </select>
+                </div>
+                <label class="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 border border-slate-100">
+                    Button pulse
+                    <input id="victory-button-pulse-toggle" type="checkbox" checked class="accent-orange-500">
+                </label>
+                <label class="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 border border-slate-100">
+                    Pulse on hover
+                    <input id="victory-button-pulse-hover-toggle" type="checkbox" checked class="accent-orange-500">
+                </label>
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Button Y</span>
+                    <span id="victory-button-y-value-label" class="font-extrabold text-orange-600">0px</span>
+                </div>
+                <input type="range" id="victory-button-y-slider" min="-180" max="180" step="1" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Title Y</span>
+                    <span id="victory-title-y-value-label" class="font-extrabold text-orange-600">0px</span>
+                </div>
+                <input type="range" id="victory-title-y-slider" min="-260" max="180" step="1" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 <div class="flex justify-between items-center text-xs pt-1">
                     <span class="font-bold text-slate-500">Panel dim</span>
                     <span id="victory-overlay-opacity-value-label" class="font-extrabold text-orange-600">18%</span>
@@ -936,13 +968,11 @@
     </div>
 
     <div id="ui-layer" class="z-50 flex justify-center px-4 transition-all duration-300 opacity-0 invisible">
-        <div id="win-modal" class="bg-[#fff9f0]/95 rounded-3xl p-5 text-center shadow-2xl max-w-sm w-full pointer-events-auto transform translate-y-4 scale-95 border-4 border-orange-200 backdrop-blur-sm">
-            <div class="text-4xl mb-2">🐾</div>
-            <h1 class="text-3xl font-bold text-orange-500 mb-1">Мяу-победа!</h1>
-            <p class="text-gray-600 mb-5 text-base font-medium">Все котики уютно уложились на коврике.</p>
-
-            <button id="btn-next" class="w-full bg-orange-500 text-white font-bold py-4 px-6 rounded-2xl hover:bg-orange-600 active:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
-                Следующий пазл
+        <div id="win-modal" class="victory-cta pointer-events-auto transform translate-y-4 scale-95">
+            <h1 class="victory-title">Уровень пройден!</h1>
+            <button id="btn-next" class="victory-next-button" type="button" aria-label="Следующий уровень">
+                <img id="victory-button-art" class="victory-button-art" src="assets/ui/victory-buttons/victory-button-01.png?v=3" alt="">
+                <span class="victory-button-label">Следующий уровень</span>
             </button>
         </div>
     </div>
@@ -952,14 +982,14 @@
     <script src="js/config.js?v=sleep-z-2"></script>
     <script src="js/SoundManager.js?v=hint-sound-1"></script>
     <script src="js/DustSystem.js?v=sleep-z-2"></script>
-    <script src="js/SettingsUI.js?v=victory-overlay-1"></script>
-    <script src="js/ProfileManager.js?v=victory-overlay-1"></script>
+    <script src="js/SettingsUI.js?v=victory-hover-1"></script>
+    <script src="js/ProfileManager.js?v=victory-hover-1"></script>
     <script src="js/EditorPanel.js?v=sleep-z-2"></script>
     <script src="js/LevelGenerator.js?v=sleep-z-2"></script>
     <script src="js/LevelManager.js?v=sleep-z-2"></script>
     <script src="js/LevelFactoryPanel.js?v=sleep-z-2"></script>
     <script src="js/VictoryEffects.js?v=sleep-z-2"></script>
-    <script src="js/GameScene.js?v=victory-overlay-1"></script>
+    <script src="js/GameScene.js?v=victory-hover-1"></script>
     <script src="js/main.js?v=sleep-z-2"></script>
 </body>
 </html>

@@ -23,6 +23,8 @@ class ProfileManager {
             rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
             placementSound: 'click3', winSound: 'win_levelup_05', hintSound: 'SFX_UI_Notification_Popup_1',
             victoryJumpMode: 'sequential', victoryPanelAnimation: 'standard',
+            victoryButtonVariant: '1',
+            victoryButtonPulseEnabled: true, victoryButtonPulseOnHover: true, victoryButtonOffsetY: 0, victoryTitleOffsetY: 0,
             victoryOverlayOpacity: 0.18, victoryOverlayBlur: 2, victoryFadeDuration: 1000,
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
@@ -209,6 +211,11 @@ class ProfileManager {
             hintSound: s.selectedHintSound || 'SFX_UI_Notification_Popup_1',
             victoryJumpMode: s.victoryJumpMode || 'sequential',
             victoryPanelAnimation: s.victoryPanelAnimation || 'standard',
+            victoryButtonVariant: s.victoryButtonVariant || '1',
+            victoryButtonPulseEnabled: s.victoryButtonPulseEnabled !== false,
+            victoryButtonPulseOnHover: s.victoryButtonPulseOnHover !== false,
+            victoryButtonOffsetY: s.victoryButtonOffsetY !== undefined ? s.victoryButtonOffsetY : 0,
+            victoryTitleOffsetY: s.victoryTitleOffsetY !== undefined ? s.victoryTitleOffsetY : 0,
             victoryOverlayOpacity: s.victoryOverlayOpacity !== undefined ? s.victoryOverlayOpacity : 0.18,
             victoryOverlayBlur: s.victoryOverlayBlur !== undefined ? s.victoryOverlayBlur : 2,
             victoryEffect: s.selectedVictoryEffect || 'sparkle-stars',
@@ -253,6 +260,11 @@ class ProfileManager {
             hintSound: 'jellycats_selected_hint_sound',
             victoryJumpMode: 'jellycats_victory_jump_mode',
             victoryPanelAnimation: 'jellycats_victory_panel_animation',
+            victoryButtonVariant: 'jellycats_victory_button_variant',
+            victoryButtonPulseEnabled: 'jellycats_victory_button_pulse_enabled',
+            victoryButtonPulseOnHover: 'jellycats_victory_button_pulse_on_hover',
+            victoryButtonOffsetY: 'jellycats_victory_button_y',
+            victoryTitleOffsetY: 'jellycats_victory_title_y',
             victoryOverlayOpacity: 'jellycats_victory_overlay_opacity',
             victoryOverlayBlur: 'jellycats_victory_overlay_blur',
             victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration'
@@ -272,7 +284,7 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryPanelAnimation','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
@@ -283,6 +295,10 @@ class ProfileManager {
         if (settings.hintSound !== undefined) s.selectedHintSound = settings.hintSound;
         if (settings.victoryJumpMode !== undefined) s.victoryJumpMode = settings.victoryJumpMode;
         if (settings.victoryPanelAnimation !== undefined) s.victoryPanelAnimation = settings.victoryPanelAnimation;
+        if (settings.victoryButtonVariant !== undefined && s.applyVictoryButtonVariant) s.applyVictoryButtonVariant();
+        if ((settings.victoryButtonPulseEnabled !== undefined || settings.victoryButtonPulseOnHover !== undefined || settings.victoryButtonOffsetY !== undefined || settings.victoryTitleOffsetY !== undefined) && s.applyVictoryCtaSettings) {
+            s.applyVictoryCtaSettings();
+        }
         if (settings.victoryOverlayOpacity !== undefined || settings.victoryOverlayBlur !== undefined) {
             if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
         }
@@ -429,6 +445,11 @@ class ProfileManager {
         if (settings.hintSound !== undefined) uv('hint-sound-select', settings.hintSound);
         if (settings.victoryJumpMode !== undefined) uv('victory-jump-mode-select', settings.victoryJumpMode);
         if (settings.victoryPanelAnimation !== undefined) uv('victory-panel-animation-select', settings.victoryPanelAnimation);
+        if (settings.victoryButtonVariant !== undefined) uv('victory-button-variant-select', settings.victoryButtonVariant);
+        if (settings.victoryButtonPulseEnabled !== undefined) uc('victory-button-pulse-toggle', settings.victoryButtonPulseEnabled !== false);
+        if (settings.victoryButtonPulseOnHover !== undefined) uc('victory-button-pulse-hover-toggle', settings.victoryButtonPulseOnHover !== false);
+        if (settings.victoryButtonOffsetY !== undefined) { uv('victory-button-y-slider', settings.victoryButtonOffsetY); ut('victory-button-y-value-label', `${settings.victoryButtonOffsetY}px`); }
+        if (settings.victoryTitleOffsetY !== undefined) { uv('victory-title-y-slider', settings.victoryTitleOffsetY); ut('victory-title-y-value-label', `${settings.victoryTitleOffsetY}px`); }
         if (settings.victoryOverlayOpacity !== undefined) {
             const opacityPercent = Math.round(settings.victoryOverlayOpacity * 100);
             uv('victory-overlay-opacity-slider', opacityPercent);

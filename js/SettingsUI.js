@@ -26,6 +26,11 @@ class SettingsUI {
         s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
         s.victoryJumpMode = localStorage.getItem('jellycats_victory_jump_mode') || 'sequential';
         s.victoryPanelAnimation = localStorage.getItem('jellycats_victory_panel_animation') || 'standard';
+        s.victoryButtonVariant = localStorage.getItem('jellycats_victory_button_variant') || '1';
+        s.victoryButtonPulseEnabled = localStorage.getItem('jellycats_victory_button_pulse_enabled') !== 'false';
+        s.victoryButtonPulseOnHover = localStorage.getItem('jellycats_victory_button_pulse_on_hover') !== 'false';
+        s.victoryButtonOffsetY = parseInt(localStorage.getItem('jellycats_victory_button_y') || '0', 10);
+        s.victoryTitleOffsetY = parseInt(localStorage.getItem('jellycats_victory_title_y') || '0', 10);
         s.victoryOverlayOpacity = parseFloat(localStorage.getItem('jellycats_victory_overlay_opacity') || '0.18');
         s.victoryOverlayBlur = parseFloat(localStorage.getItem('jellycats_victory_overlay_blur') || '2');
         s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
@@ -158,6 +163,50 @@ class SettingsUI {
             localStorage.setItem('jellycats_victory_panel_animation', val);
             s.autosaveActiveProfile();
         });
+        this._bindSelect('victory-button-variant-select', s.victoryButtonVariant, (val) => {
+            s.victoryButtonVariant = val;
+            localStorage.setItem('jellycats_victory_button_variant', val);
+            if (s.applyVictoryButtonVariant) s.applyVictoryButtonVariant();
+            s.autosaveActiveProfile();
+        });
+        if (s.applyVictoryButtonVariant) s.applyVictoryButtonVariant();
+        const pulseToggle = document.getElementById('victory-button-pulse-toggle');
+        if (pulseToggle) {
+            pulseToggle.checked = s.victoryButtonPulseEnabled !== false;
+            pulseToggle.onchange = (e) => {
+                s.victoryButtonPulseEnabled = e.target.checked;
+                localStorage.setItem('jellycats_victory_button_pulse_enabled', s.victoryButtonPulseEnabled.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            };
+        }
+        const pulseHoverToggle = document.getElementById('victory-button-pulse-hover-toggle');
+        if (pulseHoverToggle) {
+            pulseHoverToggle.checked = s.victoryButtonPulseOnHover !== false;
+            pulseHoverToggle.onchange = (e) => {
+                s.victoryButtonPulseOnHover = e.target.checked;
+                localStorage.setItem('jellycats_victory_button_pulse_on_hover', s.victoryButtonPulseOnHover.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            };
+        }
+        this._bindRangeSlider('victory-button-y-slider', 'victory-button-y-value-label', s.victoryButtonOffsetY,
+            (val) => `${val}px`,
+            (val) => {
+                s.victoryButtonOffsetY = parseInt(val, 10);
+                localStorage.setItem('jellycats_victory_button_y', s.victoryButtonOffsetY.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            });
+        this._bindRangeSlider('victory-title-y-slider', 'victory-title-y-value-label', s.victoryTitleOffsetY,
+            (val) => `${val}px`,
+            (val) => {
+                s.victoryTitleOffsetY = parseInt(val, 10);
+                localStorage.setItem('jellycats_victory_title_y', s.victoryTitleOffsetY.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            });
+        if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
         if (s.applyVictoryOverlaySettings) s.applyVictoryOverlaySettings();
         this._bindRangeSlider('victory-overlay-opacity-slider', 'victory-overlay-opacity-value-label', Math.round(s.victoryOverlayOpacity * 100),
             (val) => `${val}%`,
@@ -590,7 +639,9 @@ class SettingsUI {
         const el = document.getElementById(selectId);
         if (el) {
             el.value = initialValue;
-            el.onchange = (e) => onChange(e.target.value);
+            const handleChange = (e) => onChange(e.target.value);
+            el.onchange = handleChange;
+            el.oninput = handleChange;
         }
     }
 
