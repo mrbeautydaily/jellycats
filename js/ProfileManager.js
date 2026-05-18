@@ -18,10 +18,11 @@ class ProfileManager {
             dustEnabled: true, dustCount: 85, dustScale: 1.0, dustDistribution: 'sides', dustEdgeRatio: 0.25,
             sleepZEnabled: true, sleepZScale: 1.0, sleepZOpacity: 0.85,
             soundPitchRange: 0.2, sfxVolume: 0.8, meowVolume: 0.8, swooshVolume: 0.6,
-            putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, bgMusicVolume: 0.6,
+            putVolume: 0.25, returnVolume: 0.8, winVolume: 0.5, uiClickVolume: 0.8, bgMusicVolume: 0.6,
             shadowEnabled: true, shadowOpacity: 0.25,
             rotationSound: 'SFX_Movement_Swoosh_Fast_1', returnSound: 'SFX_Movement_Swoosh_Med_1',
             placementSound: 'click3', winSound: 'win_levelup_05', hintSound: 'SFX_UI_Notification_Popup_1',
+            uiClickSound: 'SFX_UI_Button_Click_Generic_1',
             victoryJumpMode: 'sequential', victoryPanelAnimation: 'standard',
             victoryButtonVariant: '1',
             victoryButtonPulseEnabled: true, victoryButtonPulseOnHover: true, victoryButtonOffsetY: 0, victoryTitleOffsetY: 0,
@@ -202,6 +203,7 @@ class ProfileManager {
             putVolume: s.putVolume !== undefined ? s.putVolume : 0.8,
             returnVolume: s.returnVolume !== undefined ? s.returnVolume : 0.8,
             winVolume: s.winVolume !== undefined ? s.winVolume : 0.8,
+            uiClickVolume: s.uiClickVolume !== undefined ? s.uiClickVolume : 0.8,
             bgMusicVolume: s.bgMusicVolume,
             shadowEnabled: s.shadowEnabled, shadowOpacity: s.shadowOpacity,
             rotationSound: s.selectedRotationSound || 'SFX_Movement_Swoosh_Fast_1',
@@ -209,6 +211,7 @@ class ProfileManager {
             placementSound: s.selectedPlacementSound || 'card-place-1',
             winSound: s.selectedWinSound || 'win_achievement_pop',
             hintSound: s.selectedHintSound || 'SFX_UI_Notification_Popup_1',
+            uiClickSound: s.selectedUiClickSound || 'SFX_UI_Button_Click_Generic_1',
             victoryJumpMode: s.victoryJumpMode || 'sequential',
             victoryPanelAnimation: s.victoryPanelAnimation || 'standard',
             victoryButtonVariant: s.victoryButtonVariant || '1',
@@ -253,11 +256,13 @@ class ProfileManager {
             soundPitchRange: 'jellycats_sound_pitch_range',
             sfxVolume: 'jellycats_sfx_volume', meowVolume: 'jellycats_meow_volume', swooshVolume: 'jellycats_swoosh_volume',
             putVolume: 'jellycats_put_volume', returnVolume: 'jellycats_return_volume', winVolume: 'jellycats_win_volume',
+            uiClickVolume: 'jellycats_ui_click_volume',
             bgMusicVolume: 'jellycats_bg_music_volume',
             shadowEnabled: 'jellycats_shadow_enabled', shadowOpacity: 'jellycats_shadow_opacity',
             rotationSound: 'jellycats_selected_rotation_sound', returnSound: 'jellycats_selected_return_sound',
             placementSound: 'jellycats_selected_placement_sound', winSound: 'jellycats_selected_win_sound',
             hintSound: 'jellycats_selected_hint_sound',
+            uiClickSound: 'jellycats_selected_ui_click_sound',
             victoryJumpMode: 'jellycats_victory_jump_mode',
             victoryPanelAnimation: 'jellycats_victory_panel_animation',
             victoryButtonVariant: 'jellycats_victory_button_variant',
@@ -284,7 +289,7 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
@@ -293,6 +298,7 @@ class ProfileManager {
         if (settings.placementSound !== undefined) s.selectedPlacementSound = settings.placementSound;
         if (settings.winSound !== undefined) s.selectedWinSound = settings.winSound;
         if (settings.hintSound !== undefined) s.selectedHintSound = settings.hintSound;
+        if (settings.uiClickSound !== undefined) s.selectedUiClickSound = settings.uiClickSound;
         if (settings.victoryJumpMode !== undefined) s.victoryJumpMode = settings.victoryJumpMode;
         if (settings.victoryPanelAnimation !== undefined) s.victoryPanelAnimation = settings.victoryPanelAnimation;
         if (settings.victoryButtonVariant !== undefined && s.applyVictoryButtonVariant) s.applyVictoryButtonVariant();
@@ -436,6 +442,7 @@ class ProfileManager {
         if (settings.putVolume !== undefined) { uv('put-volume-slider', Math.round(settings.putVolume * 100)); ut('put-volume-value-label', `${Math.round(settings.putVolume * 100)}%`); }
         if (settings.returnVolume !== undefined) { uv('return-volume-slider', Math.round(settings.returnVolume * 100)); ut('return-volume-value-label', `${Math.round(settings.returnVolume * 100)}%`); }
         if (settings.winVolume !== undefined) { uv('win-volume-slider', Math.round(settings.winVolume * 100)); ut('win-volume-value-label', `${Math.round(settings.winVolume * 100)}%`); }
+        if (settings.uiClickVolume !== undefined) { uv('ui-click-volume-slider', Math.round(settings.uiClickVolume * 100)); ut('ui-click-volume-value-label', `${Math.round(settings.uiClickVolume * 100)}%`); }
         if (settings.shadowEnabled !== undefined) uc('shadow-toggle', settings.shadowEnabled);
         if (settings.shadowOpacity !== undefined) { uv('shadow-opacity-slider', Math.round(settings.shadowOpacity * 100)); ut('shadow-opacity-value-label', `${Math.round(settings.shadowOpacity * 100)}%`); }
         if (settings.rotationSound !== undefined) uv('rotation-sound-select', settings.rotationSound);
@@ -443,6 +450,7 @@ class ProfileManager {
         if (settings.returnSound !== undefined) uv('return-sound-select', settings.returnSound);
         if (settings.winSound !== undefined) uv('win-sound-select', settings.winSound);
         if (settings.hintSound !== undefined) uv('hint-sound-select', settings.hintSound);
+        if (settings.uiClickSound !== undefined) uv('ui-click-sound-select', settings.uiClickSound);
         if (settings.victoryJumpMode !== undefined) uv('victory-jump-mode-select', settings.victoryJumpMode);
         if (settings.victoryPanelAnimation !== undefined) uv('victory-panel-animation-select', settings.victoryPanelAnimation);
         if (settings.victoryButtonVariant !== undefined) uv('victory-button-variant-select', settings.victoryButtonVariant);

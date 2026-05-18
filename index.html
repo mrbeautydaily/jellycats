@@ -363,6 +363,20 @@
                 <input type="range" id="sound-pitch-slider" min="0" max="50" step="1" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <label class="block text-xs font-bold text-slate-500">🔘 Звук клика по UI</label>
+                <div class="flex gap-1.5 items-center">
+                    <select id="ui-click-sound-select" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-bold focus:outline-none focus:border-orange-300 transition-colors cursor-pointer">
+                        <option value="SFX_UI_Button_Click_Generic_1">Клик обычный</option>
+                        <option value="SFX_UI_Button_Click_Select_2">Клик выбора</option>
+                        <option value="SFX_UI_Button_Click_Settings_Switch_1">Переключатель</option>
+                    </select>
+                    <button id="btn-play-ui-click-sound" class="bg-orange-50 hover:bg-orange-100 active:scale-95 text-orange-600 w-8 h-8 flex items-center justify-center rounded-xl border border-orange-100 transition-all text-sm" title="Прослушать">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
             <!-- Выбор звука вращения -->
             <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
                 <label class="block text-xs font-bold text-slate-500">🔄 Звук вращения котиков</label>
@@ -601,6 +615,14 @@
                     <span id="win-volume-value-label" class="font-extrabold text-orange-600">80%</span>
                 </div>
                 <input type="range" id="win-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+            </div>
+
+            <div class="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">🔘 Громкость клика по UI</span>
+                    <span id="ui-click-volume-value-label" class="font-extrabold text-orange-600">80%</span>
+                </div>
+                <input type="range" id="ui-click-volume-slider" min="0" max="100" step="1" value="80" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
             </div>
 
             <!-- Громкость фоновой музыки -->
@@ -980,7 +1002,7 @@
 
     <!-- JS Modules -->
     <script src="js/config.js?v=sleep-z-2"></script>
-    <script src="js/SoundManager.js?v=hint-sound-1"></script>
+    <script src="js/SoundManager.js?v=ui-click-1"></script>
     <script src="js/DustSystem.js?v=sleep-z-2"></script>
     <script src="js/SettingsUI.js?v=victory-hover-1"></script>
     <script src="js/ProfileManager.js?v=victory-hover-1"></script>

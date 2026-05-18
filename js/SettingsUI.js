@@ -23,6 +23,7 @@ class SettingsUI {
         s.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         s.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
         s.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
+        s.selectedUiClickSound = localStorage.getItem('jellycats_selected_ui_click_sound') || 'SFX_UI_Button_Click_Generic_1';
         s.selectedVictoryEffect = localStorage.getItem('jellycats_victory_effect') || 'sparkle-stars';
         s.victoryJumpMode = localStorage.getItem('jellycats_victory_jump_mode') || 'sequential';
         s.victoryPanelAnimation = localStorage.getItem('jellycats_victory_panel_animation') || 'standard';
@@ -58,6 +59,7 @@ class SettingsUI {
         s.gridHighlightColor = localStorage.getItem('jellycats_grid_highlight_color') || '#3cc85f';
         s.gridLineThickness = parseInt(localStorage.getItem('jellycats_grid_line_thickness') || '3');
         s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
+        s.uiClickVolume = parseFloat(localStorage.getItem('jellycats_ui_click_volume') || '0.8');
         s.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
         const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
         s.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
@@ -127,6 +129,13 @@ class SettingsUI {
             s.autosaveActiveProfile();
         });
         this._bindButton('btn-play-hint-sound', () => s.soundManager.playHint());
+
+        this._bindSelect('ui-click-sound-select', s.selectedUiClickSound, (val) => {
+            s.selectedUiClickSound = val;
+            localStorage.setItem('jellycats_selected_ui_click_sound', val);
+            s.autosaveActiveProfile();
+        });
+        this._bindButton('btn-play-ui-click-sound', () => s.soundManager.playUiClick());
 
         this._bindSelect('rug-mode-select', s.rugMode, (val) => {
             s.rugMode = val;
@@ -340,6 +349,8 @@ class SettingsUI {
         this._bindVolumeSlider('return-volume-slider', 'return-volume-value-label', 'returnVolume', 'jellycats_return_volume');
         // Win volume
         this._bindVolumeSlider('win-volume-slider', 'win-volume-value-label', 'winVolume', 'jellycats_win_volume', 0.5);
+        // UI click volume
+        this._bindVolumeSlider('ui-click-volume-slider', 'ui-click-volume-value-label', 'uiClickVolume', 'jellycats_ui_click_volume');
 
         // Grid highlight color
         const colorPicker = document.getElementById('grid-color-picker');

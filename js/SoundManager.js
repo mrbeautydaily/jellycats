@@ -24,6 +24,14 @@ class SoundManager {
         ];
     }
 
+    static getUiClickSounds() {
+        return [
+            'SFX_UI_Button_Click_Generic_1',
+            'SFX_UI_Button_Click_Select_2',
+            'SFX_UI_Button_Click_Settings_Switch_1'
+        ];
+    }
+
     /**
      * Load all audio assets. Called from GameScene.preload().
      */
@@ -89,6 +97,10 @@ class SoundManager {
         SoundManager.getHintSounds().forEach(soundName => {
             scene.load.audio(soundName, `assets/sounds/hint/${soundName}.wav`);
         });
+
+        SoundManager.getUiClickSounds().forEach(soundName => {
+            scene.load.audio(soundName, `assets/sounds/click/${soundName}.wav`);
+        });
     }
 
     /**
@@ -102,10 +114,12 @@ class SoundManager {
         scene.putVolume = parseFloat(localStorage.getItem('jellycats_put_volume') || '0.25');
         scene.returnVolume = parseFloat(localStorage.getItem('jellycats_return_volume') || '0.8');
         scene.winVolume = parseFloat(localStorage.getItem('jellycats_win_volume') || '0.5');
+        scene.uiClickVolume = parseFloat(localStorage.getItem('jellycats_ui_click_volume') || '0.8');
         scene.selectedPlacementSound = localStorage.getItem('jellycats_selected_placement_sound') || 'click3';
         scene.selectedReturnSound = localStorage.getItem('jellycats_selected_return_sound') || 'SFX_Movement_Swoosh_Med_1';
         scene.selectedWinSound = localStorage.getItem('jellycats_selected_win_sound') || 'win_levelup_05';
         scene.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
+        scene.selectedUiClickSound = localStorage.getItem('jellycats_selected_ui_click_sound') || 'SFX_UI_Button_Click_Generic_1';
         scene.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
     }
 
@@ -221,5 +235,44 @@ class SoundManager {
         } catch (e) {
             console.warn('Failed to play hint sound:', e);
         }
+    }
+
+    playUiClick() {
+        const scene = this.scene;
+        try {
+            const soundKey = scene.selectedUiClickSound || 'SFX_UI_Button_Click_Generic_1';
+
+            if (scene.cache.audio.exists(soundKey)) {
+                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.uiClickVolume !== undefined ? scene.uiClickVolume : 0.8);
+                scene.sound.play(soundKey, { rate: 1.0, volume: finalVolume });
+            }
+        } catch (e) {
+            console.warn('Failed to play UI click sound:', e);
+        }
+    }
+
+    bindUiClickEvents() {
+        const scene = this.scene;
+        if (scene.uiClickSoundsBound) return;
+        scene.uiClickSoundsBound = true;
+
+        const shouldPlayFor = (target) => {
+            if (!target || !target.closest) return false;
+            const element = target.closest('button');
+            if (!element || element.disabled) return false;
+            if (element.id === 'btn-play-ui-click-sound') return false;
+            if (element.closest('#game-container')) return false;
+            return true;
+        };
+
+        document.addEventListener('click', (event) => {
+            if (shouldPlayFor(event.target)) this.playUiClick();
+        }, true);
+
+        document.addEventListener('change', (event) => {
+            if (!event.target || !event.target.closest) return;
+            const element = event.target.closest('select, input[type="checkbox"], input[type="radio"], input[type="color"]');
+            if (element && !element.disabled && !element.closest('#game-container')) this.playUiClick();
+        }, true);
     }
 }

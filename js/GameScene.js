@@ -135,6 +135,10 @@
                     this.load.audio(soundName, `assets/sounds/hint/${soundName}.wav`);
                 });
 
+                SoundManager.getUiClickSounds().forEach(soundName => {
+                    this.load.audio(soundName, `assets/sounds/click/${soundName}.wav`);
+                });
+
             }
 
             create() {
@@ -201,6 +205,7 @@
                 
                 // Setup sounds and background music
                 this.soundManager.initDefaults();
+                this.soundManager.bindUiClickEvents();
                 this.soundManager.startBackgroundMusic();
                 
                 // Finalize initial state
