@@ -61,6 +61,16 @@ class SettingsUI {
         s.soundPitchRange = parseFloat(localStorage.getItem('jellycats_sound_pitch_range') || '0.2');
         s.uiClickVolume = parseFloat(localStorage.getItem('jellycats_ui_click_volume') || '0.8');
         s.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
+        s.playerMusicVolume = parseFloat(localStorage.getItem('jellycats_player_music_volume') || '1');
+        s.playerSfxVolume = parseFloat(localStorage.getItem('jellycats_player_sfx_volume') || '1');
+        s.playerLanguage = localStorage.getItem('jellycats_player_language') || 'ru';
+        s.playerSettingsDim = parseFloat(localStorage.getItem('jellycats_player_settings_dim') || '0.2');
+        s.playerSettingsButtonScale = parseFloat(localStorage.getItem('jellycats_player_settings_button_scale') || '1');
+        s.playerHintButtonScale = parseFloat(localStorage.getItem('jellycats_player_hint_button_scale') || '1');
+        s.playerLevelPanelScale = parseFloat(localStorage.getItem('jellycats_player_level_panel_scale') || '1');
+        s.playerSettingsPanelScale = parseFloat(localStorage.getItem('jellycats_player_settings_panel_scale') || '1');
+        this._applyPlayerSettingsDim();
+        this._applyPlayerUiScale();
         const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
         s.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
         s.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '85');
@@ -85,6 +95,7 @@ class SettingsUI {
         this._bindSleepZControls();
         this._bindShadowControls();
         this._bindResetButton();
+        this._bindPlayerUi();
     }
 
     _bindSoundSelectors() {
@@ -240,6 +251,20 @@ class SettingsUI {
                 localStorage.setItem('jellycats_victory_fade_duration', s.victoryFadeDuration.toString());
                 s.autosaveActiveProfile();
             });
+
+        this._bindRangeSlider('player-settings-dim-slider', 'player-settings-dim-value-label', Math.round((s.playerSettingsDim !== undefined ? s.playerSettingsDim : 0.2) * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.playerSettingsDim = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_player_settings_dim', s.playerSettingsDim.toString());
+                this._applyPlayerSettingsDim();
+                s.autosaveActiveProfile();
+            });
+
+        this._bindPlayerScaleSlider('player-settings-button-scale-slider', 'player-settings-button-scale-value-label', 'playerSettingsButtonScale', 'jellycats_player_settings_button_scale');
+        this._bindPlayerScaleSlider('player-hint-button-scale-slider', 'player-hint-button-scale-value-label', 'playerHintButtonScale', 'jellycats_player_hint_button_scale');
+        this._bindPlayerScaleSlider('player-level-panel-scale-slider', 'player-level-panel-scale-value-label', 'playerLevelPanelScale', 'jellycats_player_level_panel_scale');
+        this._bindPlayerScaleSlider('player-settings-panel-scale-slider', 'player-settings-panel-scale-value-label', 'playerSettingsPanelScale', 'jellycats_player_settings_panel_scale');
     }
 
     _bindSliders() {
@@ -330,7 +355,7 @@ class SettingsUI {
         // Background music volume
         this._bindRangeSlider('bg-music-volume-slider', 'bg-music-volume-value-label', Math.round(s.bgMusicVolume * 100),
             (val) => `${val}%`,
-            (val) => { s.bgMusicVolume = parseInt(val) / 100; localStorage.setItem('jellycats_bg_music_volume', s.bgMusicVolume.toString()); if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); s.autosaveActiveProfile(); });
+            (val) => { s.bgMusicVolume = parseInt(val) / 100; localStorage.setItem('jellycats_bg_music_volume', s.bgMusicVolume.toString()); if (s.soundManager) s.soundManager.applyMusicVolume(); else if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); s.autosaveActiveProfile(); });
 
         // Sound pitch range
         this._bindRangeSlider('sound-pitch-slider', 'sound-pitch-value-label', Math.round(s.soundPitchRange * 100),
@@ -644,6 +669,173 @@ class SettingsUI {
                     s.autosaveActiveProfile();
                 });
         });
+    }
+
+    _bindPlayerUi() {
+        const s = this.scene;
+        const overlay = document.getElementById('player-settings-overlay');
+        const openBtn = document.getElementById('btn-game-settings');
+        const closeBtn = document.getElementById('btn-player-settings-close');
+        const doneBtn = document.getElementById('btn-player-settings-done');
+        const musicSlider = document.getElementById('player-music-volume-slider');
+        const sfxSlider = document.getElementById('player-sfx-volume-slider');
+        const languageButtons = Array.from(document.querySelectorAll('.player-language-option'));
+        if (!overlay || !openBtn) return;
+
+        const translations = {
+            ru: { settingsTitle: 'Настройки', music: 'Музыка', sounds: 'Звуки', language: 'Язык', done: 'Сохранить' },
+            en: { settingsTitle: 'Settings', music: 'Music', sounds: 'Sounds', language: 'Language', done: 'Save' },
+            es: { settingsTitle: 'Ajustes', music: 'Música', sounds: 'Sonidos', language: 'Idioma', done: 'Guardar' },
+            tr: { settingsTitle: 'Ayarlar', music: 'Müzik', sounds: 'Sesler', language: 'Dil', done: 'Kaydet' }
+        };
+
+        const setSliderVisual = (slider) => {
+            if (!slider) return;
+            const min = parseFloat(slider.min || '0');
+            const max = parseFloat(slider.max || '100');
+            const value = parseFloat(slider.value || '0');
+            const pct = max === min ? 0 : ((value - min) / (max - min)) * 100;
+            const clampedPct = Phaser.Math.Clamp(pct, 0, 100);
+            const shell = slider.closest('.player-slider-shell');
+            if (shell) {
+                const minFillPx = Math.max(32, shell.clientHeight * 0.62);
+                const fillWidth = clampedPct <= 0 ? '0px' : `max(${clampedPct}%, ${minFillPx}px)`;
+                shell.style.setProperty('--player-slider-value', `${clampedPct}%`);
+                shell.style.setProperty('--player-slider-fill-width', fillWidth);
+                shell.style.setProperty('--player-slider-full-width', `${shell.clientWidth}px`);
+            }
+            slider.style.setProperty('--player-slider-value', `${clampedPct}%`);
+        };
+
+        const applyLanguage = (lang) => {
+            const safeLang = translations[lang] ? lang : 'ru';
+            const dict = translations[safeLang];
+            s.playerLanguage = safeLang;
+            localStorage.setItem('jellycats_player_language', safeLang);
+            document.documentElement.lang = safeLang;
+            document.querySelectorAll('[data-i18n]').forEach((node) => {
+                const key = node.getAttribute('data-i18n');
+                if (dict[key]) node.textContent = dict[key];
+            });
+            languageButtons.forEach((button) => {
+                const active = button.dataset.lang === safeLang;
+                button.classList.toggle('is-active', active);
+                button.setAttribute('aria-checked', active ? 'true' : 'false');
+            });
+        };
+
+        const openModal = () => {
+            overlay.classList.add('is-open');
+            overlay.setAttribute('aria-hidden', 'false');
+        };
+        const closeModal = () => {
+            overlay.classList.remove('is-open');
+            overlay.setAttribute('aria-hidden', 'true');
+        };
+
+        const stopUiPropagation = (event) => {
+            event.stopPropagation();
+        };
+        const bindUiShield = (root) => {
+            if (!root) return;
+            ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'dblclick', 'contextmenu'].forEach((eventName) => {
+                root.addEventListener(eventName, stopUiPropagation, true);
+            });
+        };
+        bindUiShield(overlay);
+        bindUiShield(openBtn);
+        bindUiShield(document.getElementById('btn-solution-hint'));
+
+        if (musicSlider) {
+            musicSlider.value = Math.round((s.playerMusicVolume !== undefined ? s.playerMusicVolume : 1) * 100);
+            setSliderVisual(musicSlider);
+            musicSlider.oninput = (e) => {
+                s.playerMusicVolume = parseInt(e.target.value, 10) / 100;
+                localStorage.setItem('jellycats_player_music_volume', s.playerMusicVolume.toString());
+                setSliderVisual(musicSlider);
+                if (s.soundManager) s.soundManager.applyMusicVolume();
+            };
+        }
+
+        if (sfxSlider) {
+            sfxSlider.value = Math.round((s.playerSfxVolume !== undefined ? s.playerSfxVolume : 1) * 100);
+            setSliderVisual(sfxSlider);
+            sfxSlider.oninput = (e) => {
+                s.playerSfxVolume = parseInt(e.target.value, 10) / 100;
+                localStorage.setItem('jellycats_player_sfx_volume', s.playerSfxVolume.toString());
+                setSliderVisual(sfxSlider);
+            };
+        }
+
+        languageButtons.forEach((button) => {
+            button.onclick = () => applyLanguage(button.dataset.lang || 'ru');
+        });
+
+        openBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openModal();
+        });
+        if (closeBtn) closeBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeModal();
+        });
+        if (doneBtn) doneBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeModal();
+        });
+        overlay.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (event.target === overlay) closeModal();
+        });
+        const hintButton = document.getElementById('btn-solution-hint');
+        if (hintButton) {
+            hintButton.onclick = null;
+            hintButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!hintButton.disabled && s.showSolutionGhosts) s.showSolutionGhosts();
+            });
+        }
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
+        });
+        window.addEventListener('resize', () => {
+            setSliderVisual(musicSlider);
+            setSliderVisual(sfxSlider);
+        });
+
+        applyLanguage(s.playerLanguage || 'ru');
+    }
+
+    _applyPlayerSettingsDim() {
+        const value = this.scene.playerSettingsDim !== undefined ? this.scene.playerSettingsDim : 0.2;
+        document.documentElement.style.setProperty('--player-settings-dim-opacity', `${Phaser.Math.Clamp(value, 0, 0.7)}`);
+    }
+
+    _bindPlayerScaleSlider(sliderId, labelId, propName, storageKey) {
+        const s = this.scene;
+        this._bindRangeSlider(sliderId, labelId, Math.round((s[propName] !== undefined ? s[propName] : 1) * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s[propName] = parseInt(val, 10) / 100;
+                localStorage.setItem(storageKey, s[propName].toString());
+                this._applyPlayerUiScale();
+                s.autosaveActiveProfile();
+            });
+    }
+
+    _applyPlayerUiScale() {
+        const s = this.scene;
+        const setScale = (name, value) => {
+            document.documentElement.style.setProperty(name, `${Phaser.Math.Clamp(value, 0.5, 1.5)}`);
+        };
+        setScale('--player-settings-button-scale', s.playerSettingsButtonScale !== undefined ? s.playerSettingsButtonScale : 1);
+        setScale('--player-hint-button-scale', s.playerHintButtonScale !== undefined ? s.playerHintButtonScale : 1);
+        setScale('--player-level-panel-scale', s.playerLevelPanelScale !== undefined ? s.playerLevelPanelScale : 1);
+        setScale('--player-settings-panel-scale', s.playerSettingsPanelScale !== undefined ? s.playerSettingsPanelScale : 1);
     }
 
     _bindSelect(selectId, initialValue, onChange) {

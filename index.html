@@ -7,22 +7,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=victory-shadow-2">
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const devRequested = params.get('dev') === '1';
+            if (params.get('dev') === '0') localStorage.removeItem('jellycats_dev_mode');
+            if (devRequested) localStorage.setItem('jellycats_dev_mode', 'true');
+            if (devRequested || localStorage.getItem('jellycats_dev_mode') === 'true') {
+                document.documentElement.classList.add('dev-mode');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="css/styles.css?v=new-ui-5">
 </head>
 <body>
 
     <!-- Контейнер для Phaser Canvas -->
     <div id="game-container"></div>
     <!-- Кнопка открытия редактора -->
-    <button id="btn-editor-toggle" class="fixed top-4 left-4 bg-white/80 backdrop-blur-md text-slate-800 font-bold py-3 px-5 rounded-2xl shadow-lg border border-slate-200 hover:bg-white active:scale-95 transition-all z-40 flex items-center gap-2">
+    <button id="btn-editor-toggle" class="dev-only fixed top-4 left-4 bg-white/80 backdrop-blur-md text-slate-800 font-bold py-3 px-5 rounded-2xl shadow-lg border border-slate-200 hover:bg-white active:scale-95 transition-all z-40 flex items-center gap-2">
         🔧 <span class="hidden sm:inline">Редактор котиков</span>
     </button>
-    <button id="btn-level-factory-toggle" class="fixed top-20 left-4 bg-white/80 backdrop-blur-md text-slate-800 font-bold py-3 px-5 rounded-2xl shadow-lg border border-slate-200 hover:bg-white active:scale-95 transition-all z-40 flex items-center gap-2">
+    <button id="btn-level-factory-toggle" class="dev-only fixed top-20 left-4 bg-white/80 backdrop-blur-md text-slate-800 font-bold py-3 px-5 rounded-2xl shadow-lg border border-slate-200 hover:bg-white active:scale-95 transition-all z-40 flex items-center gap-2">
         LVL <span class="hidden sm:inline">Level Factory</span>
     </button>
 
     <!-- Панель управления масштабом камеры и фона -->
-    <div id="zoom-control-panel" class="fixed top-4 right-4 bg-white/80 backdrop-blur-md text-slate-800 p-4 rounded-3xl shadow-lg border border-slate-200/50 hover:bg-white transition-all z-40 flex flex-col gap-4 min-w-[260px] sm:min-w-[300px] max-h-[calc(100vh-2rem)] overflow-y-auto">
+    <div id="zoom-control-panel" class="dev-only fixed top-4 right-4 bg-white/80 backdrop-blur-md text-slate-800 p-4 rounded-3xl shadow-lg border border-slate-200/50 hover:bg-white transition-all z-40 flex flex-col gap-4 min-w-[260px] sm:min-w-[300px] max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div class="flex justify-between items-center pb-2 border-b border-slate-100">
             <span class="text-sm font-bold text-slate-800 flex items-center gap-1">⚙️ Настройки отображения</span>
             <div class="flex items-center gap-1.5">
@@ -552,6 +563,31 @@
                 </div>
                 <input type="range" id="victory-overlay-opacity-slider" min="0" max="60" step="1" value="18" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Settings dim</span>
+                    <span id="player-settings-dim-value-label" class="font-extrabold text-orange-600">20%</span>
+                </div>
+                <input type="range" id="player-settings-dim-slider" min="0" max="70" step="1" value="20" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Settings button scale</span>
+                    <span id="player-settings-button-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="player-settings-button-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Hint button scale</span>
+                    <span id="player-hint-button-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="player-hint-button-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Level panel scale</span>
+                    <span id="player-level-panel-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="player-level-panel-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Settings panel scale</span>
+                    <span id="player-settings-panel-scale-value-label" class="font-extrabold text-orange-600">100%</span>
+                </div>
+                <input type="range" id="player-settings-panel-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
                     <span class="font-bold text-slate-500">Panel blur</span>
                     <span id="victory-overlay-blur-value-label" class="font-extrabold text-orange-600">2px</span>
                 </div>
@@ -982,21 +1018,81 @@
         </div>
     </div>
 
-    <div id="level-title-label" class="fixed top-4 left-1/2 z-30 -translate-x-1/2 rounded-2xl border border-white/70 bg-white/80 px-5 py-2 text-sm font-black text-slate-700 shadow-lg backdrop-blur-md">
+    <div id="level-title-label" class="player-level-panel fixed top-4 left-1/2 z-30">
         Уровень 0
     </div>
 
-    <button id="btn-game-settings" type="button" class="fixed top-4 right-[360px] z-30 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-xl font-black text-slate-700 shadow-lg backdrop-blur-md transition-all hover:bg-white active:scale-95 max-[760px]:right-[calc(100vw-3.75rem)]" aria-label="Настройки" title="Настройки">
-        ⚙
+    <button id="btn-game-settings" type="button" class="player-settings-button fixed top-4 z-30" aria-label="Настройки" title="Настройки">
+        <img src="assets/ui/new_ui/btn_settings.png" alt="">
     </button>
 
-    <div id="level-dev-nav" class="fixed bottom-5 left-4 z-30 flex items-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-xl backdrop-blur-md">
+    <div id="level-dev-nav" class="dev-only fixed bottom-5 left-4 z-30 flex items-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-xl backdrop-blur-md">
         <button id="btn-level-prev-saved" type="button" class="h-10 w-10 rounded-xl bg-slate-100 text-lg font-black text-slate-700 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40">←</button>
         <span id="level-quick-nav-counter" class="min-w-14 text-center text-xs font-black text-slate-600">0 / 0</span>
         <button id="btn-level-next-saved" type="button" class="h-10 w-10 rounded-xl bg-slate-100 text-lg font-black text-slate-700 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40">→</button>
     </div>
 
-    <button id="btn-solution-hint" type="button" class="fixed bottom-5 left-1/2 z-30 h-12 w-12 -translate-x-1/2 rounded-2xl border border-amber-200/80 bg-amber-100/95 text-xl font-black text-amber-700 shadow-xl backdrop-blur-md transition-all hover:bg-amber-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40" title="Подсказка" aria-label="Подсказка">?</button>
+    <button id="btn-solution-hint" type="button" class="player-hint-button fixed bottom-5 left-1/2 z-30" title="Подсказка" aria-label="Подсказка">
+        <img class="player-hint-art" src="assets/ui/new_ui/btn_hint.png" alt="">
+        <span id="hint-count-badge" class="player-hint-count" aria-label="Осталось подсказок">5</span>
+    </button>
+
+    <div id="player-settings-overlay" class="player-settings-overlay" aria-hidden="true">
+        <div class="player-settings-modal" role="dialog" aria-modal="true" aria-labelledby="player-settings-title">
+            <h2 id="player-settings-title" class="player-settings-title" data-i18n="settingsTitle">Настройки</h2>
+
+            <div class="player-setting-row">
+                <img class="player-setting-icon" src="assets/ui/new_ui/icon_music_button.png" alt="">
+                <label id="player-music-label" class="player-setting-label" for="player-music-volume-slider" data-i18n="music">Музыка</label>
+                <div class="player-slider-shell">
+                    <img class="player-slider-track" src="assets/ui/new_ui/slider_track_bg.png" alt="">
+                    <div class="player-slider-fill-mask">
+                        <img class="player-slider-fill" src="assets/ui/new_ui/slider_fill_green.png" alt="">
+                    </div>
+                    <input id="player-music-volume-slider" class="player-art-slider" type="range" min="0" max="100" step="1" value="100">
+                </div>
+            </div>
+
+            <div class="player-setting-row">
+                <img class="player-setting-icon" src="assets/ui/new_ui/icon_sound_button.png" alt="">
+                <label id="player-sfx-label" class="player-setting-label" for="player-sfx-volume-slider" data-i18n="sounds">Звуки</label>
+                <div class="player-slider-shell">
+                    <img class="player-slider-track" src="assets/ui/new_ui/slider_track_bg.png" alt="">
+                    <div class="player-slider-fill-mask">
+                        <img class="player-slider-fill" src="assets/ui/new_ui/slider_fill_green.png" alt="">
+                    </div>
+                    <input id="player-sfx-volume-slider" class="player-art-slider" type="range" min="0" max="100" step="1" value="100">
+                </div>
+            </div>
+
+            <div class="player-settings-divider"></div>
+
+            <div class="player-language-title" data-i18n="language">Язык</div>
+            <div class="player-language-grid" role="radiogroup" aria-label="Язык">
+                <button type="button" class="player-language-option" data-lang="en" role="radio" aria-checked="false">
+                    <img src="assets/ui/new_ui/flag_en.png" alt="">
+                    <span>EN</span>
+                </button>
+                <button type="button" class="player-language-option" data-lang="ru" role="radio" aria-checked="true">
+                    <img src="assets/ui/new_ui/flag_ru.png" alt="">
+                    <span>RU</span>
+                </button>
+                <button type="button" class="player-language-option" data-lang="es" role="radio" aria-checked="false">
+                    <img src="assets/ui/new_ui/flag_es.png" alt="">
+                    <span>ES</span>
+                </button>
+                <button type="button" class="player-language-option" data-lang="tr" role="radio" aria-checked="false">
+                    <img src="assets/ui/new_ui/flag_tr.png" alt="">
+                    <span>TR</span>
+                </button>
+            </div>
+
+            <button id="btn-player-settings-done" type="button" class="player-settings-done">
+                <img src="assets/ui/new_ui/btn_green_wide.png" alt="">
+                <span data-i18n="done">Сохранить</span>
+            </button>
+        </div>
+    </div>
 
     <div id="ui-layer" class="z-50 flex justify-center px-4 transition-all duration-300 opacity-0 invisible">
         <div id="win-modal" class="victory-cta pointer-events-auto transform translate-y-4 scale-95">
@@ -1011,10 +1107,10 @@
 
     <!-- JS Modules -->
     <script src="js/config.js?v=sleep-z-2"></script>
-    <script src="js/SoundManager.js?v=ui-click-1"></script>
+    <script src="js/SoundManager.js?v=new-ui-1"></script>
     <script src="js/DustSystem.js?v=sleep-z-2"></script>
-    <script src="js/SettingsUI.js?v=victory-hover-1"></script>
-    <script src="js/ProfileManager.js?v=victory-hover-1"></script>
+    <script src="js/SettingsUI.js?v=new-ui-6"></script>
+    <script src="js/ProfileManager.js?v=new-ui-1"></script>
     <script src="js/EditorPanel.js?v=sleep-z-2"></script>
     <script src="js/LevelGenerator.js?v=sleep-z-2"></script>
     <script src="js/LevelManager.js?v=sleep-z-2"></script>

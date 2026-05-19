@@ -121,6 +121,8 @@ class SoundManager {
         scene.selectedHintSound = localStorage.getItem('jellycats_selected_hint_sound') || 'SFX_UI_Notification_Popup_1';
         scene.selectedUiClickSound = localStorage.getItem('jellycats_selected_ui_click_sound') || 'SFX_UI_Button_Click_Generic_1';
         scene.bgMusicVolume = parseFloat(localStorage.getItem('jellycats_bg_music_volume') || '0.6');
+        scene.playerMusicVolume = parseFloat(localStorage.getItem('jellycats_player_music_volume') || '1');
+        scene.playerSfxVolume = parseFloat(localStorage.getItem('jellycats_player_sfx_volume') || '1');
     }
 
     /**
@@ -129,7 +131,7 @@ class SoundManager {
     startBackgroundMusic() {
         const scene = this.scene;
         try {
-            scene.bgMusic = scene.sound.add('bg_music', { loop: true, volume: scene.bgMusicVolume });
+            scene.bgMusic = scene.sound.add('bg_music', { loop: true, volume: this.getMusicVolume() });
             scene.bgMusic.play();
         } catch (e) {
             console.warn('Failed to initialize background music:', e);
@@ -145,6 +147,24 @@ class SoundManager {
         return rateVal;
     }
 
+    getMusicVolume() {
+        const scene = this.scene;
+        const base = scene.bgMusicVolume !== undefined ? scene.bgMusicVolume : 0.6;
+        const player = scene.playerMusicVolume !== undefined ? scene.playerMusicVolume : 1;
+        return Phaser.Math.Clamp(base * player, 0, 1);
+    }
+
+    getSfxVolume(baseVolume) {
+        const scene = this.scene;
+        const player = scene.playerSfxVolume !== undefined ? scene.playerSfxVolume : 1;
+        return Phaser.Math.Clamp(baseVolume * player, 0, 1);
+    }
+
+    applyMusicVolume() {
+        const scene = this.scene;
+        if (scene.bgMusic) scene.bgMusic.setVolume(this.getMusicVolume());
+    }
+
     playMeow() {
         const scene = this.scene;
         try {
@@ -153,7 +173,8 @@ class SoundManager {
             const soundKey = `twit${randomSoundNum}`;
             
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.meowVolume !== undefined ? scene.meowVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.meowVolume !== undefined ? scene.meowVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
             }
         } catch (e) {
@@ -173,7 +194,8 @@ class SoundManager {
             });
             
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.swooshVolume !== undefined ? scene.swooshVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.swooshVolume !== undefined ? scene.swooshVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
             }
         } catch (e) {
@@ -187,7 +209,8 @@ class SoundManager {
             const soundKey = scene.selectedPlacementSound || 'card-place-1';
             
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.putVolume !== undefined ? scene.putVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.putVolume !== undefined ? scene.putVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
             }
         } catch (e) {
@@ -201,7 +224,8 @@ class SoundManager {
             const soundKey = scene.selectedReturnSound || 'SFX_Movement_Swoosh_Fast_1';
             
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.returnVolume !== undefined ? scene.returnVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.returnVolume !== undefined ? scene.returnVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
             }
         } catch (e) {
@@ -215,7 +239,8 @@ class SoundManager {
             const soundKey = scene.selectedWinSound || 'win_achievement_pop';
             
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.winVolume !== undefined ? scene.winVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.winVolume !== undefined ? scene.winVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: 1.0, volume: finalVolume });
             }
         } catch (e) {
@@ -229,7 +254,8 @@ class SoundManager {
             const soundKey = scene.selectedHintSound || 'SFX_UI_Notification_Popup_1';
 
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8;
+                const baseVolume = scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8;
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: this._getPitchRate(), volume: finalVolume });
             }
         } catch (e) {
@@ -243,7 +269,8 @@ class SoundManager {
             const soundKey = scene.selectedUiClickSound || 'SFX_UI_Button_Click_Generic_1';
 
             if (scene.cache.audio.exists(soundKey)) {
-                const finalVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.uiClickVolume !== undefined ? scene.uiClickVolume : 0.8);
+                const baseVolume = (scene.sfxVolume !== undefined ? scene.sfxVolume : 0.8) * (scene.uiClickVolume !== undefined ? scene.uiClickVolume : 0.8);
+                const finalVolume = this.getSfxVolume(baseVolume);
                 scene.sound.play(soundKey, { rate: 1.0, volume: finalVolume });
             }
         } catch (e) {

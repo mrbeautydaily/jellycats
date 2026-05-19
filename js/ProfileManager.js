@@ -292,7 +292,7 @@ class ProfileManager {
             'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
-        if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
+        if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.soundManager) s.soundManager.applyMusicVolume(); else if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
         if (settings.rotationSound !== undefined) s.selectedRotationSound = settings.rotationSound;
         if (settings.returnSound !== undefined) s.selectedReturnSound = settings.returnSound;
         if (settings.placementSound !== undefined) s.selectedPlacementSound = settings.placementSound;
