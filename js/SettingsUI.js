@@ -32,6 +32,8 @@ class SettingsUI {
         s.victoryButtonPulseOnHover = localStorage.getItem('jellycats_victory_button_pulse_on_hover') !== 'false';
         s.victoryButtonOffsetY = parseInt(localStorage.getItem('jellycats_victory_button_y') || '0', 10);
         s.victoryTitleOffsetY = parseInt(localStorage.getItem('jellycats_victory_title_y') || '0', 10);
+        s.victoryButtonScale = parseFloat(localStorage.getItem('jellycats_victory_button_scale') || '1');
+        s.victoryTitleScale = parseFloat(localStorage.getItem('jellycats_victory_title_scale') || '1');
         s.victoryOverlayOpacity = parseFloat(localStorage.getItem('jellycats_victory_overlay_opacity') || '0.18');
         s.victoryOverlayBlur = parseFloat(localStorage.getItem('jellycats_victory_overlay_blur') || '2');
         s.victoryFadeDuration = parseInt(localStorage.getItem('jellycats_victory_fade_duration') || '1000', 10);
@@ -224,11 +226,27 @@ class SettingsUI {
                 if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
                 s.autosaveActiveProfile();
             });
+        this._bindRangeSlider('victory-button-scale-slider', 'victory-button-scale-value-label', Math.round((s.victoryButtonScale !== undefined ? s.victoryButtonScale : 1) * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.victoryButtonScale = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_victory_button_scale', s.victoryButtonScale.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            });
         this._bindRangeSlider('victory-title-y-slider', 'victory-title-y-value-label', s.victoryTitleOffsetY,
             (val) => `${val}px`,
             (val) => {
                 s.victoryTitleOffsetY = parseInt(val, 10);
                 localStorage.setItem('jellycats_victory_title_y', s.victoryTitleOffsetY.toString());
+                if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
+                s.autosaveActiveProfile();
+            });
+        this._bindRangeSlider('victory-title-scale-slider', 'victory-title-scale-value-label', Math.round((s.victoryTitleScale !== undefined ? s.victoryTitleScale : 1) * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.victoryTitleScale = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_victory_title_scale', s.victoryTitleScale.toString());
                 if (s.applyVictoryCtaSettings) s.applyVictoryCtaSettings();
                 s.autosaveActiveProfile();
             });

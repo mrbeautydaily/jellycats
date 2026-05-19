@@ -26,6 +26,7 @@ class ProfileManager {
             victoryJumpMode: 'sequential', victoryPanelAnimation: 'standard',
             victoryButtonVariant: '1',
             victoryButtonPulseEnabled: true, victoryButtonPulseOnHover: true, victoryButtonOffsetY: 0, victoryTitleOffsetY: 0,
+            victoryButtonScale: 1, victoryTitleScale: 1,
             victoryOverlayOpacity: 0.18, victoryOverlayBlur: 2, victoryFadeDuration: 1000,
             playerSettingsButtonScale: 1, playerSettingsButtonOffsetX: 0,
             playerHintButtonScale: 1, playerHintButtonOffsetX: 0,
@@ -223,6 +224,8 @@ class ProfileManager {
             victoryButtonPulseOnHover: s.victoryButtonPulseOnHover !== false,
             victoryButtonOffsetY: s.victoryButtonOffsetY !== undefined ? s.victoryButtonOffsetY : 0,
             victoryTitleOffsetY: s.victoryTitleOffsetY !== undefined ? s.victoryTitleOffsetY : 0,
+            victoryButtonScale: s.victoryButtonScale !== undefined ? s.victoryButtonScale : 1,
+            victoryTitleScale: s.victoryTitleScale !== undefined ? s.victoryTitleScale : 1,
             victoryOverlayOpacity: s.victoryOverlayOpacity !== undefined ? s.victoryOverlayOpacity : 0.18,
             victoryOverlayBlur: s.victoryOverlayBlur !== undefined ? s.victoryOverlayBlur : 2,
             victoryEffect: s.selectedVictoryEffect || 'sparkle-stars',
@@ -283,6 +286,8 @@ class ProfileManager {
             victoryButtonPulseOnHover: 'jellycats_victory_button_pulse_on_hover',
             victoryButtonOffsetY: 'jellycats_victory_button_y',
             victoryTitleOffsetY: 'jellycats_victory_title_y',
+            victoryButtonScale: 'jellycats_victory_button_scale',
+            victoryTitleScale: 'jellycats_victory_title_scale',
             victoryOverlayOpacity: 'jellycats_victory_overlay_opacity',
             victoryOverlayBlur: 'jellycats_victory_overlay_blur',
             victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration',
@@ -311,7 +316,7 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','playerSettingsButtonScale','playerSettingsButtonOffsetX','playerHintButtonScale','playerHintButtonOffsetX','playerLevelPanelScale','playerSettingsPanelScale','topUiOutlineWidth','topUiOutlineOpacity','topUiOutlineColor','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryButtonScale','victoryTitleScale','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','playerSettingsButtonScale','playerSettingsButtonOffsetX','playerHintButtonScale','playerHintButtonOffsetX','playerLevelPanelScale','playerSettingsPanelScale','topUiOutlineWidth','topUiOutlineOpacity','topUiOutlineColor','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if ((settings.playerSettingsButtonScale !== undefined || settings.playerSettingsButtonOffsetX !== undefined || settings.playerHintButtonScale !== undefined || settings.playerHintButtonOffsetX !== undefined || settings.playerLevelPanelScale !== undefined || settings.playerSettingsPanelScale !== undefined) && s.settingsUI) {
             s.settingsUI._applyPlayerUiScale();
@@ -330,7 +335,7 @@ class ProfileManager {
         if (settings.victoryJumpMode !== undefined) s.victoryJumpMode = settings.victoryJumpMode;
         if (settings.victoryPanelAnimation !== undefined) s.victoryPanelAnimation = settings.victoryPanelAnimation;
         if (settings.victoryButtonVariant !== undefined && s.applyVictoryButtonVariant) s.applyVictoryButtonVariant();
-        if ((settings.victoryButtonPulseEnabled !== undefined || settings.victoryButtonPulseOnHover !== undefined || settings.victoryButtonOffsetY !== undefined || settings.victoryTitleOffsetY !== undefined) && s.applyVictoryCtaSettings) {
+        if ((settings.victoryButtonPulseEnabled !== undefined || settings.victoryButtonPulseOnHover !== undefined || settings.victoryButtonOffsetY !== undefined || settings.victoryTitleOffsetY !== undefined || settings.victoryButtonScale !== undefined || settings.victoryTitleScale !== undefined) && s.applyVictoryCtaSettings) {
             s.applyVictoryCtaSettings();
         }
         if (settings.victoryOverlayOpacity !== undefined || settings.victoryOverlayBlur !== undefined) {
@@ -486,6 +491,8 @@ class ProfileManager {
         if (settings.victoryButtonPulseOnHover !== undefined) uc('victory-button-pulse-hover-toggle', settings.victoryButtonPulseOnHover !== false);
         if (settings.victoryButtonOffsetY !== undefined) { uv('victory-button-y-slider', settings.victoryButtonOffsetY); ut('victory-button-y-value-label', `${settings.victoryButtonOffsetY}px`); }
         if (settings.victoryTitleOffsetY !== undefined) { uv('victory-title-y-slider', settings.victoryTitleOffsetY); ut('victory-title-y-value-label', `${settings.victoryTitleOffsetY}px`); }
+        if (settings.victoryButtonScale !== undefined) { uv('victory-button-scale-slider', Math.round(settings.victoryButtonScale * 100)); ut('victory-button-scale-value-label', `${Math.round(settings.victoryButtonScale * 100)}%`); }
+        if (settings.victoryTitleScale !== undefined) { uv('victory-title-scale-slider', Math.round(settings.victoryTitleScale * 100)); ut('victory-title-scale-value-label', `${Math.round(settings.victoryTitleScale * 100)}%`); }
         if (settings.victoryOverlayOpacity !== undefined) {
             const opacityPercent = Math.round(settings.victoryOverlayOpacity * 100);
             uv('victory-overlay-opacity-slider', opacityPercent);

@@ -620,7 +620,11 @@ html:not(.dev-mode) .dev-only {
     top: clamp(8px, 2.5vw, 24px);
     margin: 0 0 6px;
     color: #ffffff;
-    font-size: clamp(24px, 7vw, 34px);
+    font-size: clamp(
+        calc(24px * var(--victory-title-scale, 1)),
+        calc(7vw * var(--victory-title-scale, 1)),
+        calc(34px * var(--victory-title-scale, 1))
+    );
     font-weight: 900;
     line-height: 1.04;
     letter-spacing: 0;
@@ -650,10 +654,11 @@ html:not(.dev-mode) .dev-only {
     transition: transform 120ms ease, filter 120ms ease;
     animation: victoryButtonPulse 1800ms ease-in-out infinite;
     --victory-button-shift-y: var(--victory-button-y, 0px);
+    --victory-button-scale-safe: var(--victory-button-scale, 1);
 }
 .victory-pulse-off .victory-next-button {
     animation: none;
-    transform: translateY(var(--victory-button-shift-y, 0px)) scale(1);
+    transform: translateY(var(--victory-button-shift-y, 0px)) scale(var(--victory-button-scale-safe));
 }
 .victory-next-button::before {
     content: "";
@@ -676,10 +681,10 @@ html:not(.dev-mode) .dev-only {
 }
 .victory-pulse-hover-pause .victory-next-button:hover {
     animation-play-state: paused;
-    transform: translateY(calc(var(--victory-button-shift-y, 0px) - 1px)) scale(1.04);
+    transform: translateY(calc(var(--victory-button-shift-y, 0px) - 1px)) scale(calc(var(--victory-button-scale-safe) * 1.04));
 }
 .victory-next-button:active {
-    transform: translateY(calc(var(--victory-button-shift-y, 0px) + 1px)) scale(0.985);
+    transform: translateY(calc(var(--victory-button-shift-y, 0px) + 1px)) scale(calc(var(--victory-button-scale-safe) * 0.985));
     filter: brightness(0.98);
 }
 .victory-next-button:focus-visible {
@@ -724,8 +729,8 @@ html:not(.dev-mode) .dev-only {
     50% { opacity: 0.9; transform: scale(1.05); }
 }
 @keyframes victoryButtonPulse {
-    0%, 100% { transform: translateY(var(--victory-button-shift-y, 0px)) scale(1); }
-    50% { transform: translateY(var(--victory-button-shift-y, 0px)) scale(1.035); }
+    0%, 100% { transform: translateY(var(--victory-button-shift-y, 0px)) scale(var(--victory-button-scale-safe)); }
+    50% { transform: translateY(var(--victory-button-shift-y, 0px)) scale(calc(var(--victory-button-scale-safe) * 1.035)); }
 }
 .victory-panel-appear-standard {
     animation: victoryPanelStandard 380ms cubic-bezier(0.22, 1, 0.36, 1) both;

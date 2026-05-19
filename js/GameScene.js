@@ -324,10 +324,24 @@
                     -260,
                     180
                 );
+                const buttonScale = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryButtonScale) ? this.victoryButtonScale : 1,
+                    0.5,
+                    1.5
+                );
+                const titleScale = Phaser.Math.Clamp(
+                    Number.isFinite(this.victoryTitleScale) ? this.victoryTitleScale : 1,
+                    0.5,
+                    1.5
+                );
                 this.victoryButtonOffsetY = buttonY;
                 this.victoryTitleOffsetY = titleY;
+                this.victoryButtonScale = buttonScale;
+                this.victoryTitleScale = titleScale;
                 modal.style.setProperty('--victory-button-y', `${buttonY}px`);
                 modal.style.setProperty('--victory-title-y', `${titleY}px`);
+                modal.style.setProperty('--victory-button-scale', buttonScale.toString());
+                modal.style.setProperty('--victory-title-scale', titleScale.toString());
                 modal.classList.toggle('victory-pulse-off', this.victoryButtonPulseEnabled === false);
                 modal.classList.toggle('victory-pulse-hover-pause', this.victoryButtonPulseOnHover === false);
             }
