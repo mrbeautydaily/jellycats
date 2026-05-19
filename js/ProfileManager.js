@@ -30,6 +30,7 @@ class ProfileManager {
             playerSettingsButtonScale: 1, playerSettingsButtonOffsetX: 0,
             playerHintButtonScale: 1, playerHintButtonOffsetX: 0,
             playerLevelPanelScale: 1, playerSettingsPanelScale: 1,
+            topUiOutlineWidth: 2, topUiOutlineOpacity: 1, topUiOutlineColor: '#111111',
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
                 creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5, showsSleepZ: true },
@@ -232,6 +233,9 @@ class ProfileManager {
             playerHintButtonOffsetX: s.playerHintButtonOffsetX !== undefined ? s.playerHintButtonOffsetX : 0,
             playerLevelPanelScale: s.playerLevelPanelScale !== undefined ? s.playerLevelPanelScale : 1,
             playerSettingsPanelScale: s.playerSettingsPanelScale !== undefined ? s.playerSettingsPanelScale : 1,
+            topUiOutlineWidth: s.topUiOutlineWidth !== undefined ? s.topUiOutlineWidth : 2,
+            topUiOutlineOpacity: s.topUiOutlineOpacity !== undefined ? s.topUiOutlineOpacity : 1,
+            topUiOutlineColor: s.topUiOutlineColor || '#111111',
             catSettings: catSettings
         };
     }
@@ -287,7 +291,10 @@ class ProfileManager {
             playerHintButtonScale: 'jellycats_player_hint_button_scale',
             playerHintButtonOffsetX: 'jellycats_player_hint_button_x',
             playerLevelPanelScale: 'jellycats_player_level_panel_scale',
-            playerSettingsPanelScale: 'jellycats_player_settings_panel_scale'
+            playerSettingsPanelScale: 'jellycats_player_settings_panel_scale',
+            topUiOutlineWidth: 'jellycats_top_ui_outline_width',
+            topUiOutlineOpacity: 'jellycats_top_ui_outline_opacity',
+            topUiOutlineColor: 'jellycats_top_ui_outline_color'
         };
         for (let key in lsMap) {
             if (settings[key] === undefined) continue;
@@ -304,10 +311,13 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','playerSettingsButtonScale','playerSettingsButtonOffsetX','playerHintButtonScale','playerHintButtonOffsetX','playerLevelPanelScale','playerSettingsPanelScale','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','playerSettingsButtonScale','playerSettingsButtonOffsetX','playerHintButtonScale','playerHintButtonOffsetX','playerLevelPanelScale','playerSettingsPanelScale','topUiOutlineWidth','topUiOutlineOpacity','topUiOutlineColor','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
         if ((settings.playerSettingsButtonScale !== undefined || settings.playerSettingsButtonOffsetX !== undefined || settings.playerHintButtonScale !== undefined || settings.playerHintButtonOffsetX !== undefined || settings.playerLevelPanelScale !== undefined || settings.playerSettingsPanelScale !== undefined) && s.settingsUI) {
             s.settingsUI._applyPlayerUiScale();
+        }
+        if ((settings.topUiOutlineWidth !== undefined || settings.topUiOutlineOpacity !== undefined || settings.topUiOutlineColor !== undefined) && s.settingsUI) {
+            s.settingsUI._applyTopUiOutline();
         }
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.soundManager) s.soundManager.applyMusicVolume(); else if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
@@ -493,6 +503,9 @@ class ProfileManager {
         if (settings.playerHintButtonOffsetX !== undefined) { uv('player-hint-button-x-slider', settings.playerHintButtonOffsetX); ut('player-hint-button-x-value-label', `${settings.playerHintButtonOffsetX}px`); }
         if (settings.playerLevelPanelScale !== undefined) { uv('player-level-panel-scale-slider', Math.round(settings.playerLevelPanelScale * 100)); ut('player-level-panel-scale-value-label', `${Math.round(settings.playerLevelPanelScale * 100)}%`); }
         if (settings.playerSettingsPanelScale !== undefined) { uv('player-settings-panel-scale-slider', Math.round(settings.playerSettingsPanelScale * 100)); ut('player-settings-panel-scale-value-label', `${Math.round(settings.playerSettingsPanelScale * 100)}%`); }
+        if (settings.topUiOutlineWidth !== undefined) { uv('top-ui-outline-width-slider', settings.topUiOutlineWidth); ut('top-ui-outline-width-value-label', `${settings.topUiOutlineWidth}px`); }
+        if (settings.topUiOutlineOpacity !== undefined) { uv('top-ui-outline-opacity-slider', Math.round(settings.topUiOutlineOpacity * 100)); ut('top-ui-outline-opacity-value-label', `${Math.round(settings.topUiOutlineOpacity * 100)}%`); }
+        if (settings.topUiOutlineColor !== undefined) uv('top-ui-outline-color-picker', settings.topUiOutlineColor);
 
         // Update cat editor sliders if open
         const catSelect = document.getElementById('edit-cat-select');

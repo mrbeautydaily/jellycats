@@ -71,8 +71,12 @@ class SettingsUI {
         s.playerHintButtonOffsetX = parseInt(localStorage.getItem('jellycats_player_hint_button_x') || '0', 10);
         s.playerLevelPanelScale = parseFloat(localStorage.getItem('jellycats_player_level_panel_scale') || '1');
         s.playerSettingsPanelScale = parseFloat(localStorage.getItem('jellycats_player_settings_panel_scale') || '1');
+        s.topUiOutlineWidth = parseFloat(localStorage.getItem('jellycats_top_ui_outline_width') || '2');
+        s.topUiOutlineOpacity = parseFloat(localStorage.getItem('jellycats_top_ui_outline_opacity') || '1');
+        s.topUiOutlineColor = localStorage.getItem('jellycats_top_ui_outline_color') || '#111111';
         this._applyPlayerSettingsDim();
         this._applyPlayerUiScale();
+        this._applyTopUiOutline();
         const savedDustEnabled = localStorage.getItem('jellycats_dust_enabled');
         s.dustEnabled = savedDustEnabled !== null ? savedDustEnabled === 'true' : true;
         s.dustCount = parseInt(localStorage.getItem('jellycats_dust_count') || '85');
@@ -269,6 +273,7 @@ class SettingsUI {
         this._bindPlayerOffsetSlider('player-hint-button-x-slider', 'player-hint-button-x-value-label', 'playerHintButtonOffsetX', 'jellycats_player_hint_button_x');
         this._bindPlayerScaleSlider('player-level-panel-scale-slider', 'player-level-panel-scale-value-label', 'playerLevelPanelScale', 'jellycats_player_level_panel_scale');
         this._bindPlayerScaleSlider('player-settings-panel-scale-slider', 'player-settings-panel-scale-value-label', 'playerSettingsPanelScale', 'jellycats_player_settings_panel_scale');
+        this._bindTopUiOutlineControls();
     }
 
     _bindSliders() {
@@ -841,6 +846,61 @@ class SettingsUI {
                 this._applyPlayerUiScale();
                 s.autosaveActiveProfile();
             });
+    }
+
+    _bindTopUiOutlineControls() {
+        const s = this.scene;
+        this._bindRangeSlider('top-ui-outline-width-slider', 'top-ui-outline-width-value-label', s.topUiOutlineWidth !== undefined ? s.topUiOutlineWidth : 2,
+            (val) => `${parseFloat(val)}px`,
+            (val) => {
+                s.topUiOutlineWidth = parseFloat(val);
+                localStorage.setItem('jellycats_top_ui_outline_width', s.topUiOutlineWidth.toString());
+                this._applyTopUiOutline();
+                s.autosaveActiveProfile();
+            });
+        this._bindRangeSlider('top-ui-outline-opacity-slider', 'top-ui-outline-opacity-value-label', Math.round((s.topUiOutlineOpacity !== undefined ? s.topUiOutlineOpacity : 1) * 100),
+            (val) => `${val}%`,
+            (val) => {
+                s.topUiOutlineOpacity = parseInt(val, 10) / 100;
+                localStorage.setItem('jellycats_top_ui_outline_opacity', s.topUiOutlineOpacity.toString());
+                this._applyTopUiOutline();
+                s.autosaveActiveProfile();
+            });
+
+        const colorPicker = document.getElementById('top-ui-outline-color-picker');
+        if (colorPicker) {
+            colorPicker.value = this._normalizeHexColor(s.topUiOutlineColor || '#111111');
+            const handleColor = (e) => {
+                s.topUiOutlineColor = this._normalizeHexColor(e.target.value);
+                localStorage.setItem('jellycats_top_ui_outline_color', s.topUiOutlineColor);
+                this._applyTopUiOutline();
+                s.autosaveActiveProfile();
+            };
+            colorPicker.oninput = handleColor;
+            colorPicker.onchange = handleColor;
+        }
+    }
+
+    _normalizeHexColor(value) {
+        return /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#111111';
+    }
+
+    _hexToRgb(value) {
+        const hex = this._normalizeHexColor(value).slice(1);
+        return {
+            r: parseInt(hex.slice(0, 2), 16),
+            g: parseInt(hex.slice(2, 4), 16),
+            b: parseInt(hex.slice(4, 6), 16)
+        };
+    }
+
+    _applyTopUiOutline() {
+        const s = this.scene;
+        const width = Phaser.Math.Clamp(Number.isFinite(s.topUiOutlineWidth) ? s.topUiOutlineWidth : 2, 0, 8);
+        const opacity = Phaser.Math.Clamp(Number.isFinite(s.topUiOutlineOpacity) ? s.topUiOutlineOpacity : 1, 0, 1);
+        const rgb = this._hexToRgb(s.topUiOutlineColor || '#111111');
+        document.documentElement.style.setProperty('--top-ui-outline-width', `${width}px`);
+        document.documentElement.style.setProperty('--top-ui-outline-color', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
     }
 
     _applyPlayerUiScale() {
