@@ -573,10 +573,20 @@
                 </div>
                 <input type="range" id="player-settings-button-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Settings button X</span>
+                    <span id="player-settings-button-x-value-label" class="font-extrabold text-orange-600">0px</span>
+                </div>
+                <input type="range" id="player-settings-button-x-slider" min="-140" max="140" step="1" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
                     <span class="font-bold text-slate-500">Hint button scale</span>
                     <span id="player-hint-button-scale-value-label" class="font-extrabold text-orange-600">100%</span>
                 </div>
                 <input type="range" id="player-hint-button-scale-slider" min="50" max="150" step="1" value="100" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-slate-500">Hint button X</span>
+                    <span id="player-hint-button-x-value-label" class="font-extrabold text-orange-600">0px</span>
+                </div>
+                <input type="range" id="player-hint-button-x-slider" min="-140" max="140" step="1" value="0" class="w-full accent-orange-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg appearance-none">
                 <div class="flex justify-between items-center text-xs pt-1">
                     <span class="font-bold text-slate-500">Level panel scale</span>
                     <span id="player-level-panel-scale-value-label" class="font-extrabold text-orange-600">100%</span>
@@ -1032,7 +1042,7 @@
         <button id="btn-level-next-saved" type="button" class="h-10 w-10 rounded-xl bg-slate-100 text-lg font-black text-slate-700 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40">→</button>
     </div>
 
-    <button id="btn-solution-hint" type="button" class="player-hint-button fixed bottom-5 left-1/2 z-30" title="Подсказка" aria-label="Подсказка">
+    <button id="btn-solution-hint" type="button" class="player-hint-button fixed top-4 z-30" title="Подсказка" aria-label="Подсказка">
         <img class="player-hint-art" src="assets/ui/new_ui/btn_hint.png" alt="">
         <span id="hint-count-badge" class="player-hint-count" aria-label="Осталось подсказок">5</span>
     </button>

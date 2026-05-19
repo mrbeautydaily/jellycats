@@ -27,6 +27,9 @@ class ProfileManager {
             victoryButtonVariant: '1',
             victoryButtonPulseEnabled: true, victoryButtonPulseOnHover: true, victoryButtonOffsetY: 0, victoryTitleOffsetY: 0,
             victoryOverlayOpacity: 0.18, victoryOverlayBlur: 2, victoryFadeDuration: 1000,
+            playerSettingsButtonScale: 1, playerSettingsButtonOffsetX: 0,
+            playerHintButtonScale: 1, playerHintButtonOffsetX: 0,
+            playerLevelPanelScale: 1, playerSettingsPanelScale: 1,
             catSettings: {
                 orangeSolo: { originX: 0.5, originY: 0.5, offsetX: 0, offsetY: -10, scaleX: 0.56, scaleY: 0.54, showsSleepZ: true },
                 creamCurl: { originX: 0.377, originY: 0.32, offsetX: 34, offsetY: 2, scaleX: 0.63, scaleY: 0.5, showsSleepZ: true },
@@ -223,6 +226,12 @@ class ProfileManager {
             victoryOverlayBlur: s.victoryOverlayBlur !== undefined ? s.victoryOverlayBlur : 2,
             victoryEffect: s.selectedVictoryEffect || 'sparkle-stars',
             victoryFadeDuration: s.victoryFadeDuration !== undefined ? s.victoryFadeDuration : 1000,
+            playerSettingsButtonScale: s.playerSettingsButtonScale !== undefined ? s.playerSettingsButtonScale : 1,
+            playerSettingsButtonOffsetX: s.playerSettingsButtonOffsetX !== undefined ? s.playerSettingsButtonOffsetX : 0,
+            playerHintButtonScale: s.playerHintButtonScale !== undefined ? s.playerHintButtonScale : 1,
+            playerHintButtonOffsetX: s.playerHintButtonOffsetX !== undefined ? s.playerHintButtonOffsetX : 0,
+            playerLevelPanelScale: s.playerLevelPanelScale !== undefined ? s.playerLevelPanelScale : 1,
+            playerSettingsPanelScale: s.playerSettingsPanelScale !== undefined ? s.playerSettingsPanelScale : 1,
             catSettings: catSettings
         };
     }
@@ -272,7 +281,13 @@ class ProfileManager {
             victoryTitleOffsetY: 'jellycats_victory_title_y',
             victoryOverlayOpacity: 'jellycats_victory_overlay_opacity',
             victoryOverlayBlur: 'jellycats_victory_overlay_blur',
-            victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration'
+            victoryEffect: 'jellycats_victory_effect', victoryFadeDuration: 'jellycats_victory_fade_duration',
+            playerSettingsButtonScale: 'jellycats_player_settings_button_scale',
+            playerSettingsButtonOffsetX: 'jellycats_player_settings_button_x',
+            playerHintButtonScale: 'jellycats_player_hint_button_scale',
+            playerHintButtonOffsetX: 'jellycats_player_hint_button_x',
+            playerLevelPanelScale: 'jellycats_player_level_panel_scale',
+            playerSettingsPanelScale: 'jellycats_player_settings_panel_scale'
         };
         for (let key in lsMap) {
             if (settings[key] === undefined) continue;
@@ -289,8 +304,11 @@ class ProfileManager {
             'gridHighlightColor','gridLineThickness','jellyMultiplier','jellyStiffness','jellyDamping',
             'breatheSpeedScale','breatheAmpScale','hintDuration','layoutOffsetY','rugPaddingCells','rugMode','dustEnabled','dustCount','dustScale','dustDistribution','dustEdgeRatio',
             'sleepZEnabled','sleepZScale','sleepZOpacity',
-            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','shadowEnabled','shadowOpacity'];
+            'soundPitchRange','sfxVolume','meowVolume','swooshVolume','putVolume','returnVolume','winVolume','uiClickVolume','victoryJumpMode','victoryPanelAnimation','victoryButtonVariant','victoryButtonPulseEnabled','victoryButtonPulseOnHover','victoryButtonOffsetY','victoryTitleOffsetY','victoryOverlayOpacity','victoryOverlayBlur','victoryFadeDuration','playerSettingsButtonScale','playerSettingsButtonOffsetX','playerHintButtonScale','playerHintButtonOffsetX','playerLevelPanelScale','playerSettingsPanelScale','shadowEnabled','shadowOpacity'];
         directProps.forEach(prop => { if (settings[prop] !== undefined) s[prop] = settings[prop]; });
+        if ((settings.playerSettingsButtonScale !== undefined || settings.playerSettingsButtonOffsetX !== undefined || settings.playerHintButtonScale !== undefined || settings.playerHintButtonOffsetX !== undefined || settings.playerLevelPanelScale !== undefined || settings.playerSettingsPanelScale !== undefined) && s.settingsUI) {
+            s.settingsUI._applyPlayerUiScale();
+        }
         if (settings.boardRowScales !== undefined) s.boardRowScales = this.normalizeBoardRowScales(settings.boardRowScales);
         if (settings.bgMusicVolume !== undefined) { s.bgMusicVolume = settings.bgMusicVolume; if (s.soundManager) s.soundManager.applyMusicVolume(); else if (s.bgMusic) s.bgMusic.setVolume(s.bgMusicVolume); }
         if (settings.rotationSound !== undefined) s.selectedRotationSound = settings.rotationSound;
@@ -469,6 +487,12 @@ class ProfileManager {
         }
         if (settings.victoryEffect !== undefined) uv('victory-effect-select', settings.victoryEffect);
         if (settings.victoryFadeDuration !== undefined) { uv('victory-fade-slider', settings.victoryFadeDuration); ut('victory-fade-value-label', `${settings.victoryFadeDuration}ms`); }
+        if (settings.playerSettingsButtonScale !== undefined) { uv('player-settings-button-scale-slider', Math.round(settings.playerSettingsButtonScale * 100)); ut('player-settings-button-scale-value-label', `${Math.round(settings.playerSettingsButtonScale * 100)}%`); }
+        if (settings.playerSettingsButtonOffsetX !== undefined) { uv('player-settings-button-x-slider', settings.playerSettingsButtonOffsetX); ut('player-settings-button-x-value-label', `${settings.playerSettingsButtonOffsetX}px`); }
+        if (settings.playerHintButtonScale !== undefined) { uv('player-hint-button-scale-slider', Math.round(settings.playerHintButtonScale * 100)); ut('player-hint-button-scale-value-label', `${Math.round(settings.playerHintButtonScale * 100)}%`); }
+        if (settings.playerHintButtonOffsetX !== undefined) { uv('player-hint-button-x-slider', settings.playerHintButtonOffsetX); ut('player-hint-button-x-value-label', `${settings.playerHintButtonOffsetX}px`); }
+        if (settings.playerLevelPanelScale !== undefined) { uv('player-level-panel-scale-slider', Math.round(settings.playerLevelPanelScale * 100)); ut('player-level-panel-scale-value-label', `${Math.round(settings.playerLevelPanelScale * 100)}%`); }
+        if (settings.playerSettingsPanelScale !== undefined) { uv('player-settings-panel-scale-slider', Math.round(settings.playerSettingsPanelScale * 100)); ut('player-settings-panel-scale-value-label', `${Math.round(settings.playerSettingsPanelScale * 100)}%`); }
 
         // Update cat editor sliders if open
         const catSelect = document.getElementById('edit-cat-select');

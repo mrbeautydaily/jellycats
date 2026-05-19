@@ -66,7 +66,9 @@ class SettingsUI {
         s.playerLanguage = localStorage.getItem('jellycats_player_language') || 'ru';
         s.playerSettingsDim = parseFloat(localStorage.getItem('jellycats_player_settings_dim') || '0.2');
         s.playerSettingsButtonScale = parseFloat(localStorage.getItem('jellycats_player_settings_button_scale') || '1');
+        s.playerSettingsButtonOffsetX = parseInt(localStorage.getItem('jellycats_player_settings_button_x') || '0', 10);
         s.playerHintButtonScale = parseFloat(localStorage.getItem('jellycats_player_hint_button_scale') || '1');
+        s.playerHintButtonOffsetX = parseInt(localStorage.getItem('jellycats_player_hint_button_x') || '0', 10);
         s.playerLevelPanelScale = parseFloat(localStorage.getItem('jellycats_player_level_panel_scale') || '1');
         s.playerSettingsPanelScale = parseFloat(localStorage.getItem('jellycats_player_settings_panel_scale') || '1');
         this._applyPlayerSettingsDim();
@@ -262,7 +264,9 @@ class SettingsUI {
             });
 
         this._bindPlayerScaleSlider('player-settings-button-scale-slider', 'player-settings-button-scale-value-label', 'playerSettingsButtonScale', 'jellycats_player_settings_button_scale');
+        this._bindPlayerOffsetSlider('player-settings-button-x-slider', 'player-settings-button-x-value-label', 'playerSettingsButtonOffsetX', 'jellycats_player_settings_button_x');
         this._bindPlayerScaleSlider('player-hint-button-scale-slider', 'player-hint-button-scale-value-label', 'playerHintButtonScale', 'jellycats_player_hint_button_scale');
+        this._bindPlayerOffsetSlider('player-hint-button-x-slider', 'player-hint-button-x-value-label', 'playerHintButtonOffsetX', 'jellycats_player_hint_button_x');
         this._bindPlayerScaleSlider('player-level-panel-scale-slider', 'player-level-panel-scale-value-label', 'playerLevelPanelScale', 'jellycats_player_level_panel_scale');
         this._bindPlayerScaleSlider('player-settings-panel-scale-slider', 'player-settings-panel-scale-value-label', 'playerSettingsPanelScale', 'jellycats_player_settings_panel_scale');
     }
@@ -827,15 +831,33 @@ class SettingsUI {
             });
     }
 
+    _bindPlayerOffsetSlider(sliderId, labelId, propName, storageKey) {
+        const s = this.scene;
+        this._bindRangeSlider(sliderId, labelId, s[propName] !== undefined ? s[propName] : 0,
+            (val) => `${val}px`,
+            (val) => {
+                s[propName] = parseInt(val, 10);
+                localStorage.setItem(storageKey, s[propName].toString());
+                this._applyPlayerUiScale();
+                s.autosaveActiveProfile();
+            });
+    }
+
     _applyPlayerUiScale() {
         const s = this.scene;
         const setScale = (name, value) => {
             document.documentElement.style.setProperty(name, `${Phaser.Math.Clamp(value, 0.5, 1.5)}`);
         };
+        const setOffset = (name, value) => {
+            const safeValue = Number.isFinite(value) ? value : 0;
+            document.documentElement.style.setProperty(name, `${Phaser.Math.Clamp(safeValue, -140, 140)}px`);
+        };
         setScale('--player-settings-button-scale', s.playerSettingsButtonScale !== undefined ? s.playerSettingsButtonScale : 1);
         setScale('--player-hint-button-scale', s.playerHintButtonScale !== undefined ? s.playerHintButtonScale : 1);
         setScale('--player-level-panel-scale', s.playerLevelPanelScale !== undefined ? s.playerLevelPanelScale : 1);
         setScale('--player-settings-panel-scale', s.playerSettingsPanelScale !== undefined ? s.playerSettingsPanelScale : 1);
+        setOffset('--player-settings-button-offset-x', s.playerSettingsButtonOffsetX !== undefined ? s.playerSettingsButtonOffsetX : 0);
+        setOffset('--player-hint-button-offset-x', s.playerHintButtonOffsetX !== undefined ? s.playerHintButtonOffsetX : 0);
     }
 
     _bindSelect(selectId, initialValue, onChange) {

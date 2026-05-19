@@ -224,6 +224,7 @@
                     root: document.getElementById('level-dev-nav'),
                     prev: document.getElementById('btn-level-prev-saved'),
                     next: document.getElementById('btn-level-next-saved'),
+                    settings: document.getElementById('btn-game-settings'),
                     hint: document.getElementById('btn-solution-hint'),
                     counter: document.getElementById('level-quick-nav-counter'),
                     title: document.getElementById('level-title-label')
@@ -248,8 +249,13 @@
 
             setLevelQuickNavHidden(hidden) {
                 const roots = this.quickNav
-                    ? [this.quickNav.root, this.quickNav.hint]
-                    : [document.getElementById('level-dev-nav'), document.getElementById('btn-solution-hint')];
+                    ? [this.quickNav.root, this.quickNav.title, this.quickNav.settings, this.quickNav.hint]
+                    : [
+                        document.getElementById('level-dev-nav'),
+                        document.getElementById('level-title-label'),
+                        document.getElementById('btn-game-settings'),
+                        document.getElementById('btn-solution-hint')
+                    ];
                 roots.forEach(root => {
                     if (root) root.classList.toggle('hidden', hidden);
                 });

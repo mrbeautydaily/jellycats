@@ -89,7 +89,7 @@ html:not(.dev-mode) .dev-only {
     background: transparent;
     filter: drop-shadow(0 8px 10px rgba(98, 45, 12, 0.24));
     transition: transform 120ms ease, filter 120ms ease;
-    transform: scale(var(--player-settings-button-scale, 1));
+    transform: translateX(var(--player-settings-button-offset-x, 0px)) scale(var(--player-settings-button-scale, 1));
     transform-origin: 50% 0;
     touch-action: manipulation;
 }
@@ -116,12 +116,15 @@ html:not(.dev-mode) .dev-only {
     transform: scale(0.96);
 }
 .player-settings-button:active {
-    transform: scale(calc(var(--player-settings-button-scale, 1) * 0.96));
+    transform: translateX(var(--player-settings-button-offset-x, 0px)) scale(calc(var(--player-settings-button-scale, 1) * 0.96));
 }
 .player-hint-button:active {
-    transform: translateX(-50%) scale(calc(var(--player-hint-button-scale, 1) * 0.96));
+    transform: translateX(calc(-50% + var(--player-hint-button-offset-x, 0px))) scale(calc(var(--player-hint-button-scale, 1) * 0.96));
 }
 .player-hint-button {
+    top: 16px;
+    bottom: auto;
+    left: calc(50% + clamp(128px, 17vw, 176px));
     width: clamp(78px, 11vw, 102px);
     height: clamp(78px, 11vw, 102px);
     border: 0;
@@ -129,8 +132,8 @@ html:not(.dev-mode) .dev-only {
     background: transparent;
     filter: drop-shadow(0 9px 12px rgba(98, 45, 12, 0.24));
     transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
-    transform: translateX(-50%) scale(var(--player-hint-button-scale, 1));
-    transform-origin: 50% 100%;
+    transform: translateX(calc(-50% + var(--player-hint-button-offset-x, 0px))) scale(var(--player-hint-button-scale, 1));
+    transform-origin: 50% 0;
     touch-action: manipulation;
 }
 .player-hint-button:disabled {
@@ -498,6 +501,12 @@ html:not(.dev-mode) .dev-only {
     .player-settings-button {
         top: 10px;
         right: calc(50% + min(25vw, 112px));
+        width: min(17vw, 72px);
+        height: min(17vw, 72px);
+    }
+    .player-hint-button {
+        top: 10px;
+        left: calc(50% + min(33vw, 140px));
         width: min(17vw, 72px);
         height: min(17vw, 72px);
     }
